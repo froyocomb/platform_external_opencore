@@ -1,6 +1,7 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
  * Copyright (C) 2008 HTC Inc.
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +47,73 @@
 #include "pvmf_omx_videoenc_callbacks.h"     //used for thin AO in encoder's callbacks
 #include "pv_omxcore.h"
 #include "pv_omxmastercore.h"
+
+typedef enum OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1 
+{
+    /** Enum for PMEM information */
+    OMX_QCOM_PLATFORM_PRIVATE_PMEM = 0x1    
+} OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1;
+
+typedef struct OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1
+{
+    /** pmem file descriptor */
+    OMX_U32 pmem_fd;
+    /** Offset from pmem device base address */
+    OMX_U32 offset;
+}OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1;
+
+typedef struct OMX_QCOM_PLATFORM_PRIVATE_ENTRY1
+{
+    /** Entry type */
+    OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1 type;
+
+    /** Pointer to platform specific entry */
+    void* entry;   
+}OMX_QCOM_PLATFORM_PRIVATE_ENTRY1;
+
+typedef struct OMX_QCOM_PLATFORM_PRIVATE_LIST1
+{
+    /** Number of entries */
+    OMX_U32 nEntries;
+
+    /** Pointer to array of platform specific entries *
+     * Contiguous block of OMX_QCOM_PLATFORM_PRIVATE_ENTRY elements
+	 */
+    OMX_QCOM_PLATFORM_PRIVATE_ENTRY1* entryList;
+}OMX_QCOM_PLATFORM_PRIVATE_LIST1;
+
+OMX_QCOM_PLATFORM_PRIVATE_LIST1  st_list = {0};
+OMX_QCOM_PLATFORM_PRIVATE_ENTRY1 st_entry;
+OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1 st_info = {0};
+
+struct OMX_QCOM_PLATFORMPRIVATE_EXTN1
+{
+    OMX_U32 nSize;        /** Size of the structure in bytes */
+    OMX_VERSIONTYPE nVersion; /** OMX spec version information */
+    OMX_U32 nPortIndex;  /** Port number on which usebuffer extn is applied */
+
+    /** Type of extensions should match an entry from 
+     OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1 
+	*/
+    OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1 type; 
+};
+
+enum OMX_QCOM_EXTN_INDEXTYPE1
+{
+    /** Qcom proprietary extension index list */
+
+    /* "OMX.QCOM.index.param.register_mmap" */
+    OMX_QcomIndexRegmmap1 = 0x7F000000,
+
+    /* "OMX.QCOM.index.param.platformprivate" */
+    OMX_QcomIndexPlatformPvt1 = 0x7F000001,
+
+    /* "OMX.QCOM.index.param.portdefn" */
+    OMX_QcomIndexPortDefn1 = 0x7F000002,
+
+     /* "OMX.QCOM.index.param.framepackingformat" */
+     OMX_QcomIndexPortFramePackFmt1 = 0x7F000003
+};
 
 
 static const OMX_U32 OMX_SPEC_VERSION = 0x00000101;
@@ -2733,7 +2801,11 @@ bool PVMFOMXVideoEncNode::SetDefaultCapabilityFlags()
     LOG_STACK_TRACE((0, "PVMFOMXVideoEncNode::SetDefaultCapabilityFlags"));
     iIsOMXComponentMultiThreaded = true;
     iOMXComponentSupportsExternalOutputBufferAlloc = true;
+#ifndef MSM_8k
+    iOMXComponentSupportsExternalInputBufferAlloc = true; //true; use_buffer
+#else
     iOMXComponentSupportsExternalInputBufferAlloc = false;
+#endif
     iOMXComponentSupportsMovableInputBuffers = false;
     iOMXComponentSupportsPartialFrames = false;
     iOMXComponentCanHandleIncompleteFrames = false;
@@ -2975,6 +3047,22 @@ bool PVMFOMXVideoEncNode::NegotiateComponentParameters()
         return false;
     }
 
+     
+      OMX_QCOM_PLATFORMPRIVATE_EXTN1 m_sQcomPlatformPvt; 
+      if (iOMXComponentSupportsExternalInputBufferAlloc)
+      {      
+         CONFIG_VERSION_SIZE (m_sQcomPlatformPvt);
+         m_sQcomPlatformPvt.nPortIndex = (OMX_U32) iInputPortIndex;
+         m_sQcomPlatformPvt.type = OMX_QCOM_PLATFORM_PRIVATE_PMEM;
+          Err = OMX_SetParameter (iOMXVideoEncoder,(OMX_INDEXTYPE)OMX_QcomIndexPlatformPvt1, &m_sQcomPlatformPvt);
+
+          if (Err != OMX_ErrorNone)
+          {
+                LOG_ERR((0, "PVMFOMXVideoEncNode::NegotiateComponentParameters() Problem setting param  OMX_QCOM_PLATFORM_PRIVATE_PMEM %d ", iInputPortIndex));
+           return false;
+           }
+       }
+         
     // configure encoder video color format
     OMX_VIDEO_PARAM_PORTFORMATTYPE VideoPortFormat;
     OMX_COLOR_FORMATTYPE VideoColorFormat = OMX_COLOR_FormatUnused;
@@ -4360,10 +4448,20 @@ bool PVMFOMXVideoEncNode::SendOutputBufferToOMXComponent()
 
 bool PVMFOMXVideoEncNode::SendInputBufferToOMXComponent()
 {
-	LOG_STACK_TRACE((0,"PVMFOMXVideoEncNode::SendInputBufferToOMXComponent() In"));
+    LOG_STACK_TRACE((0,"PVMFOMXVideoEncNode::SendInputBufferToOMXComponent() In"));
+    // first need to take care of  missing packets if node is assembling partial frames.
+    // The action depends whether the component (I) can handle incomplete frames/NALs or (II) cannot handle incomplete frames/NALs
+	if (iOMXComponentSupportsExternalInputBufferAlloc)
+	{
+		//LOGE ("IN the USE BUFFER CASE \n");
+		st_info.offset = 0;
+		st_info.pmem_fd = 0;
+                st_entry.entry = &st_info;
+		st_entry.type = OMX_QCOM_PLATFORM_PRIVATE_PMEM;
+		st_list.entryList = &st_entry;
+                st_list.nEntries = 1;
+	}
 
-	// first need to take care of  missing packets if node is assembling partial frames.
-	// The action depends whether the component (I) can handle incomplete frames/NALs or (II) cannot handle incomplete frames/NALs
 	if(!iOMXComponentSupportsPartialFrames)
 	{
 		// there are 4 cases after receiving a media msg and realizing there were missing packet(s):
@@ -4670,9 +4768,20 @@ bool PVMFOMXVideoEncNode::SendInputBufferToOMXComponent()
 
 			if( iFragmentSizeRemainingToCopy <= bytes_remaining_in_buffer )
 			{
-				oscl_memcpy( input_buf->pBufHdr->pBuffer + input_buf->pBufHdr->nFilledLen,
+                
+				if (iOMXComponentSupportsExternalInputBufferAlloc) 
+				{
+					input_buf->pBufHdr->pBuffer = ((uint8 *)frag.getMemFragPtr() + iCopyPosition);
+					st_info.pmem_fd = iDataIn->getPmemFD();
+                                        input_buf->pBufHdr->pPlatformPrivate = &st_list;
+				}
+				else
+				{
+				        oscl_memcpy( input_buf->pBufHdr->pBuffer + input_buf->pBufHdr->nFilledLen,
 							 (void *) ((uint8 *)frag.getMemFragPtr() + iCopyPosition),
 							 iFragmentSizeRemainingToCopy);
+				}
+
 
 				input_buf->pBufHdr->nFilledLen += iFragmentSizeRemainingToCopy;
 

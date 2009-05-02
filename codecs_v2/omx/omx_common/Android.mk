@@ -13,7 +13,7 @@ LOCAL_MODULE := libomx_common_lib
 
 LOCAL_CFLAGS :=   $(PV_CFLAGS)
 
-ifneq (,$(filter $(TARGET_DEVICE),dream sapphire surf))
+ifneq (,$(filter $(TARGET_DEVICE),dream sapphire msm7627_surf msm7627_ffa msm7201a_surf msm7201a_ffa qsd8250_surf qsd8250_ffa))
 LOCAL_CFLAGS += -DHARDWARE_OMX=1
 endif
 
