@@ -28,6 +28,7 @@
 
 #include "qc_omxcore.h"
 
+
 //Number of base instances
 android::Mutex g_OMX_Mutex;
 OMX_U32 g_NumMasterOMXInstances = 0;

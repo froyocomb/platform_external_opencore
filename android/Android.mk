@@ -38,3 +38,33 @@ LOCAL_LDLIBS +=
 
 include $(BUILD_STATIC_LIBRARY)
 
+include $(CLEAR_VARS)
+
+# Set up the OpenCore variables.
+include external/opencore/Config.mk
+LOCAL_C_INCLUDES := $(PV_INCLUDES) \
+		samples/android_surface_output_fb.h \
+
+LOCAL_SRC_FILES := samples/android_surface_output_fb.cpp
+
+LOCAL_CFLAGS := $(PV_CFLAGS)
+
+LOCAL_SHARED_LIBRARIES := \
+     libutils \
+     libcutils \
+     libui \
+     libhardware\
+     libandroid_runtime \
+     libmedia \
+     libsgl \
+     libopencorecommon \
+     libicuuc \
+     libopencoreplayer
+
+ LOCAL_MODULE := libopencorehw
+
+ LOCAL_LDLIBS +=
+
+ include $(BUILD_SHARED_LIBRARY)
+
+

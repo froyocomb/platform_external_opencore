@@ -38,7 +38,7 @@ endif
 
 # Include Qualcomm codec
 ifneq (,$(filter $(TARGET_DEVICE),dream sapphire surf))
-LOCAL_SHARED_LIBRARIES += libOmxCore
+ LOCAL_SHARED_LIBRARIES += libOmxCore
 endif
 
 

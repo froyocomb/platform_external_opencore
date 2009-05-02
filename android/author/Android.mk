@@ -11,9 +11,10 @@ LOCAL_SRC_FILES := \
 
 LOCAL_CFLAGS := $(PV_CFLAGS)
 
-ifneq (,$(filter $(TARGET_DEVICE),dream sapphire surf))
-LOCAL_CFLAGS += -DHARDWARE_OMX=1
-endif
+# XXX disabled because breaks compile
+# ifneq (,$(filter $(TARGET_DEVICE),dream sapphire msm7201a_surf msm7201a_ffa qsd8250_surf qsd8250_ffa))
+# LOCAL_CFLAGS += -DHARDWARE_OMX=1
+# endif
 
 LOCAL_ARM_MODE := arm
 

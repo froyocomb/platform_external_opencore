@@ -76,7 +76,7 @@ enum PVMFMediaOutputNodePortMediaTimeStatus
     PVMF_MEDIAOUTPUTNODEPORT_MEDIA_EARLY
 };
 
-#define THRESHOLD_FOR_DROPPED_VIDEO_FRAMES 120
+#define THRESHOLD_FOR_DROPPED_VIDEO_FRAMES 240
 
 /**
  * Observer class for the inactivity timer AO
