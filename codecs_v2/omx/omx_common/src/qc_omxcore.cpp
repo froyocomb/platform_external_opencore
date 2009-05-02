@@ -20,6 +20,7 @@
 
 #if HARDWARE_OMX
 
+
 QC_OMX_Wrapper::QC_OMX_Wrapper()
 {
     // initialize f. ptrs

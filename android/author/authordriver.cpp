@@ -912,10 +912,10 @@ void AuthorDriver::CommandCompleted(const PVCmdResponse& aResponse)
             // fix the hardcoded bit rate settings.
             if (config) {
                 int bitrate_setting = 192000;
-                if (mVideoWidth >= 480) {
-                    bitrate_setting = 420000; // unstable
-                } else if (mVideoWidth >= 352) {
-                    bitrate_setting = 360000;
+                if (mVideoWidth >= 640) {
+                    bitrate_setting = 1200000;
+                } else if (mVideoWidth >= 480) {
+                    bitrate_setting = 600000;
                 } else if (mVideoWidth >= 320) {
                     bitrate_setting = 320000;
                 }
@@ -931,10 +931,10 @@ void AuthorDriver::CommandCompleted(const PVCmdResponse& aResponse)
                                                                       mVideoEncoderConfig);
             if (config) {
                 int bitrate_setting = 192000;
-                if (mVideoWidth >= 480) {
-                    bitrate_setting = 420000; // unstable
-                } else if (mVideoWidth >= 352) {
-                    bitrate_setting = 360000;
+                if (mVideoWidth >= 640) {
+                    bitrate_setting = 1200000;
+                } else if (mVideoWidth >= 480) {
+                    bitrate_setting = 600000;
                 } else if (mVideoWidth >= 320) {
                     bitrate_setting = 320000;
                 }

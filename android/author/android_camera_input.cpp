@@ -1,7 +1,8 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
  * Copyright (C) 2008 HTC Inc.
- *
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1152,7 +1153,7 @@ PVMFStatus AndroidCameraInput::postWriteAsync(const sp<IMemory>& frame)
     ssize_t offset = 0;
     size_t size = 0;
     sp<IMemoryHeap> heap = frame->getMemory(&offset, &size);
-    LOGV("postWriteAsync: ID = %d, base = %p, offset = %p, size = %d", heap->getHeapID(), heap->base(), offset, size);
+    LOGE("postWriteAsync: ID = %d, base = %x, offset = %d, size = %d", (int)heap->getHeapID(), (unsigned int)heap->base(), (int)offset, (int)size);
 
     //LOGV("@@@@@@@@@@@@@ incrementing reference count (%d) @@@@@@@@@@@@@@@", mFrameRefCount);
     if (mHeap == 0) {
@@ -1160,7 +1161,7 @@ PVMFStatus AndroidCameraInput::postWriteAsync(const sp<IMemory>& frame)
         mHeap = heap;
     } else if (mHeap != heap) {
         LOGE("mHeap != heap");
-        return PVMFFailure;
+        mHeap = heap;
     }
 
     // queue data to be sent to peer
@@ -1170,6 +1171,7 @@ PVMFStatus AndroidCameraInput::postWriteAsync(const sp<IMemory>& frame)
     data.iXferHeader.flags = 0;
     data.iXferHeader.duration = 0;
     data.iXferHeader.stream_id = 0;
+    data.iXferHeader.private_data_ptr = (OsclAny*)heap->getHeapID();
     data.iFrameBuffer = frame;
     data.iFrameSize = size;
 

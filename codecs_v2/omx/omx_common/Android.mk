@@ -13,7 +13,10 @@ LOCAL_MODULE := libomx_common_lib
 
 LOCAL_CFLAGS :=   $(PV_CFLAGS)
 
-ifneq (,$(filter $(TARGET_DEVICE),dream sapphire surf))
+ifneq (,$(filter $(TARGET_DEVICE),dream sapphire))
+LOCAL_CFLAGS += -DHARDWARE_OMX=1
+endif
+ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
 LOCAL_CFLAGS += -DHARDWARE_OMX=1
 endif
 

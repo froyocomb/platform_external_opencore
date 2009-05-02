@@ -82,8 +82,11 @@ LOCAL_SHARED_LIBRARIES += libdl
 endif
 
 # Include Qualcomm codec
-ifneq (,$(filter $(TARGET_DEVICE),dream sapphire surf))
-LOCAL_SHARED_LIBRARIES += libOmxCore
+ifneq (,$(filter $(TARGET_DEVICE),dream sapphire))
+ LOCAL_SHARED_LIBRARIES += libOmxCore
+endif
+ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
+ LOCAL_SHARED_LIBRARIES += libOmxCore
 endif
 
 

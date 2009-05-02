@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1640,6 +1641,11 @@ PVMFStatus PVMFOMXAudioDecNode::HandleProcessingState()
             iParamPort.nPortIndex = iPortIndexForDynamicReconfig;
             // iParamPort.nVersion = OMX_VERSION;
 
+            // Initialising MIME type to NULL. As per the OMX spec, if the pointer is not
+            // set to NULL, then it should be a valid address. But in this case, memory for
+            // cMIMEType (char *) is not allocated.
+            iParamPort.format.audio.cMIMEType = NULL;
+
             // get new parameters of the port
             OMX_GetParameter(iOMXAudioDecoder, OMX_IndexParamPortDefinition, &iParamPort);
 
@@ -2055,6 +2061,7 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters()
     OMX_ERRORTYPE Err;
     // first get the number of ports and port indices
     OMX_PORT_PARAM_TYPE AudioPortParameters;
+    OMX_PARAM_SUSPENSIONPOLICYTYPE suspensionPolicy;
     uint32 NumPorts;
     uint32 ii;
 
@@ -2080,6 +2087,12 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters()
 
         //port
         iParamPort.nPortIndex = ii;
+
+        // Initialising MIME type to NULL. As per the OMX spec, if the pointer is not
+        // set to NULL, then it should be a valid address. But in this case, memory for
+        // cMIMEType (char *) is not allocated.
+        iParamPort.format.audio.cMIMEType = NULL;
+
         Err = OMX_GetParameter(iOMXAudioDecoder, OMX_IndexParamPortDefinition, &iParamPort);
 
         if (Err != OMX_ErrorNone)
@@ -2117,6 +2130,12 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters()
 
         //port
         iParamPort.nPortIndex = ii;
+
+        // Initialising MIME type to NULL. As per the OMX spec, if the pointer is not
+        // set to NULL, then it should be a valid address. But in this case, memory for
+        // cMIMEType (char *) is not allocated.
+        iParamPort.format.audio.cMIMEType = NULL;
+
         Err = OMX_GetParameter(iOMXAudioDecoder, OMX_IndexParamPortDefinition, &iParamPort);
 
         if (Err != OMX_ErrorNone)
@@ -2190,6 +2209,12 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters()
 
     //Port 1 for output port
     iParamPort.nPortIndex = iOutputPortIndex;
+
+    // Initialising MIME type to NULL. As per the OMX spec, if the pointer is not
+    // set to NULL, then it should be a valid address. But in this case, memory for
+    // cMIMEType (char *) is not allocated.
+    iParamPort.format.audio.cMIMEType = NULL;
+
     Err = OMX_GetParameter(iOMXAudioDecoder, OMX_IndexParamPortDefinition, &iParamPort);
     if (Err != OMX_ErrorNone)
     {
@@ -2218,6 +2243,23 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters()
         return false;
     }
 
+    // Suspension policy for the OMX component to honor the Power collapse (TCXO shutdown)
+    // Whenever there is a power collapse, OMX component releases the hardware resources and hence enabling TCXO shutdown, reducing power consumption.
+    // Return value is not checked, since this is not mandated for all the OMX component.
+    memset(&suspensionPolicy,0,sizeof(suspensionPolicy));
+    suspensionPolicy.ePolicy = OMX_SuspensionEnabled;
+
+    Err = OMX_SetParameter(iOMXAudioDecoder, OMX_IndexParamSuspensionPolicy, &suspensionPolicy);
+    if (Err != OMX_ErrorNone)
+    {
+        PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                        (0, "PVMFOMXAudioDecNode::NegotiateComponentParameters() Problem setting suspension policy parameters in output port %d ", iOutputPortIndex));
+    }
+    else
+    {
+      PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                     (0, "PVMFOMXAudioDecNode::NegotiateComponentParameters() SUCCESS setting suspension policy parameters in output port %d", iOutputPortIndex));
+    }
     return true;
 }
 
