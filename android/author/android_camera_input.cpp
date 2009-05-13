@@ -1153,14 +1153,15 @@ PVMFStatus AndroidCameraInput::postWriteAsync(const sp<IMemory>& frame)
     ssize_t offset = 0;
     size_t size = 0;
     sp<IMemoryHeap> heap = frame->getMemory(&offset, &size);
-    LOGE("postWriteAsync: ID = %d, base = %x, offset = %d, size = %d", (int)heap->getHeapID(), (unsigned int)heap->base(), (int)offset, (int)size);
+    LOGV("postWriteAsync: ID = %d, base = %x, offset = %d, size = %d", (int)heap->getHeapID(),
+         (unsigned int)heap->base(), (int)offset, (int)size);
 
     //LOGV("@@@@@@@@@@@@@ incrementing reference count (%d) @@@@@@@@@@@@@@@", mFrameRefCount);
     if (mHeap == 0) {
         //LOGV("initialize the reference to frame heap memory");
         mHeap = heap;
     } else if (mHeap != heap) {
-        LOGE("mHeap != heap");
+        LOGV("mHeap != heap");
         mHeap = heap;
     }
 
