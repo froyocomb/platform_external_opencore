@@ -2,51 +2,40 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := \
-        src/\
-        src/pv_omxcore.cpp \
-        src/pv_omxregistry.cpp \
-        src/pv_omxmastercore.cpp \
-        src/qc_omxcore.cpp
+	src/pv_omxcore.cpp \
+        src/pv_omx_config_parser.cpp \
+        src/pv_omxregistry.cpp
 
 
 LOCAL_MODULE := libomx_common_lib
 
 LOCAL_CFLAGS :=   $(PV_CFLAGS)
 
-ifneq (,$(filter $(TARGET_DEVICE),dream sapphire msm7627_surf msm7627_ffa msm7201a_surf msm7201a_ffa qsd8250_surf qsd8250_ffa))
+ifneq (,$(filter $(TARGET_DEVICE),dream sapphire))
+LOCAL_CFLAGS += -DHARDWARE_OMX=1
+endif
+ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
 LOCAL_CFLAGS += -DHARDWARE_OMX=1
 endif
 
 LOCAL_ARM_MODE := arm
 
+LOCAL_STATIC_LIBRARIES := 
+
+LOCAL_SHARED_LIBRARIES := 
+
 LOCAL_C_INCLUDES := \
-        $(PV_TOP)//codecs_v2/omx/omx_common/include \
-        $(PV_TOP)//codecs_v2/omx/omx_common/src \
-        $(PV_TOP)//codecs_v2/omx/omx_common/../../../extern_libs_v2/khronos/openmax/include \
+	$(PV_TOP)/codecs_v2/omx/omx_common/src \
+        $(PV_TOP)/codecs_v2/omx/omx_common/include \
+        $(PV_TOP)/extern_libs_v2/khronos/openmax/include \
+        $(PV_TOP)/pvmi/pvmf/include \
         $(PV_INCLUDES)
 
-ifeq ($(ARCHITECTURE), linux_nj)
-   LOCAL_C_INCLUDES += $(PV_TOP)//codecs_v2/omx/omx_common/config/linux_nj
-else
-   ifeq ($(FORMAT), 3gpp)
-      LOCAL_C_INCLUDES += $(PV_TOP)//codecs_v2/omx/omx_common/config/linux_3gpp
-   else
-      ifeq ($(FORMAT), nj)
-         LOCAL_C_INCLUDES += $(PV_TOP)//codecs_v2/omx/omx_common/config/linux_nj
-      else
-         LOCAL_C_INCLUDES += $(PV_TOP)//codecs_v2/omx/omx_common/config/default
-      endif
-   endif
-endif
-
 LOCAL_COPY_HEADERS_TO := $(PV_COPY_HEADERS_TO)
+
 LOCAL_COPY_HEADERS := \
-        include/pv_omxmastercore.h \
-        include/pv_omxcore.h \
-        include/pv_omxdefs.h \
-        include/pv_omx_shared_lib_interface.h \
-        include/qc_omxcore.h \
-        include/pv_omxwrapperbase.h
+	include/pv_omxcore.h \
+        include/pv_omx_config_parser.h \
+        include/pv_omxdefs.h
 
 include $(BUILD_STATIC_LIBRARY)
-

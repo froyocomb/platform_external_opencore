@@ -1,5 +1,5 @@
 /* ------------------------------------------------------------------
- * Copyright (C) 2008 PacketVideo
+ * Copyright (C) 1998-2009 PacketVideo
  * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -197,8 +197,9 @@ OSCL_EXPORT_REF OsclSharedPtr<PVMFMediaData>
 PVMFMediaData::createMediaData(OsclSharedPtr<PVMFMediaDataImpl>& in_impl_ptr,
                                Oscl_DefAlloc* gen_alloc)
 {
-    // allocate enough room
+    OsclSharedPtr<PVMFMediaData> shared_media_data;
 
+    // allocate enough room
     uint8* my_ptr;
     OsclRefCounter* my_refcnt;
 
@@ -213,6 +214,9 @@ PVMFMediaData::createMediaData(OsclSharedPtr<PVMFMediaDataImpl>& in_impl_ptr,
                                               aligned_cleanup_size +
                                               aligned_media_data_size +
                                               sizeof(PVMFMediaMsgHeader));
+
+        //not allocators leave, so check for NULL ptr
+        if (my_ptr == NULL) return shared_media_data;
 
         MediaDataCleanupDA *my_cleanup = OSCL_PLACEMENT_NEW(my_ptr + aligned_refcnt_size, MediaDataCleanupDA(gen_alloc));
         my_refcnt = OSCL_PLACEMENT_NEW(my_ptr, OsclRefCounterDA(my_ptr, my_cleanup));
@@ -235,7 +239,7 @@ PVMFMediaData::createMediaData(OsclSharedPtr<PVMFMediaDataImpl>& in_impl_ptr,
 
     media_data_ptr->impl_ptr = in_impl_ptr;
 
-    OsclSharedPtr<PVMFMediaData> shared_media_data(media_data_ptr, my_refcnt);
+    shared_media_data.Bind(media_data_ptr, my_refcnt);
 
     return shared_media_data;
 }
@@ -245,8 +249,9 @@ PVMFMediaData::createMediaData(OsclSharedPtr<PVMFMediaDataImpl>& in_impl_ptr,
                                const PVMFMediaMsgHeader* msgHeader,
                                Oscl_DefAlloc* gen_alloc)
 {
-    // allocate enough room
+    OsclSharedPtr<PVMFMediaData> shared_media_data;
 
+    // allocate enough room
     uint8* my_ptr;
     OsclRefCounter* my_refcnt;
 
@@ -261,6 +266,9 @@ PVMFMediaData::createMediaData(OsclSharedPtr<PVMFMediaDataImpl>& in_impl_ptr,
                                               aligned_cleanup_size +
                                               aligned_media_data_size +
                                               sizeof(PVMFMediaMsgHeader));
+
+        //not allocators leave, so check for NULL ptr
+        if (my_ptr == NULL) return shared_media_data;
 
         MediaDataCleanupDA *my_cleanup = OSCL_PLACEMENT_NEW(my_ptr + aligned_refcnt_size, MediaDataCleanupDA(gen_alloc));
         my_refcnt = OSCL_PLACEMENT_NEW(my_ptr, OsclRefCounterDA(my_ptr, my_cleanup));
@@ -290,7 +298,7 @@ PVMFMediaData::createMediaData(OsclSharedPtr<PVMFMediaDataImpl>& in_impl_ptr,
 
     media_data_ptr->impl_ptr = in_impl_ptr;
 
-    OsclSharedPtr<PVMFMediaData> shared_media_data(media_data_ptr, my_refcnt);
+    shared_media_data.Bind(media_data_ptr, my_refcnt);
 
     return shared_media_data;
 }
