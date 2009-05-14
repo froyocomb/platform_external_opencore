@@ -171,8 +171,6 @@ OMX_ERRORTYPE CallbackEventHandler(OMX_OUT OMX_HANDLETYPE aComponent,
                                    OMX_OUT OMX_PTR aEventData)
 {
     LOGD("PVMFOMXVideoEncNode::CallbackEventHandler: event(%d), data1(%ld) and data2(%ld)", aEvent, aData1, aData2);
-    PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, PVLogger::GetLoggerObject("PVMFOMXVideoEncNode"), PVLOGMSG_STACK_TRACE,
-                    (0, "PVMFOMXVideoEncNode::CallbackEventHandler: In"));
     PVMFOMXVideoEncNode *Node = (PVMFOMXVideoEncNode *) aAppData;
 
     if ( Node->IsComponentMultiThreaded() )
