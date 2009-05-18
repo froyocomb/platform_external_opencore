@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -349,6 +350,9 @@ class PvmfAssetInfo3GPPLocationStruct
 #define OUTPUT_FORMATS_CAP_QUERY ".../output_formats;attr=cap"
 #define OUTPUT_FORMATS_CUR_QUERY ".../output_formats;attr=cur"
 #define OUTPUT_FORMATS_VALTYPE ".../output_formats;valtype=uint32"
+
+// Key value pair to configure MIO for AUdioSource Type
+#define AUDIO_INPUT_SOURCE_TYPE ".../input_formats;valtype=uint32"
 
 #define VIDEO_INPUT_WIDTH_CAP_QUERY ".../input/width;attr=cap"
 #define VIDEO_INPUT_WIDTH_CAP_RANGE ".../input/width;valtype=range_uint32"

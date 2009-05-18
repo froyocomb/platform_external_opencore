@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +55,10 @@
 #endif
 #define KMp4ComposerMimeType "/x-pvmf/ff-mux/mp4"
 #define K3gpComposerMimeType "/x-pvmf/ff-mux/3gp"
+#define KQCPComposerMimeType "/x-pvmf/ff-mux/qcp" // Added QCP support
 #define KAmrNbEncMimeType "/x-pvmf/audio/encode/amr-nb"
+#define kEVRCEncMimeType  "/x-pvmf/audio/encode/evrc" // QCELP / EVRC codec support
+#define kQCELPEncMimeType "/x-pvmf/audio/encode/qcelp"
 #define KH263EncMimeType "/x-pvmf/video/encode/h263"
 #define KH264EncMimeType "/x-pvmf/video/encode/h264"
 #define KMp4EncMimeType "/x-pvmf/video/encode/mp4"
@@ -67,6 +71,18 @@
 #define KAACADIFEncMimeType			"/x-pvmf/audio/encode/aac/adif"
 #define KAACADTSEncMimeType			"/x-pvmf/audio/encode/aac/adts"
 //end of changes
+
+// This is for the list of source devices that is supported now.
+// Please ensure that if any updates to this is also reflected in AudioRecord.h (frameworks\base\include\media)
+enum audio_source {
+    AUDIO_SOURCE_DEFAULT = 0,
+    AUDIO_SOURCE_MIC = 1,
+    /** Jagan Voice call Sources */
+    /** Voice Rx only */
+    AUDIO_SOURCE_VOICE_Rx = 2,
+    /** Voice Tx+Rx */
+    AUDIO_SOURCE_VOICE_Tx_Rx = 3,
+};
 
 /**
  * Enumeration of types of asychronous commands that can be issued to PV Author Engine
@@ -163,7 +179,8 @@ class PVAuthorEngine : public PVAuthorEngineInterface,
         OSCL_IMPORT_REF PVCommandId GetLogLevel(const char* aTag, PVLogLevelInfo& aLogInfo, const OsclAny* aContextData = NULL);
         OSCL_IMPORT_REF PVCommandId Open(const OsclAny* aContextData = NULL);
         OSCL_IMPORT_REF PVCommandId Close(const OsclAny* aContextData = NULL);
-        OSCL_IMPORT_REF PVCommandId AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aContextData = NULL);
+        // Added the source type.
+        OSCL_IMPORT_REF PVCommandId AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aSourceType, const OsclAny* aContextData = NULL);
         OSCL_IMPORT_REF PVCommandId RemoveDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aContextData = NULL);
         OSCL_IMPORT_REF PVCommandId SelectComposer(const PvmfMimeString& aComposerType, PVInterface*& aConfigInterface,
                 const OsclAny* aContextData = NULL);
@@ -375,6 +392,10 @@ class PVAuthorEngine : public PVAuthorEngineInterface,
         int iAsyncNumElements;
         bool iDoResetNodeContainers;
         bool iResetInProgress;
+        // Audiosource and VideSource type.
+        int  iAudioSourceType;
+        int  iVideoSourceType;
+        bool iAudioSourceSet;
 };
 
 

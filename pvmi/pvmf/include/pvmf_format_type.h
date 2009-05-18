@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,9 +149,10 @@ typedef PvmfFormatIndex PVMFFormatType;
 #define PVMF_AMRWB_IETF					PVMF_FIRST_COMPRESSED_AUDIO+16
 #define PVMF_ASF_MPEG4_AUDIO			PVMF_FIRST_COMPRESSED_AUDIO+17
 #define PVMF_AAC_SIZEHDR				PVMF_FIRST_COMPRESSED_AUDIO+18
+#define PVMF_QCELP                      PVMF_FIRST_COMPRESSED_AUDIO+19 // QCPELP support
 //When adding types to this range, please update the following
 //value to equal the last defined format.
-#define PVMF_LAST_COMPRESSED_AUDIO		PVMF_FIRST_COMPRESSED_AUDIO+18
+#define PVMF_LAST_COMPRESSED_AUDIO		PVMF_FIRST_COMPRESSED_AUDIO+19
 
 // MIME strings for compressed audio formats
 #define PVMF_MIME_AMR		 "audio/AMR" // Streaming AMR format, aka IETF_COMBINED_TOC
@@ -159,6 +161,7 @@ typedef PvmfFormatIndex PVMFFormatType;
 #define PVMF_MIME_AMRWB_IETF "X-AMRWB-IETF-SEPARATE" // Today's IETF
 #define PVMF_MIME_AMR_IF2	 "X-AMR-IF2"
 #define PVMF_MIME_EVRC		 "audio/EVRC" // Streaming EVRC format
+#define PVMF_MIME_QCELP      "audio/QCELP" // QCPELP format
 #define PVMF_MIME_MP3		 "audio/MPEG"
 #define PVMF_MIME_ADIF		 "X-AAC-ADIF" //.aac file format
 #define PVMF_MIME_ADTS		 "X-AAC-ADTS" //.aac file format

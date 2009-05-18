@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,6 +144,11 @@ OSCL_EXPORT_REF PvmfFormatIndex GetFormatIndex(char* mime_string, PvmfMediaTypeI
         else if (pv_mime_strcmp(lastcomp, PVMF_MIME_EVRC) == 0)
         {
             return PVMF_EVRC;
+        }
+        // QCELP support
+        else if (pv_mime_strcmp(lastcomp, PVMF_MIME_QCELP) == 0)
+        {
+            return PVMF_QCELP;
         }
         else if (pv_mime_strcmp(lastcomp, PVMF_MIME_MP3) == 0)
         {
@@ -449,6 +455,9 @@ OSCL_EXPORT_REF void GetFormatString(PvmfFormatIndex aFormatIndex, OSCL_String&s
             break;
         case PVMF_EVRC:
             str = PVMF_MIME_EVRC;
+            break;
+       case PVMF_QCELP: // QCELP support
+            str = PVMF_MIME_QCELP;
             break;
         case PVMF_MP3:
             str = PVMF_MIME_MP3;

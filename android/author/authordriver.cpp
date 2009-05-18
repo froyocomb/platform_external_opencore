@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008, The Android Open Source Project
  * Copyright (C) 2008 HTC Inc.
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License. 
@@ -295,6 +296,11 @@ void AuthorDriver::handleSetAudioSource(set_audio_source_command *ac)
     switch(ac->as) {
     case AUDIO_SOURCE_DEFAULT:
     case AUDIO_SOURCE_MIC:
+    // Detect other source types
+    /** Voice Rx only */
+    case AUDIO_SOURCE_VOICE_Rx:
+    /** Voice Tx+Rx */
+    case AUDIO_SOURCE_VOICE_Tx_Rx:
         mAudioInputMIO = new AndroidAudioInput();
         if(mAudioInputMIO != NULL){
             LOGV("create mio input audio");
@@ -314,7 +320,8 @@ void AuthorDriver::handleSetAudioSource(set_audio_source_command *ac)
         return;
     }
 
-    OSCL_TRY(error, mAuthor->AddDataSource(*mAudioNode, ac));
+    // Passing the source to AuthorEngine
+    OSCL_TRY(error, mAuthor->AddDataSource(*mAudioNode, &(ac->as), ac));
     OSCL_FIRST_CATCH_ANY(error, commandFailed(ac));
 }
 
@@ -345,7 +352,8 @@ void AuthorDriver::handleSetVideoSource(set_video_source_command *ac)
         return;
     }
 
-    OSCL_TRY(error, mAuthor->AddDataSource(*mVideoNode, ac));
+    //Passing the source to AuthorEngine
+    OSCL_TRY(error, mAuthor->AddDataSource(*mVideoNode, &(ac->vs), ac));
     OSCL_FIRST_CATCH_ANY(error, commandFailed(ac));
 }
 
@@ -369,6 +377,11 @@ void AuthorDriver::handleSetOutputFormat(set_output_format_command *ac)
 
     case OUTPUT_FORMAT_RAW_AMR:
         iComposerMimeType = "/x-pvmf/ff-mux/amr-nb"; 
+        break;
+
+    // Adding QCP file support
+    case OUTPUT_FOMRAT_QCP:
+        iComposerMimeType = "/x-pvmf/ff-mux/qcp";
         break;
 
     default:
@@ -401,6 +414,15 @@ void AuthorDriver::handleSetAudioEncoder(set_audio_encoder_command *ac)
     switch(ac->ae) {
     case AUDIO_ENCODER_AMR_NB:
         iAudioEncoderMimeType = "/x-pvmf/audio/encode/amr-nb";
+        break;
+
+    // Adding support for EVRC and QCELP codec type
+    case AUDIO_ENCODER_EVRC:
+        iAudioEncoderMimeType = "/x-pvmf/audio/encode/evrc";
+        break;
+
+    case AUDIO_ENCODER_QCELP:
+        iAudioEncoderMimeType = "/x-pvmf/audio/encode/qcelp";
         break;
 
     default:
@@ -529,8 +551,9 @@ void AuthorDriver::handleSetOutputFile(set_output_file_command *ac)
         LOGE("Ln %d fopen() error", __LINE__);
         goto exit;
     }
-	
-    if ( OUTPUT_FORMAT_RAW_AMR == mOutputFormat ) {
+
+    if ( (OUTPUT_FORMAT_RAW_AMR == mOutputFormat ) ||
+         (OUTPUT_FOMRAT_QCP == mOutputFormat )){ //QCP support
         PvmfFileOutputNodeConfigInterface *config = OSCL_DYNAMIC_CAST(PvmfFileOutputNodeConfigInterface*, mComposerConfig);
         if (!config) goto exit;
         
@@ -542,7 +565,6 @@ void AuthorDriver::handleSetOutputFile(set_output_file_command *ac)
         config->SetPresentationTimescale(1000);
         ret = config->SetOutputFile(&OsclFileHandle(ifpOutput));
     }
-    
 
 exit:
     

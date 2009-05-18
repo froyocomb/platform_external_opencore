@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -185,7 +186,8 @@ class PVAuthorEngineInterface
          * @param aContextData Optional opaque data to be passed back to user with the command response
          * @return Unique command ID to identify this command in command response
          */
-        virtual PVCommandId AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aContextData = NULL) = 0;
+        // Added a parameter to send the AudioSourceType - AuthorEngine to configure MIO
+        virtual PVCommandId AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aSourceType, const OsclAny* aContextData = NULL) = 0;
 
         /**
          * Unbinds a previously added data source.

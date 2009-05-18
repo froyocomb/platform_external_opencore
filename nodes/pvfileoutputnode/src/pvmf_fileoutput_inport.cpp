@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -294,7 +295,9 @@ bool PVMFFileOutputInPort::IsFormatSupported(PVMFFormatType aFmt)
             (aFmt == PVMF_PCM8) ||
             (aFmt == PVMF_PCM16) ||
             (aFmt == PVMF_YUV420) ||
-            (aFmt == PVMF_3GPP_TIMEDTEXT));
+            (aFmt == PVMF_3GPP_TIMEDTEXT) ||
+            (aFmt == PVMF_EVRC) || // QCELP / EVRC support
+            (aFmt == PVMF_QCELP));
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -353,7 +356,7 @@ OSCL_EXPORT_REF PVMFStatus PVMFFileOutputInPort::getParametersSync(PvmiMIOSessio
 
     if (pv_mime_strcmp(identifier, INPUT_FORMATS_CAP_QUERY) == 0)
     {
-        num_parameter_elements = 15;
+        num_parameter_elements = 17; // QCELP / EVRC support
         status = AllocateKvp(parameters, INPUT_FORMATS_VALTYPE, num_parameter_elements);
         if (status != PVMFSuccess)
         {
@@ -376,6 +379,8 @@ OSCL_EXPORT_REF PVMFStatus PVMFFileOutputInPort::getParametersSync(PvmiMIOSessio
             parameters[12].value.uint32_value = PVMF_H264_MP4;
             parameters[13].value.uint32_value = PVMF_H264;
             parameters[14].value.uint32_value = PVMF_3GPP_TIMEDTEXT;
+            parameters[15].value.uint32_value = PVMF_EVRC;
+            parameters[16].value.uint32_value = PVMF_QCELP;
         }
     }
     else if (pv_mime_strcmp(identifier, INPUT_FORMATS_CUR_QUERY) == 0)
