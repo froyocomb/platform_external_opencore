@@ -4614,10 +4614,14 @@ void PVMFOMXAudioDecNode::DoPrepare(PVMFOMXAudioDecNodeCommand& aCmd)
                 case PVMF_AMR_IF2:
                 case PVMF_AMR_IETF:
                 case PVMF_AMR_IETF_COMBINED:
+
+                    Role = "audio_decoder.amrnb";
+                    break;
+
                 case PVMF_AMRWB_IETF:
                 case PVMF_AMRWB_IETF_PAYLOAD:
 
-                    Role = "audio_decoder.amr";
+                    Role = "audio_decoder.amrwb";
                     break;
 
                 case PVMF_MP3:

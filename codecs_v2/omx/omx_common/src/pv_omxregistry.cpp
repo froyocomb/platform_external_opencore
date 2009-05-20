@@ -369,10 +369,41 @@ OMX_ERRORTYPE AmrRegister(ComponentRegistrationType **aTemplateList)
     OMX_S32 ii;
     ComponentRegistrationType *pCRT = (ComponentRegistrationType *) oscl_malloc(sizeof(ComponentRegistrationType));
 
+    /* Add AMR-NB component to the registry */
     if (pCRT)
     {
-        pCRT->ComponentName = "OMX.PV.amrdec";
-        pCRT->RoleString = "audio_decoder.amr";
+        pCRT->ComponentName = "OMX.PV.amrnbdec";
+        pCRT->RoleString = "audio_decoder.amrnb";
+        pCRT->FunctionPtrCreateComponent = &AmrOmxComponentFactory;
+        pCRT->FunctionPtrDestroyComponent = &AmrOmxComponentDestructor;
+
+    }
+    else
+    {
+        return OMX_ErrorInsufficientResources;
+    }
+
+    for (ii = 0; ii < MAX_SUPPORTED_COMPONENTS; ii++)
+    {
+        if (NULL == aTemplateList[ii])
+        {
+            aTemplateList[ii] = pCRT;
+            break;
+        }
+    }
+
+    if (MAX_SUPPORTED_COMPONENTS == ii)
+    {
+        return OMX_ErrorInsufficientResources;
+    }
+
+    /* Add AMR-WB component to the registry */
+    pCRT = (ComponentRegistrationType *) oscl_malloc(sizeof(ComponentRegistrationType));
+
+    if (pCRT)
+    {
+        pCRT->ComponentName = "OMX.PV.amrwbdec";
+        pCRT->RoleString = "audio_decoder.amrwb";
         pCRT->FunctionPtrCreateComponent = &AmrOmxComponentFactory;
         pCRT->FunctionPtrDestroyComponent = &AmrOmxComponentDestructor;
 
