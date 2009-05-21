@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,7 +138,8 @@ class PVAuthorEngineNodeFactoryUtility
             }
             else if (CompareMimeTypes(aMimeType, OSCL_HeapString<OsclMemAllocator>(KAMRNbComposerMimeType)) ||
                      CompareMimeTypes(aMimeType, OSCL_HeapString<OsclMemAllocator>(KAACADIFComposerMimeType)) ||
-                     CompareMimeTypes(aMimeType, OSCL_HeapString<OsclMemAllocator>(KAACADTSComposerMimeType)))
+                     CompareMimeTypes(aMimeType, OSCL_HeapString<OsclMemAllocator>(KAACADTSComposerMimeType)) ||
+                     CompareMimeTypes(aMimeType, OSCL_HeapString<OsclMemAllocator>(KQCPComposerMimeType))) // Support for QCP composer node
             {
                 aUuid = KPVFileOutputNodeUuid;
             }

@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -231,6 +232,14 @@ class PVMFNodeInterface: public PVMFPortActivityHandler
         virtual ~PVMFNodeInterface()
         {
             iSessions.clear();
+        }
+
+        /** 
+        To Configure the MIO for the proper AudioFormat and Audio Source types
+        **/
+        virtual PVMFStatus SetUpMIO(PvmfFormatIndex nIndex, int nAudioSourceType)
+        {
+          return PVMFSuccess;
         }
 
         virtual PVMFStatus ThreadLogon() = 0;
