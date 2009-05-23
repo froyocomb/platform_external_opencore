@@ -14038,7 +14038,15 @@ void PVPlayerEngine::HandleSourceNodeSetDataSourcePositionDuringPlayback(PVPlaye
             {
                 // Adjust the media data time to skip-to to correspond to the requested time
                 // Add the difference of target NPT with actual playback position in NPT to the actual media data time to get time to skip to.
-                iAdjustedMediaDataTS = iActualMediaDataTS + (targetNPT - iActualPlaybackPosition);
+                if(iActualMediaDataTS == iActualPlaybackPosition)
+                {
+                    iAdjustedMediaDataTS = iActualMediaDataTS;
+                }
+                else
+                {
+                    iAdjustedMediaDataTS = iActualMediaDataTS + (targetNPT - iActualPlaybackPosition);
+                }
+
                 // Set the actual playback position to the requested time since actual media data TS was adjusted
                 // This is important since the difference between the two is used to calculate the NPT to media data offset in HandleSinkNodeskipMediaDataDuringPlayback()
                 iActualPlaybackPosition = targetNPT;
