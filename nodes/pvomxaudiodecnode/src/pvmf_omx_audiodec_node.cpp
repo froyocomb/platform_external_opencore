@@ -1802,6 +1802,19 @@ PVMFStatus PVMFOMXAudioDecNode::HandleProcessingState()
                 else
                     iOMXComponentOutputBufferSize = (iPCMSamplingRate * 1000) / (PVOMXAUDIODEC_DEFAULT_OUTPUTPCM_TIME);
 
+                iParamPort.nPortIndex = iOutputPortIndex;
+                Err = OMX_GetParameter(iOMXAudioDecoder, OMX_IndexParamPortDefinition, &iParamPort);
+                if (Err != OMX_ErrorNone)
+                {
+                    PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
+                              (0, "PVMFOMXAudioDecNode::HandleProcessingState() OMX_IndexParamPortDefinition Failed "));
+                    SetState(EPVMFNodeError);
+                    ReportErrorEvent(PVMFErrResource);
+                    return PVMFErrResource;
+                }
+                if(iOMXComponentOutputBufferSize < iParamPort.nBufferSize)
+                    iOMXComponentOutputBufferSize = iParamPort.nBufferSize;
+
                 // do we need to increase the number of buffers?
                 if (iNumOutputBuffers < iParamPort.nBufferCountMin)
                     iNumOutputBuffers = iParamPort.nBufferCountMin;
