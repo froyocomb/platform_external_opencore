@@ -25,7 +25,10 @@ LOCAL_SHARED_LIBRARIES += libdl
 endif
 
 # Include Qualcomm codec
-ifneq (,$(filter $(TARGET_DEVICE),dream sapphire msm7627_surf msm7627_ffa msm7201a_surf msm7201a_ffa qsd8250_surf qsd8250_ffa))
+ifneq (,$(filter $(TARGET_DEVICE),dream sapphire))
+ LOCAL_SHARED_LIBRARIES += libOmxCore
+endif
+ifeq ($(BOARD_USES_QCOM_HARDWARE),true)
  LOCAL_SHARED_LIBRARIES += libOmxCore
 endif
 
