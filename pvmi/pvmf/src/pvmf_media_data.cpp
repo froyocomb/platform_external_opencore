@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +48,10 @@ OSCL_EXPORT_REF PVUid32 PVMFMediaData::getFormatID()
     return hdr_ptr->format_id;
 }
 
+OSCL_EXPORT_REF PVUid32 PVMFMediaData::getPmemFD()
+{
+   return hdr_ptr->fd;
+}
 OSCL_EXPORT_REF bool PVMFMediaData::queryInterface(const PVUuid& uuid, PVInterface*& iface)
 {
     OSCL_UNUSED_ARG(uuid);
@@ -88,6 +93,11 @@ OSCL_EXPORT_REF void PVMFMediaData::setSeqNum(uint32 seq)
 OSCL_EXPORT_REF void PVMFMediaData::setStreamID(uint32 id)
 {
     hdr_ptr->stream_id = id;
+}
+
+OSCL_EXPORT_REF void PVMFMediaData::setPmemFd(uint32 id)
+{
+    hdr_ptr->fd = id;
 }
 
 OSCL_EXPORT_REF uint32 PVMFMediaData::getMarkerInfo()

@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -969,6 +970,7 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
     OMX_ERRORTYPE Err;
     // first get the number of ports and port indices
     OMX_PORT_PARAM_TYPE AudioPortParameters;
+    OMX_PARAM_SUSPENSIONPOLICYTYPE suspensionPolicy;
     uint32 NumPorts;
     uint32 ii;
 

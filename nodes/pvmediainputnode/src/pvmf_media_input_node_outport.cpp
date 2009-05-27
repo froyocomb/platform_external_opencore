@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -346,10 +347,10 @@ PVMFCommandId PvmfMediaInputNodeOutPort::writeAsync(uint8 format_type, int32 for
 #ifdef _TEST_AE_ERROR_HANDLING
 
             if (data_header_info.stream_id == iNode->iTrackID)
-            {
+              {
                 uint32 ii = 0;
                 while (iNode->iChunkCount > 0)
-                {
+                  {
                     uint32 sz = data_len - 5;
 
                     for (ii = 0; ii <= sz; ii++)

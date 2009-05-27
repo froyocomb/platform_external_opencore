@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1001,6 +1002,12 @@ void OsclMemPoolResizableAllocator::deallocateblock(MemPoolBlockInfo& aBlockPtr)
         MemPoolBlockInfo* rightblock = aBlockPtr.iNextFreeBlock;
         // Size update
         leftblock->iBlockSize += (midblock->iBlockSize + rightblock->iBlockSize);
+
+        if( aBlockPtr.iNextFreeBlock->iNextFreeBlock > aBlockPtr.iParentBuffer->iEndAddr)
+        {
+        // The address of the buffer is not part of the parent buffer
+         rightblock->iNextFreeBlock=NULL;
+        }
         // Newly freed and right neighbor block removal
         if (rightblock->iNextFreeBlock)
         {

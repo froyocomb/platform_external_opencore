@@ -1,6 +1,7 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 2008 PacketVideo
- *
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -960,6 +961,79 @@ OSCL_EXPORT_REF bool AndroidSurfaceOutput::initCheck()
     ISurface::BufferHeap buffers(displayWidth, displayHeight,
             frameWidth, frameHeight, PIXEL_FORMAT_RGB_565, mFrameHeap);
     mSurface->registerBuffers(buffers);
+
+    // FIXME: Need to move hardware specific code to partners directory
+
+/*
+#if HAVE_ANDROID_OS
+    // Dream hardware codec uses semi-planar format
+    if (!mEmulation && iVideoSubFormat == PVMF_YUV420_SEMIPLANAR_YVU) {
+        LOGE("using hardware codec");
+        mHardwareCodec = true;
+    } else
+#endif
+
+    // software codec
+    {
+        LOGE("using software codec");
+
+#if HAVE_ANDROID_OS
+        // emulation
+        if (mEmulation)
+#endif
+        {
+            // RGB-565 frames are 2 bytes/pixel
+            displayWidth = (displayWidth + 1) & -2;
+            displayHeight = (displayHeight + 1) & -2;
+            frameWidth = (frameWidth + 1) & -2;
+            frameHeight = (frameHeight + 1) & -2;
+            frameSize = frameWidth * frameHeight * 2;
+
+            // create frame buffer heap and register with surfaceflinger
+            mFrameHeap = new MemoryHeapBase(frameSize * kBufferCount);
+            if (mFrameHeap->heapID() < 0) {
+                LOGE("Error creating frame buffer heap");
+                return false;
+            }
+            mSurface->registerBuffers(displayWidth, displayHeight, frameWidth, frameHeight, PIXEL_FORMAT_RGB_565, mFrameHeap);
+
+            // create frame buffers
+            for (int i = 0; i < kBufferCount; i++) {
+                mFrameBuffers[i] = i * frameSize;
+            }
+
+            // initialize software color converter
+            iColorConverter = ColorConvert16::NewL();
+            iColorConverter->Init(displayWidth, displayHeight, frameWidth, displayWidth, displayHeight, displayWidth, CCROTATE_NONE);
+            iColorConverter->SetMemHeight(frameHeight);
+            iColorConverter->SetMode(1);
+        }
+
+#if HAVE_ANDROID_OS
+        // FIXME: hardware specific
+        else {
+            // YUV420 frames are 1.5 bytes/pixel
+            frameSize = (frameWidth * frameHeight * 3) / 2;
+
+            // create frame buffer heap
+            sp<MemoryHeapBase> master = new MemoryHeapBase(pmem_adsp, frameSize * kBufferCount);
+            if (master->heapID() < 0) {
+                LOGE("Error creating frame buffer heap");
+                return false;
+            }
+            master->setDevice(pmem);
+            mHeapPmem = new MemoryHeapPmem(master, 0);
+            mHeapPmem->slap();
+            master.clear();
+            mSurface->registerBuffers(displayWidth, displayHeight, frameWidth, frameHeight, PIXEL_FORMAT_YCbCr_420_SP, mHeapPmem);
+
+            // create frame buffers
+            for (int i = 0; i < kBufferCount; i++) {
+                mFrameBuffers[i] = i * frameSize;
+            }
+        }
+#endif
+*/
 
     // create frame buffers
     for (int i = 0; i < kBufferCount; i++) {

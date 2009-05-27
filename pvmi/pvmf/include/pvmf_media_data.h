@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +83,7 @@ class PVMFMediaData : public PVMFMediaMsg
         OSCL_IMPORT_REF virtual uint32 getStreamID();
         OSCL_IMPORT_REF virtual uint32 getSeqNum();
         OSCL_IMPORT_REF virtual PVUid32 getFormatID();
+        OSCL_IMPORT_REF virtual PVUid32 getPmemFD();
         OSCL_IMPORT_REF virtual bool queryInterface(const PVUuid& uuid, PVInterface*& iface);
         OSCL_IMPORT_REF virtual bool getFormatSpecificInfo(OsclRefCounterMemFrag& memfrag);
         OSCL_IMPORT_REF virtual void setFormatSpecificInfo(OsclRefCounterMemFrag& memfrag);
@@ -90,7 +92,7 @@ class PVMFMediaData : public PVMFMediaMsg
         OSCL_IMPORT_REF virtual void setDuration(const uint32& duration);
         OSCL_IMPORT_REF virtual void setStreamID(uint32 id);
         OSCL_IMPORT_REF virtual void setSeqNum(uint32 seqnum);
-
+        OSCL_IMPORT_REF virtual void setPmemFd(uint32 seqnum);
         OSCL_IMPORT_REF uint32 getMarkerInfo();
         OSCL_IMPORT_REF bool setMarkerInfo(uint32 aMarker);
         OSCL_IMPORT_REF uint32 getErrorsFlag();
@@ -101,9 +103,8 @@ class PVMFMediaData : public PVMFMediaMsg
         OSCL_IMPORT_REF uint32 getFilledSize();
         OSCL_IMPORT_REF uint32 getCapacity();
         OSCL_IMPORT_REF const PVMFMediaMsgHeader* getMessageHeader();
-
-
-        OSCL_IMPORT_REF static OsclSharedPtr<PVMFMediaData>
+        
+		OSCL_IMPORT_REF static OsclSharedPtr<PVMFMediaData>
         createMediaData(OsclSharedPtr<PVMFMediaDataImpl>& in_impl_ptr,
                         Oscl_DefAlloc* gen_alloc = NULL);
 
