@@ -1164,7 +1164,7 @@ PVMFCommandId PVMFFileOutputNode::QueueCommandL(PVMFFileOutputNodeCommand& aCmd)
     return id;
 }
 
-/** Function to create the QCP header Jagan QCP */ 
+/** Function to create the QCP header */ 
 void PVMFFileOutputNode::CreateQCPHeader()
 {
    append_header.s_riff = iFileSize + QCP_HEADER_SIZE - 8; /* exclude riff id and size field */

@@ -1154,7 +1154,7 @@ int AndroidAudioInput::audin_thread_func() {
             {
               dataDuration = (numOfBytes/iAudioNumChannels/ 32) * 20; //ms
             }
-            else if (iAudioFormat == PVMF_EVRC) // Jagan QCP
+            else if (iAudioFormat == PVMF_EVRC)
             {
               dataDuration = (numOfBytes/iAudioNumChannels/ 23) * 20; //ms
             }

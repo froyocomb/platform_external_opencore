@@ -77,7 +77,7 @@
 enum audio_source {
     AUDIO_SOURCE_DEFAULT = 0,
     AUDIO_SOURCE_MIC = 1,
-    /** Jagan Voice call Sources */
+    /** Voice call Sources */
     /** Voice Rx only */
     AUDIO_SOURCE_VOICE_Rx = 2,
     /** Voice Tx+Rx */
