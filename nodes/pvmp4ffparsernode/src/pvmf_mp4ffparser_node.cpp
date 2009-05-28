@@ -3251,10 +3251,7 @@ PVMFStatus PVMFMP4FFParserNode::DoSetDataSourcePosition(PVMFMP4FFParserNodeComma
             return PVMFErrResource;
         }
     }
-    if(*actualNPT  > *actualMediaDataTS)
-    {
-       *actualMediaDataTS = mints;
-    }
+
     if (mints == 0xFFFFFFFF)
     {
         mints = *actualNPT;
