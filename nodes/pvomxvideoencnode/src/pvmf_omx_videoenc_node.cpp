@@ -2799,11 +2799,7 @@ bool PVMFOMXVideoEncNode::SetDefaultCapabilityFlags()
     LOG_STACK_TRACE((0, "PVMFOMXVideoEncNode::SetDefaultCapabilityFlags"));
     iIsOMXComponentMultiThreaded = true;
     iOMXComponentSupportsExternalOutputBufferAlloc = true;
-#ifndef MSM_8k
     iOMXComponentSupportsExternalInputBufferAlloc = true; //true; use_buffer
-#else
-    iOMXComponentSupportsExternalInputBufferAlloc = false;
-#endif
     iOMXComponentSupportsMovableInputBuffers = false;
     iOMXComponentSupportsPartialFrames = false;
     iOMXComponentCanHandleIncompleteFrames = false;

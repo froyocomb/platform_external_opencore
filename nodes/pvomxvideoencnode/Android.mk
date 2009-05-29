@@ -12,9 +12,6 @@ LOCAL_SRC_FILES := \
 LOCAL_MODULE := libpvomxvideoencnode
 
 LOCAL_CFLAGS :=   $(PV_CFLAGS)
-ifneq (,$(filter $(TARGET_DEVICE), qsd8250_surf qsd8250_ffa))
-LOCAL_CFLAGS += -DMSM_8k              
-endif
 
 LOCAL_C_INCLUDES := \
 	$(PV_TOP)/nodes/pvvideoencnode/include \
