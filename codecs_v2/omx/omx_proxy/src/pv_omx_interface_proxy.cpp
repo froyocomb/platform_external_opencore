@@ -587,8 +587,12 @@ void CPVInterfaceProxy_OMX::InThread()
 // OS-specific Thread routines
 ////////////////////////////////
 
-
 #include "oscl_mem_audit.h"
+#include <sys/prctl.h>
+#include <utils/threads.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+#define OSCL_SET_THREAD_NAME(name) prctl(PR_SET_NAME,(unsigned long)name,0,0,0)
 
 TOsclThreadFuncRet OSCL_THREAD_DECL pvproxythreadmain_omx(TOsclThreadFuncArg *aPtr)
 //PV Thread main routine
@@ -605,6 +609,8 @@ TOsclThreadFuncRet OSCL_THREAD_DECL pvproxythreadmain_omx(TOsclThreadFuncArg *aP
 #if defined( OSCL_SET_THREAD_NAME)
     OSCL_SET_THREAD_NAME("OMX proxy");
 #endif
+    // Setting the Decoder thread priority same as the Renderer (AudioFlinger)
+    setpriority(0, 0, -17);
 
     //Call the proxied app routine to create its logger appenders.
     //proxy->iPVApp.CreateLoggerAppenders();
