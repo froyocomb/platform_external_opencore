@@ -350,6 +350,9 @@ class PvmfAssetInfo3GPPLocationStruct
 #define OUTPUT_FORMATS_CUR_QUERY ".../output_formats;attr=cur"
 #define OUTPUT_FORMATS_VALTYPE ".../output_formats;valtype=uint32"
 
+// Added for Source types
+#define AUDIO_INPUT_SOURCE_TYPE ".../input_formats;valtype=uint32"
+
 #define VIDEO_INPUT_WIDTH_CAP_QUERY ".../input/width;attr=cap"
 #define VIDEO_INPUT_WIDTH_CAP_RANGE ".../input/width;valtype=range_uint32"
 #define VIDEO_INPUT_WIDTH_CUR_QUERY ".../input/width;attr=cur"

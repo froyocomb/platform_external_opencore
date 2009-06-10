@@ -175,6 +175,8 @@ class PvmfMediaInputNode : public OsclActiveObject,
             OSCL_UNUSED_ARG(aActivity);
         }
 
+	OSCL_IMPORT_REF PVMFStatus SetUpMIO(PvmfFormatIndex nIndex, int nAudioSourceType);
+
         // Pure virtual from PvInterface
         OSCL_IMPORT_REF void addRef();
         OSCL_IMPORT_REF void removeRef();

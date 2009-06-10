@@ -115,7 +115,8 @@ PVAuthorEngine::PVAuthorEngine() :
         iEncodedVideoFormat(PVMF_FORMAT_UNKNOWN),
         iState(PVAE_STATE_IDLE),
         iDoResetNodeContainers(false),
-        iResetInProgress(false)
+        iResetInProgress(false),
+        iAudioSourceSet(false)
 {
     iLogger = PVLogger::GetLoggerObject("PVAuthorEngine");
 }
@@ -233,13 +234,13 @@ OSCL_EXPORT_REF PVCommandId PVAuthorEngine::Close(const OsclAny* aContextData)
     return iCommandId++;
 }
 
-////////////////////////////////////////////////////////////////////////////
-OSCL_EXPORT_REF PVCommandId PVAuthorEngine::AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aContextData)
+//////////////////////////////////////////////////////////////////////////// Added the sourcetype
+OSCL_EXPORT_REF PVCommandId PVAuthorEngine::AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aSourceType, const OsclAny* aContextData)
 {
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                     (0, "PVAuthorEngine::AddDataSource: &aDataSource=0x%x, aContextData=0x%x", &aDataSource, aContextData));
 
-    PVEngineCommand cmd(PVAE_CMD_ADD_DATA_SOURCE, iCommandId, (OsclAny*)aContextData, (OsclAny*)&aDataSource);
+    PVEngineCommand cmd(PVAE_CMD_ADD_DATA_SOURCE, iCommandId, (OsclAny*)aContextData, (OsclAny*)&aDataSource, (OsclAny*)aSourceType);
     Dispatch(cmd);
     return iCommandId++;
 }
@@ -985,6 +986,27 @@ PVMFStatus PVAuthorEngine::DoAddDataSource(PVEngineCommand& aCmd)
         DeallocateNodeContainer(iDataSourcePool, node);
     }
 
+
+    // Get the Data source Type
+    int *DataSourceType = OSCL_REINTERPRET_CAST(int*, aCmd.GetParam2());
+
+    LOGE("The DataSourceType value that I got is %d", *DataSourceType);
+
+    // All this is assuming and MediaRecorder mandates that setting the AudioSource first is necessary.
+    // Right now this will work, since the only source for Video recording is Camera input.
+    if (true == iAudioSourceSet)
+    {
+      iVideoSourceType = *DataSourceType;	
+      //iAudioSourceSet = false; 
+      LOGE("The Video DatasourceType is %d", iVideoSourceType); 
+    }
+    else
+    {
+      iAudioSourceType = *DataSourceType;
+      iAudioSourceSet = true;
+      LOGE("The Audio DatasourceType is %d", iAudioSourceType); 
+    }
+	
     return retval;
 }
 
@@ -992,6 +1014,9 @@ PVMFStatus PVAuthorEngine::DoAddDataSource(PVEngineCommand& aCmd)
 PVMFStatus PVAuthorEngine::DoRemoveDataSource(PVEngineCommand& aCmd)
 {
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE, (0, "PVAuthorEngine::DoRemoveDataSource"));
+
+    // Reset the Sourceset.
+    iAudioSourceSet = false;
 
     if (GetPVAEState() != PVAE_STATE_OPENED)
     {
@@ -1075,6 +1100,12 @@ PVMFStatus PVAuthorEngine::DoSelectComposer(PVEngineCommand& aCmd)
     return PVMFPending;
 }
 
+static bool CompareMimeTypes(const PvmfMimeString& a, const PvmfMimeString& b)
+{
+    return (oscl_strncmp(a.get_cstr(), b.get_cstr(), oscl_strlen(a.get_cstr())) == 0);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 PVMFStatus PVAuthorEngine::DoAddMediaTrack(PVEngineCommand& aCmd)
 {
@@ -1128,6 +1159,29 @@ PVMFStatus PVAuthorEngine::DoAddMediaTrack(PVEngineCommand& aCmd)
                          LOG_ERR((0, "PVAuthorEngine::DoAddMediaTrack: Error - iDataSourceNodes.push_back failed"));
                          return PVMFFailure;
                         );
+    // Changes made by
+    // 1. If we know that we are going to use tunnel mode encoding
+    if ( (aCmd.GetMimeType() == KAmrNbEncMimeType) && 
+		 ( (iAudioSourceType == AUDIO_SOURCE_VOICE_Tx) ||
+		   (iAudioSourceType == AUDIO_SOURCE_VOICE_Rx) ||
+		   (iAudioSourceType == AUDIO_SOURCE_VOICE_Tx_Rx)))
+    {
+
+      PvmfFormatIndex nFormat = GetFormatIndex(PVMF_MIME_AMR_IETF, PVMF_COMPRESSED_AUDIO_FORMAT);
+
+      // 2. Set the MIO to the corresponding format type
+      LOGE("MIO is configured as Compressed since, these are configured to be Tunneled encoders");
+      //  2.1 Setting up the MIO node to ensure that the right format is sent
+      inputNodeContainer->iNode->SetUpMIO(nFormat, iAudioSourceType);
+    }
+    else
+    {
+      LOGE("MIO is configured as as uncompressed, since Non-tunneled encoders, though MIO supports comp");
+      compressedDataSrc = false;
+    }
+
+    // Resetting the AudioSourceType, to ensure that the next time call to Engine is made proper wrto AddDataSource
+    iAudioSourceSet = false;
 
     if (compressedDataSrc)
     {
@@ -1434,6 +1488,8 @@ PVMFStatus PVAuthorEngine::DoStop(PVEngineCommand& aCmd)
             if (iEncoderNodes.size() > 0)
                 iNodeUtil.Flush(iEncoderNodes);
             iNodeUtil.Flush(iComposerNodes);
+	    
+	    iAudioSourceSet = false;
             return PVMFPending;
 
         default:

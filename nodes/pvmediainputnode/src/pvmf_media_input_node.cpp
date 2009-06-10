@@ -127,6 +127,153 @@ OSCL_EXPORT_REF PVMFStatus PvmfMediaInputNode::ThreadLogoff()
     return PVMFSuccess;
 }
 
+
+PVMFStatus PvmfMediaInputNode::SetUpMIO(PvmfFormatIndex nIndex, int nAudioSourceType)
+{
+
+  if (!iMediaIOConfig)
+	  return PVMFFailure;
+
+  PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+					  (0, "PvmfMediaInputNode::SetUpMIO"));
+
+  
+  PvmiKvp* kvp = NULL;
+  int numParams = 0;
+  int32 err = 0;
+
+  // Get supported output formats from peer
+  PVMFStatus status = iMediaIOConfig->getParametersSync(NULL, OUTPUT_FORMATS_CAP_QUERY, kvp, numParams, NULL);
+  if (status != PVMFSuccess || numParams == 0)
+  {
+      PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+					  (0, "PvmfMediaInputNode::SetUpMIO: Error - iMediaIOConfig->getParametersSync(output_formats) failed"));
+	  return status;
+  }
+
+  // Using a priority queue, sort the kvp's returned from aConfig->getParametersSync
+  // according to the preference of this port. Formats that are not supported are
+  // not pushed to the priority queue and hence dropped from consideration.
+  PvmiKvp* selectedKvp = NULL;
+  for (int32 i = 0; i < numParams && !selectedKvp; i++)
+  {
+	  if (nIndex == kvp[i].value.uint32_value)
+	  {
+	    selectedKvp = &kvp[i];
+		break;
+	  }
+  }
+
+  if (!selectedKvp)
+  {
+    
+      PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+					  (0, "PvmfMediaInputNode::SetUpMIO: Error - No matching supported input format"));
+	  return PVMFFailure;
+  }
+
+  // Set format
+  PvmiKvp* retKvp = NULL;
+  OSCL_TRY(err, iMediaIOConfig->setParametersSync(NULL, selectedKvp, 1, retKvp););
+  OSCL_FIRST_CATCH_ANY(err,
+  	                  PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+					  (0, "PvmfMediaInputNode::SetUpMIO: Error - iMediaIOConfig->setParametersSync failed. err"));
+					   return PVMFFailure;
+					  );
+
+  // Release parameters back to peer and reset for the next query
+  iMediaIOConfig->releaseParameters(NULL, kvp, numParams);
+  kvp = NULL;
+  selectedKvp = NULL;
+  numParams = 0;
+  err = 0;
+
+// Get the supported Audio sources from peer
+status = iMediaIOConfig->getParametersSync(NULL, AUDIO_INPUT_SOURCE_TYPE, kvp, numParams, NULL);
+  if (status != PVMFSuccess || numParams == 0)
+  {
+      PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+					  (0, "PvmfMediaInputNode::SetUpMIO: Error - iMediaIOConfig->getParametersSync(output_formats) failed"));
+	  return status;
+  }
+
+  // Using a priority queue, sort the kvp's returned from aConfig->getParametersSync
+  // according to the preference of this port. Formats that are not supported are
+  // not pushed to the priority queue and hence dropped from consideration.
+  for (int32 i = 0; i < numParams && !selectedKvp; i++)
+  {
+	  if (nAudioSourceType == kvp[i].value.uint32_value)
+	  {
+	    selectedKvp = &kvp[i];
+		break;
+	  }
+  }
+
+  if (!selectedKvp)
+  {
+    
+      PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+					  (0, "PvmfMediaInputNode::SetUpMIO: Error - No matching supported input format"));
+	  return PVMFFailure;
+  }
+
+  // Set audio source type as requested
+  retKvp = NULL;
+  OSCL_TRY(err, iMediaIOConfig->setParametersSync(NULL, selectedKvp, 1, retKvp););
+  OSCL_FIRST_CATCH_ANY(err,
+  	                  PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+					  (0, "PvmfMediaInputNode::SetUpMIO: Error - iMediaIOConfig->setParametersSync failed. err"));
+					   return PVMFFailure;
+					  );
+
+  // Release parameters back to peer and reset for the next query
+  iMediaIOConfig->releaseParameters(NULL, kvp, numParams);
+  kvp = NULL;
+  numParams = 0;
+
+/*
+  status = aConfig->getParametersSync(NULL, AUDIO_OUTPUT_SAMPLING_RATE_CUR_QUERY, kvp, numParams, NULL);
+  uint32 samplingRate = 0;
+  if (status != PVMFSuccess || !kvp || numParams != 1)
+  {
+	  LOG_ERR((0, "PvmfAmrEncPort::NegotiateInputSettings: config->getParametersSync(sampling rate) not supported. Use default."));
+	  samplingRate = PVMF_AMRENC_DEFAULT_SAMPLING_RATE;
+  }
+  else
+  {
+	  samplingRate = kvp[0].value.uint32_value;
+	  aConfig->releaseParameters(NULL, kvp, numParams);
+  }
+
+  // Forward settings to encoder
+  iEncConfig->SetInputSamplingRate(samplingRate);
+  
+  //kvp = NULL;
+  //numParams = 0;
+
+  status = aConfig->getParametersSync(NULL, AUDIO_OUTPUT_NUM_CHANNELS_CUR_QUERY, kvp, numParams, NULL);
+  uint32 numChannels = 0;
+  if (status != PVMFSuccess || !kvp || numParams != 1)
+  {
+	  LOG_ERR((0, "PvmfMediaInputNode::SetUpMIO: config->getParametersSync(num channels) not supported. Use default"));
+	  numChannels = PVMF_AMRENC_DEFAULT_NUM_CHANNELS;
+  }
+  else
+  {
+	  numChannels = kvp[0].value.uint32_value;
+	  aConfig->releaseParameters(NULL, kvp, numParams);
+  }
+  
+
+  // Forward settings to encoder
+  //iEncConfig->SetInputNumChannels(numChannels);
+  //kvp = NULL;
+  //numParams = 0;
+*/
+  return PVMFSuccess;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 OSCL_EXPORT_REF PVMFStatus PvmfMediaInputNode::GetCapability(PVMFNodeCapability& aNodeCapability)
 {

@@ -373,6 +373,7 @@ private:
 
     int32 iFrameSize;
     int32 iDataEventCounter;
+    int   iAudioSourceType; // Audio Source type.
 
     // Functions specific to this MIO
 

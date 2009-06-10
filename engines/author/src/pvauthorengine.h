@@ -68,6 +68,21 @@
 #define KAACADTSEncMimeType			"/x-pvmf/audio/encode/aac/adts"
 //end of changes
 
+// This is for the list of source devices that is supported now.
+// Please ensure that if any updates to this is also reflected in AudioRecord.h (frameworks\base\include\media)
+enum audio_source {
+    AUDIO_SOURCE_DEFAULT = 0,
+    AUDIO_SOURCE_MIC = 1,
+    /** Voice call Sources */
+    /** Voice Tx only */
+    AUDIO_SOURCE_VOICE_Tx = 2,
+    /** Voice Rx only */
+    AUDIO_SOURCE_VOICE_Rx = 3,
+    /** Voice Tx+Rx */
+    AUDIO_SOURCE_VOICE_Tx_Rx = 4,
+};
+
+
 /**
  * Enumeration of types of asychronous commands that can be issued to PV Author Engine
  */
@@ -163,7 +178,8 @@ class PVAuthorEngine : public PVAuthorEngineInterface,
         OSCL_IMPORT_REF PVCommandId GetLogLevel(const char* aTag, PVLogLevelInfo& aLogInfo, const OsclAny* aContextData = NULL);
         OSCL_IMPORT_REF PVCommandId Open(const OsclAny* aContextData = NULL);
         OSCL_IMPORT_REF PVCommandId Close(const OsclAny* aContextData = NULL);
-        OSCL_IMPORT_REF PVCommandId AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aContextData = NULL);
+	// Added the source type.
+        OSCL_IMPORT_REF PVCommandId AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aSourceType, const OsclAny* aContextData = NULL);
         OSCL_IMPORT_REF PVCommandId RemoveDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aContextData = NULL);
         OSCL_IMPORT_REF PVCommandId SelectComposer(const PvmfMimeString& aComposerType, PVInterface*& aConfigInterface,
                 const OsclAny* aContextData = NULL);
@@ -375,6 +391,9 @@ class PVAuthorEngine : public PVAuthorEngineInterface,
         int iAsyncNumElements;
         bool iDoResetNodeContainers;
         bool iResetInProgress;
+	int  iAudioSourceType;
+	int  iVideoSourceType;
+	bool iAudioSourceSet;
 };
 
 

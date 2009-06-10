@@ -185,7 +185,9 @@ class PVAuthorEngineInterface
          * @param aContextData Optional opaque data to be passed back to user with the command response
          * @return Unique command ID to identify this command in command response
          */
-        virtual PVCommandId AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aContextData = NULL) = 0;
+        //virtual PVCommandId AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aContextData = NULL) = 0;
+        // Added a parameter to send the AudioSourceType, since the PV should know what source type we are interested
+	virtual PVCommandId AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aSourceType, const OsclAny* aContextData = NULL) = 0;
 
         /**
          * Unbinds a previously added data source.

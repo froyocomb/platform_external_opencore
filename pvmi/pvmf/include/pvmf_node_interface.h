@@ -233,6 +233,16 @@ class PVMFNodeInterface: public PVMFPortActivityHandler
             iSessions.clear();
         }
 
+	/** 
+        Setup MIO incase of composer is file node. To set MIO to a proper format type
+        **/
+
+        virtual PVMFStatus SetUpMIO(PvmfFormatIndex nIndex, int nAudioSourceType)
+        {
+          return PVMFSuccess;
+        }
+       
+
         virtual PVMFStatus ThreadLogon() = 0;
         virtual PVMFStatus ThreadLogoff() = 0;
 

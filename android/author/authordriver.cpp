@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-//#define LOG_NDEBUG 0
+#define LOG_NDEBUG 0
 #define LOG_TAG "AuthorDriver"
 
 #include <unistd.h>
@@ -295,6 +295,13 @@ void AuthorDriver::handleSetAudioSource(set_audio_source_command *ac)
     switch(ac->as) {
     case AUDIO_SOURCE_DEFAULT:
     case AUDIO_SOURCE_MIC:
+	// source types
+	/** Voice Tx only */
+	case AUDIO_SOURCE_VOICE_Tx:
+	/** Voice Rx only */
+	case AUDIO_SOURCE_VOICE_Rx:
+	/** Voice Tx+Rx */
+	case AUDIO_SOURCE_VOICE_Tx_Rx:
         mAudioInputMIO = new AndroidAudioInput();
         if(mAudioInputMIO != NULL){
             LOGV("create mio input audio");
@@ -314,7 +321,8 @@ void AuthorDriver::handleSetAudioSource(set_audio_source_command *ac)
         return;
     }
 
-    OSCL_TRY(error, mAuthor->AddDataSource(*mAudioNode, ac));
+    OSCL_TRY(error, mAuthor->AddDataSource(*mAudioNode, &(ac->as), ac)); // Changing here to pass the actual Data source (Context data)
+                                                                   // to be accesible by the engine to determine the graph.
     OSCL_FIRST_CATCH_ANY(error, commandFailed(ac));
 }
 
@@ -345,7 +353,7 @@ void AuthorDriver::handleSetVideoSource(set_video_source_command *ac)
         return;
     }
 
-    OSCL_TRY(error, mAuthor->AddDataSource(*mVideoNode, ac));
+    OSCL_TRY(error, mAuthor->AddDataSource(*mVideoNode, &(ac->vs), ac)); // Added the sourcetype
     OSCL_FIRST_CATCH_ANY(error, commandFailed(ac));
 }
 
@@ -353,6 +361,8 @@ void AuthorDriver::handleSetOutputFormat(set_output_format_command *ac)
 {
     int error = 0;
     OSCL_HeapString<OsclMemAllocator> iComposerMimeType;
+
+    LOGE("AuthorDriver::handleSetOutputFormat %d", ac->of);
 
     if (ac->of == OUTPUT_FORMAT_DEFAULT) {
         ac->of = OUTPUT_FORMAT_THREE_GPP;
