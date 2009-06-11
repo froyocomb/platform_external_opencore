@@ -362,8 +362,6 @@ void AuthorDriver::handleSetOutputFormat(set_output_format_command *ac)
     int error = 0;
     OSCL_HeapString<OsclMemAllocator> iComposerMimeType;
 
-    LOGE("AuthorDriver::handleSetOutputFormat %d", ac->of);
-
     if (ac->of == OUTPUT_FORMAT_DEFAULT) {
         ac->of = OUTPUT_FORMAT_THREE_GPP;
     }

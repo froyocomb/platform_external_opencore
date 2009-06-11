@@ -990,21 +990,16 @@ PVMFStatus PVAuthorEngine::DoAddDataSource(PVEngineCommand& aCmd)
     // Get the Data source Type
     int *DataSourceType = OSCL_REINTERPRET_CAST(int*, aCmd.GetParam2());
 
-    LOGE("The DataSourceType value that I got is %d", *DataSourceType);
-
     // All this is assuming and MediaRecorder mandates that setting the AudioSource first is necessary.
     // Right now this will work, since the only source for Video recording is Camera input.
     if (true == iAudioSourceSet)
     {
       iVideoSourceType = *DataSourceType;	
-      //iAudioSourceSet = false; 
-      LOGE("The Video DatasourceType is %d", iVideoSourceType); 
     }
     else
     {
       iAudioSourceType = *DataSourceType;
       iAudioSourceSet = true;
-      LOGE("The Audio DatasourceType is %d", iAudioSourceType); 
     }
 	
     return retval;
@@ -1170,13 +1165,11 @@ PVMFStatus PVAuthorEngine::DoAddMediaTrack(PVEngineCommand& aCmd)
       PvmfFormatIndex nFormat = GetFormatIndex(PVMF_MIME_AMR_IETF, PVMF_COMPRESSED_AUDIO_FORMAT);
 
       // 2. Set the MIO to the corresponding format type
-      LOGE("MIO is configured as Compressed since, these are configured to be Tunneled encoders");
       //  2.1 Setting up the MIO node to ensure that the right format is sent
       inputNodeContainer->iNode->SetUpMIO(nFormat, iAudioSourceType);
     }
     else
     {
-      LOGE("MIO is configured as as uncompressed, since Non-tunneled encoders, though MIO supports comp");
       compressedDataSrc = false;
     }
 
