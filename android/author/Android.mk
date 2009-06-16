@@ -14,6 +14,12 @@ LOCAL_CFLAGS := $(PV_CFLAGS)
 # board-specific configuration
 LOCAL_CFLAGS += $(BOARD_OPENCORE_FLAGS)
 
+ifeq ($(strip $(BOARD_USES_QCOM_7x_CHIPSET)), true)
+    LOCAL_CFLAGS += -DSURF
+else ifeq ($(strip $(BOARD_USES_QCOM_8x_CHIPSET)), true)
+    LOCAL_CFLAGS += -DSURF8K
+endif
+
 LOCAL_ARM_MODE := arm
 
 LOCAL_C_INCLUDES := $(PV_INCLUDES) \

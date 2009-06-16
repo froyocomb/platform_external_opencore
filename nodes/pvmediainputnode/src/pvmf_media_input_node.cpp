@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +28,7 @@
 #include "oscl_dll.h"
 #include "pvmf_basic_errorinfomessage.h"
 #include "pvmf_media_input_node_events.h"
+#include "pv_mime_string_utils.h"
 
 #ifndef PVMF_MEDIA_MSG_FORMAT_IDS_H_INCLUDED
 #include "pvmf_media_msg_format_ids.h"
@@ -143,6 +145,109 @@ OSCL_EXPORT_REF PVMFStatus PvmfMediaInputNode::ThreadLogoff()
     return PVMFSuccess;
 }
 
+// Function to setup the MIO (Format needed and the Audio Source type)
+PVMFStatus PvmfMediaInputNode::SetUpMIO(char *iAudioFormat, int nAudioSourceType)
+{
+
+  if (!iMediaIOConfig)
+     return PVMFFailure;
+
+  PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                 (0, "PvmfMediaInputNode::SetUpMIO"));
+
+  PvmiKvp* kvp = NULL;
+  int numParams = 0;
+  int32 err = 0;
+
+  // Get supported output formats from peer
+  PVMFStatus status = iMediaIOConfig->getParametersSync(NULL, OUTPUT_FORMATS_CAP_QUERY, kvp, numParams, NULL);
+  if (status != PVMFSuccess || numParams == 0)
+  {
+      PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                     (0, "PvmfMediaInputNode::SetUpMIO: Error - iMediaIOConfig->getParametersSync(output_formats) failed"));
+    return status;
+  }
+
+  // Using a priority queue, sort the kvp's returned from aConfig->getParametersSync
+  // according to the preference of this port. Formats that are not supported are
+  // not pushed to the priority queue and hence dropped from consideration.
+  PvmiKvp* selectedKvp = NULL;
+  for (int32 i = 0; i < numParams && !selectedKvp; i++)
+  {
+    if (!pv_mime_strcmp(iAudioFormat, kvp[i].value.pChar_value))
+    {
+      selectedKvp = &kvp[i];
+      break;
+    }
+  }
+
+  if (!selectedKvp)
+  {
+    PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                   (0, "PvmfMediaInputNode::SetUpMIO: Error - No matching supported input format"));
+    return PVMFFailure;
+  }
+
+  // Set format
+  PvmiKvp* retKvp = NULL;
+  OSCL_TRY(err, iMediaIOConfig->setParametersSync(NULL, selectedKvp, 1, retKvp););
+  OSCL_FIRST_CATCH_ANY(err,
+                    PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                  (0, "PvmfMediaInputNode::SetUpMIO: Error - iMediaIOConfig->setParametersSync failed. err"));
+    return PVMFFailure;
+  );
+
+  // Release parameters back to peer and reset for the next query
+  iMediaIOConfig->releaseParameters(NULL, kvp, numParams);
+  kvp = NULL;
+  selectedKvp = NULL;
+  numParams = 0;
+  err = 0;
+
+// Get the supported Audio sources from peer
+status = iMediaIOConfig->getParametersSync(NULL, AUDIO_INPUT_SOURCE_TYPE, kvp, numParams, NULL);
+  if (status != PVMFSuccess || numParams == 0)
+  {
+      PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+      (0, "PvmfMediaInputNode::SetUpMIO: Error - iMediaIOConfig->getParametersSync(output_formats) failed"));
+    return status;
+  }
+
+  // Using a priority queue, sort the kvp's returned from aConfig->getParametersSync
+  // according to the preference of this port. Formats that are not supported are
+  // not pushed to the priority queue and hence dropped from consideration.
+  for (int32 i = 0; i < numParams && !selectedKvp; i++)
+  {
+    if (nAudioSourceType == kvp[i].value.uint32_value)
+    {
+      selectedKvp = &kvp[i];
+      break;
+    }
+  }
+
+  if (!selectedKvp)
+  {
+      PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+      (0, "PvmfMediaInputNode::SetUpMIO: Error - No matching supported input format"));
+    return PVMFFailure;
+  }
+
+  // Set audio source type as requested
+  retKvp = NULL;
+  OSCL_TRY(err, iMediaIOConfig->setParametersSync(NULL, selectedKvp, 1, retKvp););
+  OSCL_FIRST_CATCH_ANY(err,
+                  PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+           (0, "PvmfMediaInputNode::SetUpMIO: Error - iMediaIOConfig->setParametersSync failed. err"));
+    return PVMFFailure;
+  );
+
+  // Release parameters back to peer and reset for the next query
+  iMediaIOConfig->releaseParameters(NULL, kvp, numParams);
+  kvp = NULL;
+  numParams = 0;
+  return PVMFSuccess;
+}
+
 ////////////////////////////////////////////////////////////////////////////
 OSCL_EXPORT_REF PVMFStatus PvmfMediaInputNode::GetCapability(PVMFNodeCapability& aNodeCapability)
 {
@@ -164,6 +269,7 @@ OSCL_EXPORT_REF PVMFStatus PvmfMediaInputNode::GetCapability(PVMFNodeCapability&
     kvp = NULL;
     numParams = 0;
     status = iMediaIOConfig->getParametersSync(NULL, (PvmiKeyType)INPUT_FORMATS_CAP_QUERY, kvp, numParams, NULL);
+    
     if (status == PVMFSuccess)
     {
         OSCL_TRY(err,
