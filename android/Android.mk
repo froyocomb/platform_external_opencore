@@ -25,7 +25,7 @@ LOCAL_C_INCLUDES := $(PV_INCLUDES) \
     $(PV_TOP)/engines/player/include \
     $(PV_TOP)/nodes/common/include \
     $(PV_TOP)/fileformats/pvx/parser/include \
-	$(PV_TOP)/nodes/pvprotocolenginenode/download_protocols/common/src \
+    $(PV_TOP)/nodes/pvprotocolenginenode/download_protocols/common/src \
     libs/drm/mobile1/include \
     include/graphics \
     external/skia/include/corecg \
@@ -41,3 +41,32 @@ LOCAL_STATIC_LIBRARIES := libosclbase libosclerror libosclmemory libosclutil
 LOCAL_LDLIBS += 
 
 include $(BUILD_STATIC_LIBRARY)
+
+include $(CLEAR_VARS)
+# Set up the OpenCore variables.
+include external/opencore/Config.mk
+LOCAL_C_INCLUDES := $(PV_INCLUDES) \
+  samples/android_surface_output_fb.h \
+
+LOCAL_SRC_FILES := samples/android_surface_output_fb.cpp
+
+LOCAL_CFLAGS := $(PV_CFLAGS)
+
+LOCAL_SHARED_LIBRARIES := \
+     libutils \
+     libcutils \
+     libui \
+     libhardware\
+     libandroid_runtime \
+     libmedia \
+     libsgl \
+     libopencore_common \
+     libicuuc \
+     libopencore_player
+
+ LOCAL_MODULE := libopencorehw
+
+ LOCAL_LDLIBS +=
+
+ include $(BUILD_SHARED_LIBRARY)
+

@@ -112,7 +112,7 @@ OSCL_EXPORT_REF bool AndroidSurfaceOutputFB::initCheck()
     int frameSize;
 
     // MSM72xx hardware codec uses semi-planar format
-    if (iVideoSubFormat == PVMF_YUV420_SEMIPLANAR_YVU) {
+    if (iVideoSubFormat == PVMF_MIME_YUV420_SEMIPLANAR_YVU) {
         LOGV("using hardware codec");
         mHardwareCodec = true;
     } else {
@@ -167,7 +167,7 @@ PVMFStatus AndroidSurfaceOutputFB::writeFrameBuf(uint8* aData, uint32 aDataLen, 
             LOGV("private data pointer is 0%p\n", data_header_info.private_data_ptr);
 
             // check for correct video format
-            if (iVideoSubFormat != PVMF_YUV420_SEMIPLANAR_YVU) return PVMFFailure;
+            if (iVideoSubFormat != PVMF_MIME_YUV420_SEMIPLANAR_YVU) return PVMFFailure;
 
             uint32 fd;
             if (!getPmemFd(data_header_info.private_data_ptr, &fd)) {

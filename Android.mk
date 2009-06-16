@@ -12,6 +12,10 @@ ifneq ($(VALUE_ADD),1)
 $(call add-prebuilt-files, ETC, pvplayer.cfg)
 endif
 
+ifneq ($(VALUE_ADD),1)
+$(call add-prebuilt-files, ETC, 01_qc.cfg)
+endif
+
 
 include $(PV_TOP)/build_config/opencore_dynamic/Android_opencore_common.mk
 include $(PV_TOP)/build_config/opencore_dynamic/Android_opencore_author.mk
