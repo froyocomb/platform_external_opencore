@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +56,6 @@
 
 #include "pv_author_sdkinfo.h"
 
-
 // Define entry point for this DLL
 OSCL_DLL_ENTRY_POINT_DEFAULT()
 
@@ -99,7 +99,8 @@ PVAuthorEngine::PVAuthorEngine() :
         iEncodedVideoFormat(PVMF_MIME_FORMAT_UNKNOWN),
         iState(PVAE_STATE_IDLE),
         iCfgCapCmdObserver(NULL),
-        iAsyncNumElements(0)
+        iAsyncNumElements(0),
+        iAudioSourceSet(false)
 {
     iLogger = PVLogger::GetLoggerObject("PVAuthorEngine");
     iDoResetNodeContainers = false;
@@ -216,13 +217,13 @@ OSCL_EXPORT_REF PVCommandId PVAuthorEngine::Close(const OsclAny* aContextData)
     return iCommandId++;
 }
 
-////////////////////////////////////////////////////////////////////////////
-OSCL_EXPORT_REF PVCommandId PVAuthorEngine::AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aContextData)
+//////////////////////////////////////////////////////////////////////////// Added the sourcetype
+OSCL_EXPORT_REF PVCommandId PVAuthorEngine::AddDataSource(const PVMFNodeInterface& aDataSource, const OsclAny* aSourceType, const OsclAny* aContextData)
 {
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                     (0, "PVAuthorEngine::AddDataSource: &aDataSource=0x%x, aContextData=0x%x", &aDataSource, aContextData));
 
-    PVEngineCommand cmd(PVAE_CMD_ADD_DATA_SOURCE, iCommandId, (OsclAny*)aContextData, (OsclAny*)&aDataSource);
+    PVEngineCommand cmd(PVAE_CMD_ADD_DATA_SOURCE, iCommandId, (OsclAny*)aContextData, (OsclAny*)&aDataSource, (OsclAny*)aSourceType);
     Dispatch(cmd);
     return iCommandId++;
 }
@@ -995,6 +996,21 @@ PVMFStatus PVAuthorEngine::DoAddDataSource(PVEngineCommand& aCmd)
         DeallocateNodeContainer(iDataSourcePool, node);
     }
 
+
+    // Get the Data source Type
+    int *DataSourceType = OSCL_REINTERPRET_CAST(int*, aCmd.GetParam2());
+
+    // If Audio Source is already set for this session, then next will be Video source
+    if (true == iAudioSourceSet)
+    {
+      iVideoSourceType = *DataSourceType;
+    }
+    else
+    {
+      iAudioSourceType = *DataSourceType;
+      iAudioSourceSet = true;
+    }
+
     return retval;
 }
 
@@ -1002,6 +1018,9 @@ PVMFStatus PVAuthorEngine::DoAddDataSource(PVEngineCommand& aCmd)
 PVMFStatus PVAuthorEngine::DoRemoveDataSource(PVEngineCommand& aCmd)
 {
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE, (0, "PVAuthorEngine::DoRemoveDataSource"));
+
+    // Reset the Sourceset.
+    iAudioSourceSet = false;
 
     if (GetPVAEState() != PVAE_STATE_OPENED)
     {
@@ -1085,6 +1104,13 @@ PVMFStatus PVAuthorEngine::DoSelectComposer(PVEngineCommand& aCmd)
     return PVMFPending;
 }
 
+// Voicemoe - Function to compare mime types
+static bool CompareMimeTypes(const PvmfMimeString& a, const PvmfMimeString& b)
+{
+    return (oscl_strncmp(a.get_cstr(), b.get_cstr(), oscl_strlen(a.get_cstr())) == 0);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 PVMFStatus PVAuthorEngine::DoAddMediaTrack(PVEngineCommand& aCmd)
 {
@@ -1138,6 +1164,40 @@ PVMFStatus PVAuthorEngine::DoAddMediaTrack(PVEngineCommand& aCmd)
                          LOG_ERR((0, "PVAuthorEngine::DoAddMediaTrack: Error - iDataSourceNodes.push_back failed"));
                          return PVMFFailure;
                         );
+
+    // 1. If Compressed input and following types - configure tunnel encode
+    if ( compressedDataSrc &&
+        ((aCmd.GetMimeType() == KAmrNbEncMimeType) ||
+         (aCmd.GetMimeType() == kEVRCEncMimeType) ||
+         (aCmd.GetMimeType() == kQCELPEncMimeType)))
+    {
+
+      char *iAudioFormat = NULL;      
+
+      if (aCmd.GetMimeType() == KAmrNbEncMimeType)
+      {
+        iAudioFormat = (char *)PVMF_MIME_AMR_IETF;
+      }
+      else if (aCmd.GetMimeType() == kEVRCEncMimeType)
+      {
+        iAudioFormat = (char *)PVMF_MIME_EVRC;
+      }
+      else if (aCmd.GetMimeType() == kQCELPEncMimeType)
+      {
+        iAudioFormat = (char *)PVMF_MIME_QCELP;
+      }
+
+      // 2. Set the MIO to the corresponding format type
+      //  2.1 Setting up the MIO node to ensure that the right format is sent
+      inputNodeContainer->iNode->SetUpMIO(iAudioFormat, iAudioSourceType);
+    }
+    else
+    {
+      compressedDataSrc = false;
+    }
+
+    // Resetting the AudioSourceType, to ensure that the next time call to Engine is made proper wrto AddDataSource
+    iAudioSourceSet = false;
 
     if (compressedDataSrc)
     {
@@ -1440,6 +1500,8 @@ PVMFStatus PVAuthorEngine::DoStop(PVEngineCommand& aCmd)
             if (iEncoderNodes.size() > 0)
                 iNodeUtil.Flush(iEncoderNodes);
             iNodeUtil.Flush(iComposerNodes);
+            // Reseting the AudioSource, if Stop received.
+            iAudioSourceSet = false;
             return PVMFPending;
 
         default:
@@ -1683,6 +1745,15 @@ PVMFStatus PVAuthorEngine::GetPvmfFormatString(PvmfMimeString& aMimeType, const 
     else if (aNodeMimeType == KAMRWbEncMimeType)
     {
         aMimeType = PVMF_MIME_AMRWB_IETF;
+    }
+    // Added support for EVRC and QCELP mime types
+    else if (aNodeMimeType == kEVRCEncMimeType)
+    {
+      aMimeType = PVMF_MIME_EVRC;
+    }
+    else if (aNodeMimeType == kQCELPEncMimeType)
+    {
+      aMimeType = PVMF_MIME_QCELP;
     }
     else if (aNodeMimeType == KAACADIFEncMimeType ||
              aNodeMimeType == KAACADIFComposerMimeType)

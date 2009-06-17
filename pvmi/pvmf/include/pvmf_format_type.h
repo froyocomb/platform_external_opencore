@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,6 +95,7 @@ typedef OSCL_String PvmfMimeString;
 #define PVMF_MIME_AMRWB_IETF	"X-AMRWB-IETF-SEPARATE" // Today's IETF
 #define PVMF_MIME_AMR_IF2		"X-AMR-IF2"
 #define PVMF_MIME_EVRC			"audio/EVRC" // Streaming EVRC format
+#define PVMF_MIME_QCELP      "audio/QCELP" // QCPELP format
 #define PVMF_MIME_MP3			"audio/MPEG"
 #define PVMF_MIME_ADIF			"X-AAC-ADIF" //.aac file format
 #define PVMF_MIME_ADTS			"X-AAC-ADTS" //.aac file format
