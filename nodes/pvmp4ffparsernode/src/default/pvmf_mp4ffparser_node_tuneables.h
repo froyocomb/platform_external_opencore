@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +32,10 @@
 #define AMR_IETF_MAXTRACKQUEUEDEPTH		2
 #define AMRWB_IETF_MAXTRACKDATASIZE		(61*10*2)
 #define AMRWB_IETF_MAXTRACKQUEUEDEPTH		2
+#define QCELP_MAXTRACKDATASIZE		(35*10*2)
+#define QCELP_MAXTRACKQUEUEDEPTH		2
+#define EVRC_MAXTRACKDATASIZE		(23*10*2)
+#define EVRC_MAXTRACKQUEUEDEPTH		2
 #define TIMEDTEXT_MAXTRACKDATASIZE		4096
 #define TIMEDTEXT_MAXTRACKQUEUEDEPTH	2
 #define UNKNOWN_MAXTRACKDATASIZE		10000
@@ -50,6 +55,8 @@
 #define MPEG4_AUDIO_NUMSAMPLES	1
 #define AMR_IETF_NUMFRAMES		1
 #define AMRWB_IETF_NUMFRAMES	10
+#define QCELP_NUMFRAMES	1
+#define EVRC_NUMFRAMES	1
 #define TIMEDTEXT_NUMSAMPLES	1
 #define UNKNOWN_NUMSAMPLES		1
 
