@@ -140,6 +140,7 @@ typedef OSCL_String PvmfMimeString;
 #define PVMF_MIME_AMRFF			"X-AMR-FF"
 #define PVMF_MIME_AACFF			"X-AAC-FF"
 #define PVMF_MIME_MP3FF			"X-MP3-FF"
+#define PVMF_MIME_QCPFF			"X-QCP-FF"
 #define PVMF_MIME_WAVFF			"X-WAV-FF"
 #define PVMF_MIME_ASFFF			"x-pvmf/mux/asf"
 #define PVMF_MIME_RMFF			"x-pvmf/mux/rm"
