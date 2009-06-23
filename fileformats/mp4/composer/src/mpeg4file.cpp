@@ -196,7 +196,10 @@ PVA_FF_Mpeg4File::~PVA_FF_Mpeg4File()
         PV_MP4_FF_DELETE(NULL, PVA_FF_FileTypeAtom, _pFileTypeAtom);
     }
 
-    PVA_FF_AtomUtils::closeFileSession(OSCL_STATIC_CAST(Oscl_FileServer*, _aFs));
+    if (_aFs)
+    {
+      PVA_FF_AtomUtils::closeFileSession(OSCL_STATIC_CAST(Oscl_FileServer*, _aFs));
+    }
 }
 
 void PVA_FF_Mpeg4File::SetCacheSize(uint32 aCacheSize)
