@@ -1125,9 +1125,22 @@ PVMFStatus AndroidCameraInput::postWriteAsync(const sp<IMemory>& frame)
     // release the received recording frame right way
     // if recording has not been started yet or recording has already finished
     if (!isRecorderStarting()) {
-        LOGV("Recording is not started, so recording frame is dropped");
-        mCamera->releaseRecordingFrame(frame);
-        return PVMFSuccess;
+        /* If the iState is alreday STATE_STOPPING, then we should not issue releaseRecordingFrame
+         * here. It will lead to a deadlock, since it will be called in the same
+         * thread context. So if the state is STATE_STOPPING,(that means a STOP has already
+         * been issued by the application) just return PVMFSuccess from here.
+         */
+        if ( iState == STATE_STOPPING )
+        {
+             LOGV(" Stop has been issued, so just return from here ");
+             return PVMFSuccess;
+        }
+        else
+        {
+             LOGV("Recording is not started, so recording frame is dropped");
+             mCamera->releaseRecordingFrame(frame);
+             return PVMFSuccess;
+        }
     }
 
     if (!iPeer) {
