@@ -782,7 +782,7 @@ PVMFStatus PVMFMP3FFParserNode::DoReset(PVMFMP3FFParserNodeCommand& aCmd)
         case EPVMFNodePaused:
         case EPVMFNodeError:
         {
-            if (iDurationCalcAO->IsBusy())
+            if (iDurationCalcAO && iDurationCalcAO->IsBusy())
             {
                 iDurationCalcAO->Cancel();
             }
