@@ -3538,6 +3538,14 @@ PVMFStatus PVRTSPEngineNode::processIncomingMessage(RTSPIncomingMessage &iIncomi
                         {
                             iSessionInfo.iSelectedStream[i].iSSRC = iIncomingMsg.transport[0].ssrc;
                         }
+                        // If SSRC is not provided in the setup response, then PV player client
+                        // does not send firewall packets to the server.
+                        // So hardcoding the control path SSRC.
+                        else
+                        {
+                            iSessionInfo.iSelectedStream[i].ssrcIsSet = 1;
+                            iSessionInfo.iSelectedStream[i].iSSRC = 0x51156b9c+(i<<3);
+                        }
                         if (!(iIncomingMsg.transport[0].server_portIsSet || iIncomingMsg.transport[0].channelIsSet))
                         {
                             iCurrentErrorCode = PVMFRTSPClientEngineNodeErrorMalformedRTSPMessage;

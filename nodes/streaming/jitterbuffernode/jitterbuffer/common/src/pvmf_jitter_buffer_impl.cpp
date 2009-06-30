@@ -632,11 +632,19 @@ PVMFJitterBufferRegisterMediaMsgStatus PVMFJitterBufferImpl::AddPacket(PVMFShare
     }
     else
     {
-        if (oSSRCFromSetUpResponseAvailable && (aDataPacket->getStreamID() != SSRCFromSetUpResponse))
-        {//discard packet
+        /*
+         * Disabling SSRC check in data path for streaming from server(s) which
+         * does not provide SSRC in setup response.
+         * As per PV, this was fixed in Opencore 2.04
+         */
+#if 0
+        if ( oSSRCFromSetUpResponseAvailable && (aDataPacket->getStreamID() != SSRCFromSetUpResponse) )
+        {
+            //discard packet
             PVMF_JB_LOGERROR((0, "PVMFJitterBufferImpl::addPacket: ERROR wrong ssrc %d", aDataPacket->getStreamID()));
             return PVMF_JB_REGISTER_MEDIA_MSG_SUCCESS;
         }
+#endif
         // Add packet to temporary array
         iFirstDataPackets.push_back(aDataPacket);
 
