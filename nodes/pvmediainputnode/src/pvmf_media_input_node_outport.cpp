@@ -429,6 +429,7 @@ PVMFCommandId PvmfMediaInputNodeOutPort::writeAsync(uint8 format_type, int32 for
             mediaData->setSeqNum(data_header_info.seq_num);
             mediaData->setMediaFragFilledLen(0, data_len);
             mediaData->setStreamID(data_header_info.stream_id);
+            mediaData->setPmemFd ((uint32)data_header_info.private_data_ptr);
 
             LOGDATATRAFFIC((0, "PvmfMediaInputNodeOutPort::writeAsync:"
                             "StreamID=%d, TS=%d, Len=%d, SN=%d, MimeType=%s",
