@@ -64,7 +64,7 @@
 // FIXME:
 // Platform-specic and temporal workaround to prevent video size
 // from being set too large
-#define ANDROID_MAX_ENCODED_FRAME_WIDTH            640
+#define ANDROID_MAX_ENCODED_FRAME_WIDTH            800
 #define ANDROID_MAX_ENCODED_FRAME_HEIGHT           480
 
 #define ANDROID_MIN_FRAME_RATE_FPS                 5

@@ -949,7 +949,11 @@ void AuthorDriver::CommandCompleted(const PVCmdResponse& aResponse)
             if (config) {
                 int bitrate_setting = 192000;
                 if (mVideoWidth >= 480) {
+                    #ifdef SURF8K
+                    bitrate_setting = 2000000; // 2.0Mbps for VGA & WVGA
+                    #else
                     bitrate_setting = 1200000; // 1.2Mbps for VGA
+                    #endif
                 } else if (mVideoWidth >= 352) {
                     bitrate_setting = 360000;
                 } else if (mVideoWidth >= 320) {
@@ -968,7 +972,11 @@ void AuthorDriver::CommandCompleted(const PVCmdResponse& aResponse)
             if (config) {
                 int bitrate_setting = 192000;
                 if (mVideoWidth >= 480) {
+                    #ifdef SURF8K
+                    bitrate_setting = 2000000; // 2.0Mbps for VGA & WVGA
+                    #else
                     bitrate_setting = 1200000; // 1.2Mbps for VGA
+                    #endif
                 } else if (mVideoWidth >= 352) {
                     bitrate_setting = 360000;
                 } else if (mVideoWidth >= 320) {
