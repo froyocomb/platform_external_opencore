@@ -237,8 +237,11 @@ PVMFStatus PVMFOMXVideoDecNode::HandlePortReEnable()
             }
         }
         // set the new width / height
-        iYUVWidth =  iParamPort.format.video.nFrameWidth;
-        iYUVHeight = iParamPort.format.video.nFrameHeight;
+        iDispWidth =  iParamPort.format.video.nFrameWidth;
+        iDispHeight = iParamPort.format.video.nFrameHeight;
+
+        iYUVWidth =  iParamPort.format.video.nStride;
+        iYUVHeight = iParamPort.format.video.nSliceHeight;
 
         if (iOMXComponentOutputBufferSize < iParamPort.nBufferSize)
             iOMXComponentOutputBufferSize = iParamPort.nBufferSize;
@@ -282,8 +285,8 @@ PVMFStatus PVMFOMXVideoDecNode::HandlePortReEnable()
                 {
                     fsiInfo->uid = PVMFYuvFormatSpecificInfo0_UID;
                     fsiInfo->video_format = iYUVFormat;
-                    fsiInfo->display_width = iYUVWidth;
-                    fsiInfo->display_height = iYUVHeight;
+                    fsiInfo->display_width = iDispWidth;
+                    fsiInfo->display_height = iDispHeight;
                     fsiInfo->num_buffers = iNumOutputBuffers;
                     fsiInfo->buffer_size = iOMXComponentOutputBufferSize;
 
@@ -742,11 +745,15 @@ bool PVMFOMXVideoDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
     {
         iYUVWidth  = pOutputParameters->width;
         iYUVHeight = pOutputParameters->height;
+        iDispWidth  = iYUVWidth;
+        iDispHeight = iYUVHeight;
     }
     else
     {
-        iYUVWidth =  iParamPort.format.video.nFrameWidth;
-        iYUVHeight = iParamPort.format.video.nFrameHeight;
+        iYUVWidth =  iParamPort.format.video.nStride;
+        iYUVHeight = iParamPort.format.video.nSliceHeight;
+        iDispWidth = iParamPort.format.video.nFrameWidth;
+        iDispHeight = iParamPort.format.video.nFrameHeight;
     }
 
     //iNumOutputBuffers = NUMBER_OUTPUT_BUFFER;
@@ -791,8 +798,8 @@ bool PVMFOMXVideoDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
             {
                 fsiInfo->uid = PVMFYuvFormatSpecificInfo0_UID;
                 fsiInfo->video_format = iYUVFormat;
-                fsiInfo->display_width = iYUVWidth;
-                fsiInfo->display_height = iYUVHeight;
+                fsiInfo->display_width = iDispWidth;
+                fsiInfo->display_height = iDispHeight;
                 fsiInfo->num_buffers = iNumOutputBuffers;
                 fsiInfo->buffer_size = iOMXComponentOutputBufferSize;
 
@@ -1508,8 +1515,8 @@ bool PVMFOMXVideoDecNode::QueueOutputBuffer(OsclSharedPtr<PVMFMediaDataImpl> &me
                 {
                     fsiInfo->uid = PVMFYuvFormatSpecificInfo0_UID;
                     fsiInfo->video_format = iYUVFormat;
-                    fsiInfo->display_width = iYUVWidth;
-                    fsiInfo->display_height = iYUVHeight;
+                    fsiInfo->display_width = iDispWidth;
+                    fsiInfo->display_height = iDispHeight;
 
                     if (((PVMFOMXDecPort*)iInPort)->iFormat == PVMF_MIME_H264_VIDEO ||
                             ((PVMFOMXDecPort*)iInPort)->iFormat == PVMF_MIME_H264_VIDEO_MP4 ||

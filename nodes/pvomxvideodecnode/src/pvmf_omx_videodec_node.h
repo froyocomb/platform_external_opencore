@@ -192,6 +192,10 @@ class PVMFOMXVideoDecNode
         int32 iLastYUVWidth;
         // Last stored value of hight
         int32 iLastYUVHeight;
+        // Display width of decoded frame
+        int32 iDispWidth;
+        // Display height of decoded frame
+        int32 iDispHeight;
 
         uint32 iH263MaxBitstreamFrameSize;
         uint32 iH263MaxWidth;
