@@ -25,6 +25,7 @@
 #include "pvmf_media_msg_format_ids.h"
 #include "pvmi_kvp_util.h"
 
+
 #ifdef _DEBUG
 #include <stdio.h>
 #endif
@@ -91,6 +92,74 @@ static const char LOG_ID_VIDEO_H263[] = "Video_H263";
 static const char LOG_ID_VIDEO_M4V[] =  "Video_M4V";
 static const char LOG_ID_VIDEO_AVC[] =  "Video_AVC";
 static const char LOG_ID_UNKNOWN[] = "TypeNotSetYet";
+
+typedef enum OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1
+{
+    /** Enum for PMEM information */
+    OMX_QCOM_PLATFORM_PRIVATE_PMEM = 0x1
+} OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1;
+
+
+typedef struct OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1
+{
+    /** pmem file descriptor */
+    OMX_U32 pmem_fd;
+    /** Offset from pmem device base address */
+    OMX_U32 offset;
+}OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1;
+
+typedef struct OMX_QCOM_PLATFORM_PRIVATE_ENTRY1
+{
+    /** Entry type */
+    OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1 type;
+    /** Pointer to platform specific entry */
+    void* entry;
+}OMX_QCOM_PLATFORM_PRIVATE_ENTRY1;
+
+typedef struct OMX_QCOM_PLATFORM_PRIVATE_LIST1
+{
+    /** Number of entries */
+    OMX_U32 nEntries;
+    /** Pointer to array of platform specific entries *
+    * Contiguous block of OMX_QCOM_PLATFORM_PRIVATE_ENTRY elements
+    */
+    OMX_QCOM_PLATFORM_PRIVATE_ENTRY1* entryList;
+}OMX_QCOM_PLATFORM_PRIVATE_LIST1;
+
+
+OMX_QCOM_PLATFORM_PRIVATE_LIST1  st_list;
+OMX_QCOM_PLATFORM_PRIVATE_ENTRY1 st_entry;
+OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1 st_info;
+
+struct OMX_QCOM_PLATFORMPRIVATE_EXTN1
+{
+    OMX_U32 nSize;        /** Size of the structure in bytes */
+    OMX_VERSIONTYPE nVersion; /** OMX spec version information */
+    OMX_U32 nPortIndex;  /** Port number on which usebuffer extn is applied */
+
+    /** Type of extensions should match an entry from
+     OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1
+    */
+    OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1 type; 
+};
+
+enum OMX_QCOM_EXTN_INDEXTYPE1
+{
+    /** Qcom proprietary extension index list */
+
+    /* "OMX.QCOM.index.param.register_mmap" */
+    OMX_QcomIndexRegmmap1 = 0x7F000000,
+
+    /* "OMX.QCOM.index.param.platformprivate" */
+    OMX_QcomIndexPlatformPvt1 = 0x7F000001,
+
+    /* "OMX.QCOM.index.param.portdefn" */
+    OMX_QcomIndexPortDefn1 = 0x7F000002,
+
+     /* "OMX.QCOM.index.param.framepackingformat" */
+     OMX_QcomIndexPortFramePackFmt1 = 0x7F000003
+};
+
 
 // OMX CALLBACKS
 // 1) AO OMX component running in the same thread as the OMX node
@@ -2155,6 +2224,23 @@ bool PVMFOMXEncNode::NegotiateVideoComponentParameters()
         return false;
     }
 
+    if (iOMXComponentSupportsExternalInputBufferAlloc && iInFormat != PVMF_MIME_PCM16)
+    {
+        OMX_QCOM_PLATFORMPRIVATE_EXTN1 m_sQcomPlatformPvt;
+        CONFIG_SIZE_AND_VERSION (m_sQcomPlatformPvt);
+        m_sQcomPlatformPvt.nPortIndex = (OMX_U32) iInputPortIndex;
+        m_sQcomPlatformPvt.type = OMX_QCOM_PLATFORM_PRIVATE_PMEM;
+        Err = OMX_SetParameter (iOMXEncoder,\
+                                (OMX_INDEXTYPE)OMX_QcomIndexPlatformPvt1,\
+                                &m_sQcomPlatformPvt);
+
+        if (Err != OMX_ErrorNone)
+        {
+            PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                            (0, "PVMFOMXEncNode-%s::NegotiateVideoComponentParameters() Problem setting parameters in input port %d ", iNodeTypeId, iInputPortIndex));
+            return false;
+        }
+    }
 
     //////////////////// OUTPUT PORT //////////////////////////////////////////////
     CONFIG_SIZE_AND_VERSION(Video_port_format);
@@ -3600,6 +3686,9 @@ bool PVMFOMXEncNode::SetDefaultCapabilityFlags()
 
     iOMXComponentSupportsExternalOutputBufferAlloc = false;
     iOMXComponentSupportsExternalInputBufferAlloc = false;
+    if (iInFormat != PVMF_MIME_PCM16)
+      iOMXComponentSupportsExternalInputBufferAlloc = true;
+
     iOMXComponentSupportsMovableInputBuffers = false;
 
     iOMXComponentUsesNALStartCodes = true;
@@ -3713,6 +3802,17 @@ bool PVMFOMXEncNode::SendInputBufferToOMXComponent()
     InputBufCtrlStruct *input_buf = NULL;
     int32 errcode = 0;
     uint32 ii;
+
+    if (iOMXComponentSupportsExternalInputBufferAlloc)
+    {
+        //LOGE ("IN the USE BUFFER CASE \n");
+        st_info.offset = 0;
+        st_info.pmem_fd = 0;
+        st_entry.entry = &st_info;
+        st_entry.type = OMX_QCOM_PLATFORM_PRIVATE_PMEM;
+        st_list.entryList = &st_entry;
+        st_list.nEntries = 1;
+    }
 
     do
     {
@@ -3859,9 +3959,19 @@ bool PVMFOMXEncNode::SendInputBufferToOMXComponent()
             if (iFragmentSizeRemainingToCopy <= (input_buf->pBufHdr->nAllocLen))
             {
 
-                oscl_memcpy(input_buf->pBufHdr->pBuffer,
-                            (void *)((uint8 *)frag.getMemFragPtr() + iCopyPosition),
-                            iFragmentSizeRemainingToCopy);
+
+                if (iOMXComponentSupportsExternalInputBufferAlloc)
+                {
+                    input_buf->pBufHdr->pBuffer = ((uint8 *)frag.getMemFragPtr()+ iCopyPosition);
+                    st_info.pmem_fd = iDataIn->getPmemFD();
+                    input_buf->pBufHdr->pPlatformPrivate = &st_list;
+                }
+                else
+                {
+                    oscl_memcpy(input_buf->pBufHdr->pBuffer,
+                                (void *)((uint8 *)frag.getMemFragPtr() + iCopyPosition),
+                                iFragmentSizeRemainingToCopy);
+                }
 
                 input_buf->pBufHdr->nFilledLen = iFragmentSizeRemainingToCopy;
 
@@ -3870,8 +3980,6 @@ bool PVMFOMXEncNode::SendInputBufferToOMXComponent()
 
                 iCopyPosition += iFragmentSizeRemainingToCopy;
                 iFragmentSizeRemainingToCopy = 0;
-
-
 
             }
             else
