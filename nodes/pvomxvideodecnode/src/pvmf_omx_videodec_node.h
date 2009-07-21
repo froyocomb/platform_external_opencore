@@ -69,11 +69,14 @@ const PVOMXBaseDecNodeKeyStringData PVOMXVideoDecNodeConfigM4VKeys[PVOMXVIDEODEC
 };
 
 // Key string info at the render level ("x-pvmf/video/render")
-#define PVOMXVIDEODECNODECONFIG_RENDER_NUMKEYS 2
+#define PVOMXVIDEODECNODECONFIG_RENDER_NUMKEYS 4
 const PVOMXBaseDecNodeKeyStringData PVOMXVideoDecNodeConfigRenderKeys[PVOMXVIDEODECNODECONFIG_RENDER_NUMKEYS] =
 {
     {"width", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32},
-    {"height", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32}
+    {"height", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32},
+    {"display_width", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32},
+    {"display_height", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32},
+
 };
 
 
@@ -175,6 +178,7 @@ class PVMFOMXVideoDecNode
         PVMFStatus DoGetH263DecoderParameter(PvmiKvp*& aParameters, int& aNumParamElements, int32 aIndex, PvmiKvpAttr reqattr);
         PVMFStatus DoGetM4VDecoderParameter(PvmiKvp*& aParameters, int& aNumParamElements, int32 aIndex, PvmiKvpAttr reqattr);
         PVMFStatus DoVerifyAndSetVideoDecNodeParameter(PvmiKvp& aParameter, bool aSetParam);
+        PVMFStatus DoVerifyAndSetVidRenderParameter(PvmiKvp& aParameter, bool aSetParam);
         PVMFStatus DoVerifyAndSetH263DecoderParameter(PvmiKvp& aParameter, bool aSetParam);
         PVMFStatus DoVerifyAndSetM4VDecoderParameter(PvmiKvp& aParameter, bool aSetParam);
 
@@ -185,17 +189,19 @@ class PVMFOMXVideoDecNode
         OMX_VIDEO_CODINGTYPE iOMXVideoCompressionFormat;
         PVMFFormatType iYUVFormat;
         // Width of decoded frame
-        int32 iYUVWidth;
+        uint32 iYUVWidth;
         // Height of decoded frame
-        int32 iYUVHeight;
+        uint32 iYUVHeight;
         // Last stored value of width
-        int32 iLastYUVWidth;
+        uint32 iLastYUVWidth;
         // Last stored value of hight
-        int32 iLastYUVHeight;
+        uint32 iLastYUVHeight;
         // Display width of decoded frame
-        int32 iDispWidth;
+        uint32 iDispWidth;
         // Display height of decoded frame
-        int32 iDispHeight;
+        uint32 iDispHeight;
+
+        bool iUpstreamParsing;
 
         uint32 iH263MaxBitstreamFrameSize;
         uint32 iH263MaxWidth;
