@@ -391,6 +391,11 @@ void AuthorDriver::handleSetOutputFormat(set_output_format_command *ac)
         iComposerMimeType = "/x-pvmf/ff-mux/qcp";
         break;
 
+    // Adding 3GPP2 file support
+    case OUTPUT_FORMAT_THREE_GPP2:
+        iComposerMimeType = "/x-pvmf/ff-mux/3g2";
+        break;
+
     default:
         LOGE("Ln %d unsupported file format: %d", __LINE__, ac->of);
         commandFailed(ac);
@@ -564,7 +569,8 @@ void AuthorDriver::handleSetOutputFile(set_output_file_command *ac)
         if (!config) goto exit;
         
         ret = config->SetOutputFileDescriptor(&OsclFileHandle(ifpOutput));
-    }  else if((OUTPUT_FORMAT_THREE_GPP == mOutputFormat) || (OUTPUT_FORMAT_MPEG_4 == mOutputFormat)) {
+    }  else if((OUTPUT_FORMAT_THREE_GPP == mOutputFormat) || (OUTPUT_FORMAT_MPEG_4 == mOutputFormat) || 
+               (OUTPUT_FORMAT_THREE_GPP2 == mOutputFormat)) {
         PVMp4FFCNClipConfigInterface *config = OSCL_DYNAMIC_CAST(PVMp4FFCNClipConfigInterface*, mComposerConfig);
         if (!config) goto exit;
         
