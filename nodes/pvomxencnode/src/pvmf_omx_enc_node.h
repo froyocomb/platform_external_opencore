@@ -146,6 +146,38 @@ typedef struct InputBufCtrlStruct
     PVMFSharedMediaDataPtr pMediaData;
 } InputBufCtrlStruct;
 
+typedef enum OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1
+{
+    /** Enum for PMEM information */
+    OMX_QCOM_PLATFORM_PRIVATE_PMEM = 0x1
+} OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1;
+
+
+typedef struct OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1
+{
+    /** pmem file descriptor */
+    OMX_U32 pmem_fd;
+    /** Offset from pmem device base address */
+    OMX_U32 offset;
+}OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1;
+
+typedef struct OMX_QCOM_PLATFORM_PRIVATE_ENTRY1
+{
+    /** Entry type */
+    OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1 type;
+    /** Pointer to platform specific entry */
+    void* entry;
+}OMX_QCOM_PLATFORM_PRIVATE_ENTRY1;
+
+typedef struct OMX_QCOM_PLATFORM_PRIVATE_LIST1
+{
+    /** Number of entries */
+    OMX_U32 nEntries;
+    /** Pointer to array of platform specific entries *
+ *     * Contiguous block of OMX_QCOM_PLATFORM_PRIVATE_ENTRY elements
+ *         */
+    OMX_QCOM_PLATFORM_PRIVATE_ENTRY1* entryList;
+}OMX_QCOM_PLATFORM_PRIVATE_LIST1;
 
 // fwd class declaration
 class PVLogger;
@@ -1386,6 +1418,9 @@ class PVMFOMXEncNode
         OsclAny **in_ctrl_struct_ptr ;
         OsclAny **in_buff_hdr_ptr ;
 
+        OMX_QCOM_PLATFORM_PRIVATE_LIST1  *st_list;
+        OMX_QCOM_PLATFORM_PRIVATE_ENTRY1 *st_entry;
+        OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1 *st_info;
 
 
 #ifdef _TEST_AE_ERROR_HANDLING

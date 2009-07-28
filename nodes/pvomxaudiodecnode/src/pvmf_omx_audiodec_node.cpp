@@ -1423,6 +1423,18 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
         return false;
     }
 
+    // Suspension policy for the OMX component to honor the Power collapse (TCXO shutdown)
+    // Whenever there is a power collapse, OMX component releases the hardware resources and hence enabling TCXO shutdown, reducing power consumption.
+    // Return value is ignored, since this is not mandated for all the OMX components.
+    memset(&suspensionPolicy,0,sizeof(suspensionPolicy));
+    suspensionPolicy.ePolicy = OMX_SuspensionEnabled;
+
+    Err = OMX_SetParameter(iOMXDecoder, OMX_IndexParamSuspensionPolicy, &suspensionPolicy);
+    if ( Err != OMX_ErrorNone )
+    {
+        PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                        (0, "PVMFOMXAudioDecNode::NegotiateComponentParameters() Problem setting suspension policy parameters in output port %d ", iOutputPortIndex));
+    }
 
     return true;
 }
