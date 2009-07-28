@@ -102,7 +102,7 @@ struct OMX_QCOM_PLATFORMPRIVATE_EXTN1
     /** Type of extensions should match an entry from
      OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1
     */
-    OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1 type; 
+    OMX_QCOM_PLATFORM_PRIVATE_ENTRY_TYPE1 type;
 };
 
 enum OMX_QCOM_EXTN_INDEXTYPE1
@@ -5005,45 +5005,50 @@ OMX_ERRORTYPE PVMFOMXEncNode::FillBufferDoneProcessing(OMX_OUT OMX_HANDLETYPE aC
         pBufdata += aBuffer->nOffset;
 
         uint32 bufLen = (uint32) aBuffer->nFilledLen;
-
-        // in case of mp4 streaming and the very 1st buffer, save vol header separately
-        if ((iOutFormat == PVMF_MIME_M4V) && (iVideoEncodeParam.iContentType == EI_M4V_STREAMING)
-            && (iFrameCounter == 1))
-        {
-
-            // save the first buffer since this is the VOL header
-
-            uint refCounterSize = oscl_mem_aligned_size(sizeof(OsclRefCounterDA));
-            OsclMemoryFragment volHeader;
-            volHeader.ptr = NULL;
-            volHeader.len = aBuffer->nFilledLen; // vol header size should be (28)
-            uint8* memBuffer = (uint8*)iAlloc.allocate(refCounterSize + volHeader.len);
-            oscl_memset(memBuffer, 0, refCounterSize + volHeader.len);
-            OsclRefCounter* refCounter = OSCL_PLACEMENT_NEW(memBuffer, OsclRefCounterDA(memBuffer, (OsclDestructDealloc*) & iAlloc));
-            memBuffer += refCounterSize;
-            volHeader.ptr = (OsclAny*)memBuffer;
-
-            // copy the vol header from OMX buffer
-            oscl_memcpy(volHeader.ptr, pBufdata, volHeader.len);
-
-            // save in class variable
-            iVolHeader = OsclRefCounterMemFrag(volHeader, refCounter, volHeader.len);
-
-            // release the OMX buffer
-            iOutBufMemoryPool->deallocate(pContext);
-            return OMX_ErrorNone;
-        }
-
         if (iFrameCounter == 1)
         {
-            if ((iOutFormat == PVMF_MIME_ADTS)
+            // in case of mp4 streaming and the very 1st buffer, save vol header separately
+            if ((iOutFormat == PVMF_MIME_M4V) && (iVideoEncodeParam.iContentType == EI_M4V_STREAMING))
+            {
+                // save the first buffer since this is the VOL header
+
+                uint refCounterSize = oscl_mem_aligned_size(sizeof(OsclRefCounterDA));
+                OsclMemoryFragment volHeader;
+                volHeader.ptr = NULL;
+                volHeader.len = DEFAULT_VOL_HEADER_LENGTH; // vol header size should be (28)
+                uint8* memBuffer = (uint8*)iAlloc.allocate(refCounterSize + volHeader.len);
+                oscl_memset(memBuffer, 0, refCounterSize + volHeader.len);
+                OsclRefCounter* refCounter = OSCL_PLACEMENT_NEW(memBuffer, OsclRefCounterDA(memBuffer, (OsclDestructDealloc*) & iAlloc));
+                memBuffer += refCounterSize;
+                volHeader.ptr = (OsclAny*)memBuffer;
+
+                // copy the vol header from OMX buffer
+                oscl_memcpy(volHeader.ptr, pBufdata, volHeader.len);
+
+                // save in class variable
+                iVolHeader = OsclRefCounterMemFrag(volHeader, refCounter, volHeader.len);
+
+                if (volHeader.len >= bufLen)
+                {
+                    // no more data is available release the OMX buffer
+                    iOutBufMemoryPool->deallocate(pContext);
+                    return OMX_ErrorNone;
+                }
+                else
+                {
+                    // got VOL header but more data is available to pass downstream
+                    pBufdata += volHeader.len;
+                    bufLen -= volHeader.len;
+                    aBuffer->nFilledLen = bufLen;
+                }
+            }
+            else if ((iOutFormat == PVMF_MIME_ADTS)
                 || (iOutFormat == PVMF_MIME_ADIF)
                 || (iOutFormat == PVMF_MIME_MPEG4_AUDIO)
                 || (iOutFormat == PVMF_MIME_WMA)
                 || (iOutFormat == PVMF_MIME_WMV)
                 )
             {
-
                 // save the first buffer since this is the config header and needs to be sent separately
                 uint refCounterSize = oscl_mem_aligned_size(sizeof(OsclRefCounterDA));
                 OsclMemoryFragment configHeader;
