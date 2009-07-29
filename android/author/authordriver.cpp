@@ -955,11 +955,7 @@ void AuthorDriver::CommandCompleted(const PVCmdResponse& aResponse)
             if (config) {
                 int bitrate_setting = 192000;
                 if (mVideoWidth >= 480) {
-                    #ifdef SURF8K
                     bitrate_setting = 2000000; // 2.0Mbps for VGA & WVGA
-                    #else
-                    bitrate_setting = 1200000; // 1.2Mbps for VGA
-                    #endif
                 } else if (mVideoWidth >= 352) {
                     bitrate_setting = 360000;
                 } else if (mVideoWidth >= 320) {
@@ -969,6 +965,11 @@ void AuthorDriver::CommandCompleted(const PVCmdResponse& aResponse)
                 config->SetOutputBitRate(0, bitrate_setting);
                 config->SetOutputFrameSize(0, mVideoWidth, mVideoHeight);
                 config->SetOutputFrameRate(0, mVideoFrameRate);
+                // Encode two I frames every second to achieve higher bitrate for WVGA and
+                // VGA encode
+                if (mVideoWidth >= 480)
+                config->SetIFrameInterval(2);
+                else
                 config->SetIFrameInterval(ANDROID_DEFAULT_I_FRAME_INTERVAL);
             }
         } break;
@@ -978,11 +979,7 @@ void AuthorDriver::CommandCompleted(const PVCmdResponse& aResponse)
             if (config) {
                 int bitrate_setting = 192000;
                 if (mVideoWidth >= 480) {
-                    #ifdef SURF8K
                     bitrate_setting = 2000000; // 2.0Mbps for VGA & WVGA
-                    #else
-                    bitrate_setting = 1200000; // 1.2Mbps for VGA
-                    #endif
                 } else if (mVideoWidth >= 352) {
                     bitrate_setting = 360000;
                 } else if (mVideoWidth >= 320) {
