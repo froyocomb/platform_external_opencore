@@ -146,7 +146,7 @@ OSCL_EXPORT_REF PVMFStatus PvmfMediaInputNode::ThreadLogoff()
 }
 
 // Function to setup the MIO (Format needed and the Audio Source type)
-PVMFStatus PvmfMediaInputNode::SetUpMIO(char *iAudioFormat, int nAudioSourceType)
+PVMFStatus PvmfMediaInputNode::SetUpMIO(char *iAudioFormat)
 {
 
   if (!iMediaIOConfig)
@@ -204,47 +204,6 @@ PVMFStatus PvmfMediaInputNode::SetUpMIO(char *iAudioFormat, int nAudioSourceType
   numParams = 0;
   err = 0;
 
-// Get the supported Audio sources from peer
-status = iMediaIOConfig->getParametersSync(NULL, AUDIO_INPUT_SOURCE_TYPE, kvp, numParams, NULL);
-  if (status != PVMFSuccess || numParams == 0)
-  {
-      PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
-      (0, "PvmfMediaInputNode::SetUpMIO: Error - iMediaIOConfig->getParametersSync(output_formats) failed"));
-    return status;
-  }
-
-  // Using a priority queue, sort the kvp's returned from aConfig->getParametersSync
-  // according to the preference of this port. Formats that are not supported are
-  // not pushed to the priority queue and hence dropped from consideration.
-  for (int32 i = 0; i < numParams && !selectedKvp; i++)
-  {
-    if (nAudioSourceType == kvp[i].value.uint32_value)
-    {
-      selectedKvp = &kvp[i];
-      break;
-    }
-  }
-
-  if (!selectedKvp)
-  {
-      PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
-      (0, "PvmfMediaInputNode::SetUpMIO: Error - No matching supported input format"));
-    return PVMFFailure;
-  }
-
-  // Set audio source type as requested
-  retKvp = NULL;
-  OSCL_TRY(err, iMediaIOConfig->setParametersSync(NULL, selectedKvp, 1, retKvp););
-  OSCL_FIRST_CATCH_ANY(err,
-                  PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
-           (0, "PvmfMediaInputNode::SetUpMIO: Error - iMediaIOConfig->setParametersSync failed. err"));
-    return PVMFFailure;
-  );
-
-  // Release parameters back to peer and reset for the next query
-  iMediaIOConfig->releaseParameters(NULL, kvp, numParams);
-  kvp = NULL;
-  numParams = 0;
   return PVMFSuccess;
 }
 
@@ -673,12 +632,12 @@ PvmfMediaInputNode::~PvmfMediaInputNode()
     while (!iCurrentCommand.empty())
     {
         CommandComplete(iCurrentCommand, iCurrentCommand.front(), PVMFFailure);
-//		iCurrentCommand.Erase(&iCurrentCommand.front());
+//      iCurrentCommand.Erase(&iCurrentCommand.front());
     }
     while (!iInputCommands.empty())
     {
         CommandComplete(iInputCommands, iInputCommands.front(), PVMFFailure);
-//		iInputCommands.Erase(&iInputCommands.front());
+//      iInputCommands.Erase(&iInputCommands.front());
     }
 }
 
@@ -1293,7 +1252,7 @@ PVMFStatus PvmfMediaInputNode::DoReset(PvmfMediaInputNodeCmd& aCmd)
 
     if (IsAdded())
     {
-        for (uint32 i = 0;i< iOutPortVector.size();i++)
+        for (uint32 i = 0; i < iOutPortVector.size(); i++)
         {
             iOutPortVector[i]->Stop();
             iOutPortVector[i]->Disconnect();
@@ -1678,7 +1637,7 @@ void PvmfMediaInputNode::ReportInfoEvent(PVMFEventType aEventType, OsclAny* aEve
 bool PvmfMediaInputNode::PortQueuesEmpty()
 {
     uint32 i;
-    for (i = 0;i < iOutPortVector.size();i++)
+    for (i = 0; i < iOutPortVector.size(); i++)
     {
         if (iOutPortVector[i]->IncomingMsgQueueSize() > 0
                 || iOutPortVector[i]->OutgoingMsgQueueSize() > 0)

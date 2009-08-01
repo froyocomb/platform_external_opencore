@@ -705,7 +705,7 @@ int32 SampleDescriptionAtom::getAverageBitrate()
         }
     }
     const SampleEntry* entry = getSampleEntryAt(i);
-    if (!entry)		// will also pick off size() == 0
+    if (!entry)     // will also pick off size() == 0
         return 0;
 
     averageBitrate = entry->getAverageBitrate();
@@ -735,7 +735,7 @@ int32 SampleDescriptionAtom::getWidth()
     }
 
     const SampleEntry* entry = getSampleEntryAt(i);
-    if (!entry)		// will also pick off size() == 0
+    if (!entry)     // will also pick off size() == 0
         return 0;
 
     width = entry->getWidth();
@@ -764,7 +764,7 @@ int32 SampleDescriptionAtom::getHeight()
     }
 
     const SampleEntry* entry = getSampleEntryAt(i);
-    if (!entry)		// also catch size() == 0
+    if (!entry)     // also catch size() == 0
         return 0;
     return (uint32)entry->getHeight();
 }
@@ -836,7 +836,7 @@ SampleDescriptionAtom::getSampleProtocol(uint32 index)
 
     // Return the atom type of the sampleEntryAtom - for the first one in the vector
     const SampleEntry* entry = getSampleEntryAt(index);
-    if (!entry)		// will also pick off size() == 0
+    if (!entry)     // will also pick off size() == 0
         return 0;
 
     return entry->getType();
@@ -925,7 +925,7 @@ void SampleDescriptionAtom::getMIMEType(OSCL_String& aMimeType)
     {
         mimeType.set(PVMF_MIME_AMR, oscl_strlen(PVMF_MIME_AMR));
     }
-    else if	(objectType == AMR_AUDIO_3GPP)
+    else if (objectType == AMR_AUDIO_3GPP)
     {
         mimeType.set(PVMF_MIME_AMR_IETF, oscl_strlen(PVMF_MIME_AMR_IETF));
     }

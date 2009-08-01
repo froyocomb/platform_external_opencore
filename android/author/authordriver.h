@@ -70,6 +70,31 @@
 #define ANDROID_MIN_FRAME_RATE_FPS                 5
 #define ANDROID_MAX_FRAME_RATE_FPS                 30
 
+static const int32 MAX_AUDIO_BITRATE_SETTING = 320000; // Max bitrate??
+static const int32 MIN_AUDIO_BITRATE_SETTING = 1;      // Min bitrate??
+static const int32 DEFAULT_AUDIO_BITRATE_SETTING = 64000; // Default for all the other audio
+static const PVMF_GSMAMR_Rate DEFAULT_AMR_NARROW_BAND_BITRATE_SETTING = GSM_AMR_12_2;
+static const PVMF_GSMAMR_Rate DEFAULT_AMR_WIDE_BAND_BITRATE_SETTING = GSM_AMR_23_85;
+
+typedef struct AMR_BITRATE_MAPPING
+{
+   int32 bitrate;
+   PVMF_GSMAMR_Rate actual;
+} AMR_BITRATE_MAPPING;
+
+static const uint32 AMR_BITRATE_MAX_NUMBER_OF_ROWS = 10;
+static const AMR_BITRATE_MAPPING AMR_BITRATE_MAPPING_ARRAY[AMR_BITRATE_MAX_NUMBER_OF_ROWS][2] = {
+    {{1,DEFAULT_AMR_NARROW_BAND_BITRATE_SETTING}, {1,    DEFAULT_AMR_WIDE_BAND_BITRATE_SETTING}},  // default values
+    {{4950,                        GSM_AMR_4_75}, {7725,                          GSM_AMR_6_60}},
+    {{5525,                        GSM_AMR_5_15}, {10750,                         GSM_AMR_8_85}},
+    {{6300,                        GSM_AMR_5_90}, {13450,                        GSM_AMR_12_65}},
+    {{7050,                        GSM_AMR_6_70}, {15050,                        GSM_AMR_14_25}},
+    {{7625,                        GSM_AMR_7_40}, {17050,                        GSM_AMR_15_85}},
+    {{9075,                        GSM_AMR_7_95}, {19050,                        GSM_AMR_18_25}},
+    {{11200,                       GSM_AMR_10_2}, {21450,                        GSM_AMR_19_85}},
+   {{(MAX_AUDIO_BITRATE_SETTING+1),GSM_AMR_12_2}, {23450,                        GSM_AMR_23_05}},
+   {{(MAX_AUDIO_BITRATE_SETTING+1),GSM_AMR_12_2},{(MAX_AUDIO_BITRATE_SETTING+1), GSM_AMR_23_85}}};
+
 namespace android {
 
 template<class DestructClass>
@@ -250,7 +275,7 @@ private:
     // Finish up a non-async command in such a way that
     // the event loop will keep running.
     void FinishNonAsyncCommand(author_command *ec);
- 
+
     // remove references to configurations
     void removeConfigRefs(author_command *ac);
 
@@ -276,7 +301,19 @@ private:
     // milliseconds, otherwise "limit" holds the maximum filesize in bytes.
     PVMFStatus setMaxDurationOrFileSize(int64_t limit, bool limit_is_duration);
 
+    // Used to set the sampling rate of the audio source
+    PVMFStatus setParamAudioSamplingRate(int64_t aSamplingRate);
+
+    // Used to set the number of channels of the audio source
+    PVMFStatus setParamAudioNumberOfChannels(int64_t aNumberOfChannels);
+
+    // Used for setting the audio encoding bitrate
+    PVMFStatus setParamAudioEncodingBitrate(int64_t aAudioBitrate);
+
     PVMFStatus setParameter(const String8 &key, const String8 &value);
+
+    // Used to map the incoming bitrate to the closest AMR bitrate
+    bool MapAMRBitrate(int32 aAudioBitrate, PVMF_GSMAMR_Rate &anAMRBitrate);
 
     PVAuthorEngineInterface    *mAuthor;
 
@@ -295,7 +332,7 @@ private:
     int                     mVideoFrameRate;
     //int                     mVideoBitRate;
     video_encoder           mVideoEncoder;
-    output_format           mOutputFormat; 
+    output_format           mOutputFormat;
 
     //int                     mAudioBitRate;
     audio_encoder           mAudioEncoder;
@@ -311,6 +348,10 @@ private:
 
     sp<ICamera>             mCamera;
     sp<IMediaPlayerClient>  mListener;
+
+    int32            mSamplingRate;
+    int32            mNumberOfChannels;
+    int32            mAudio_bitrate_setting;
 
     FILE*       ifpOutput;
 };

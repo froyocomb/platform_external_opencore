@@ -22,9 +22,9 @@
 /*     -------------------------------------------------------------------       */
 /*********************************************************************************/
 /*
-	This ISucceedFail Class is the base class for all other classes here
-	- this provides the ability to check for failure when reading in an
-	mp4 file
+    This ISucceedFail Class is the base class for all other classes here
+    - this provides the ability to check for failure when reading in an
+    mp4 file
 */
 
 
@@ -42,7 +42,7 @@
 
 #define MAX_ERROR_CODES 113
 
-typedef enum {  READ_FAILED	= -1,
+typedef enum {  READ_FAILED = -1,
                 EVERYTHING_FINE = 0,
                 DEFAULT_ERROR = 1,
                 READ_USER_DATA_ATOM_FAILED = 2,

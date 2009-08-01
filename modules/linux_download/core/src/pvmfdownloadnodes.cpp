@@ -22,7 +22,7 @@
 #include "osclconfig.h"
 
 class DownloadNodesInterface: public OsclSharedLibraryInterface,
-            public NodeSharedLibraryInterface
+        public NodeSharedLibraryInterface
 {
     public:
         DownloadNodesInterface() {};
@@ -59,11 +59,11 @@ class DownloadNodesInterface: public OsclSharedLibraryInterface,
 
 extern "C"
 {
-    OsclSharedLibraryInterface* PVGetInterface(void)
+    OSCL_EXPORT_REF OsclSharedLibraryInterface* PVGetInterface(void)
     {
         return OSCL_NEW(DownloadNodesInterface, ());
     }
-    void PVReleaseInterface(OsclSharedLibraryInterface* aInstance)
+    OSCL_EXPORT_REF void PVReleaseInterface(OsclSharedLibraryInterface* aInstance)
     {
         OSCL_DELETE(aInstance);
     }

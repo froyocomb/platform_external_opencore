@@ -13,8 +13,6 @@ LOCAL_SRC_FILES := \
     android_audio_mio.cpp \
     android_audio_output_threadsafe_callbacks.cpp
 
-LOCAL_CFLAGS := $(PV_CFLAGS)
-
 LOCAL_C_INCLUDES := $(PV_INCLUDES) \
     $(PV_TOP)/engines/common/include \
     $(PV_TOP)/fileformats/mp4/parser/include \
@@ -39,7 +37,7 @@ LOCAL_MODULE := libandroidpv
 LOCAL_SHARED_LIBRARIES := libui libutils
 LOCAL_STATIC_LIBRARIES := libosclbase libosclerror libosclmemory libosclutil
 
-LOCAL_LDLIBS += 
+LOCAL_LDLIBS +=
 
 include $(BUILD_STATIC_LIBRARY)
 
@@ -70,4 +68,3 @@ LOCAL_SHARED_LIBRARIES := \
  LOCAL_LDLIBS +=
 
  include $(BUILD_SHARED_LIBRARY)
-

@@ -16,7 +16,7 @@
  * -------------------------------------------------------------------
  */
 /*! \file oscl_file_native.cpp
-	\brief This file contains file io APIs
+    \brief This file contains file io APIs
 */
 
 #include "oscl_file_native.h"
@@ -70,7 +70,8 @@ int32  OsclNativeFile::Open(const OsclFileHandle& aHandle, uint32 mode
     return 0;
 }
 
-static void OpenModeToString(uint32 mode, char mode_str[4]) {
+static void OpenModeToString(uint32 mode, char mode_str[4])
+{
     uint32 index = 0;
 
     if (mode & Oscl_File::MODE_READWRITE)
@@ -114,7 +115,8 @@ static void OpenModeToString(uint32 mode, char mode_str[4]) {
 }
 
 int32 OsclNativeFile::OpenFileOrSharedFd(
-        const char *filename, const char *openmode) {
+    const char *filename, const char *openmode)
+{
 #ifdef ENABLE_SHAREDFD_PLAYBACK
     int fd;
     long long offset;
@@ -155,48 +157,8 @@ int32 OsclNativeFile::Open(const oscl_wchar *filename, uint32 mode
         if (!filename || *filename == '\0') return -1; // Null string not supported in fopen, error out
 
         char openmode[4];
-        uint32 index = 0;
 
-        if (mode & Oscl_File::MODE_READWRITE)
-        {
-            if (mode & Oscl_File::MODE_APPEND)
-            {
-                openmode[index++] = 'a';
-                openmode[index++] = '+';
-            }
-            else
-            {
-                openmode[index++] = 'w';
-                openmode[index++] = '+';
-            }
-        }
-        else if (mode & Oscl_File::MODE_APPEND)
-        {
-            openmode[index++] = 'a';
-            openmode[index++] = '+';
-        }
-        else if (mode & Oscl_File::MODE_READ)
-        {
-            openmode[index++] = 'r';
-        }
-        else if (mode & Oscl_File::MODE_READ_PLUS)
-        {
-            openmode[index++] = 'r';
-            openmode[index++] = '+';
-        }
-
-
-
-        if (mode & Oscl_File::MODE_TEXT)
-        {
-            openmode[index++] = 't';
-        }
-        else
-        {
-            openmode[index++] = 'b';
-        }
-
-        openmode[index++] = '\0';
+        OpenModeToString(mode, openmode);
 
 #ifdef _UNICODE
         oscl_wchar convopenmode[4];
@@ -216,7 +178,7 @@ int32 OsclNativeFile::Open(const oscl_wchar *filename, uint32 mode
         {
             return -1;
         }
-	return OpenFileOrSharedFd(convfilename, openmode);
+        return OpenFileOrSharedFd(convfilename, openmode);
 #endif
     }
 
@@ -235,47 +197,8 @@ int32 OsclNativeFile::Open(const char *filename, uint32 mode
     if (!filename || *filename == '\0') return -1; // Null string not supported in fopen, error out
 
     char openmode[4];
-    uint32 index = 0;
 
-    if (mode & Oscl_File::MODE_READWRITE)
-    {
-	if (mode & Oscl_File::MODE_APPEND)
-	{
-	    openmode[index++] = 'a';
-	    openmode[index++] = '+';
-	}
-	else
-	{
-	    openmode[index++] = 'w';
-	    openmode[index++] = '+';
-
-	}
-    }
-    else if (mode & Oscl_File::MODE_APPEND)
-    {
-	openmode[index++] = 'a';
-	openmode[index++] = '+';
-    }
-    else if (mode & Oscl_File::MODE_READ)
-    {
-	openmode[index++] = 'r';
-    }
-    else if (mode & Oscl_File::MODE_READ_PLUS)
-    {
-	openmode[index++] = 'r';
-	openmode[index++] = '+';
-    }
-
-    if (mode & Oscl_File::MODE_TEXT)
-    {
-	openmode[index++] = 't';
-    }
-    else
-    {
-	openmode[index++] = 'b';
-    }
-
-    openmode[index++] = '\0';
+    OpenModeToString(mode, openmode);
 
     return OpenFileOrSharedFd(filename, openmode);
 
@@ -337,21 +260,25 @@ int32 OsclNativeFile::Close()
 uint32 OsclNativeFile::Read(OsclAny *buffer, uint32 size, uint32 numelements)
 {
 #ifdef ENABLE_SHAREDFD_PLAYBACK
-    if (iSharedFd >= 0) {
+    if (iSharedFd >= 0)
+    {
         // restore position, no locking is needed because all access to the
         // shared filedescriptor is done by the same thread.
         lseek64(iSharedFd, iSharedFilePosition + iSharedFileOffset, SEEK_SET);
         uint32 count = size * numelements;
-        if (iSharedFilePosition + count > iSharedFileSize) {
+        if (iSharedFilePosition + count > iSharedFileSize)
+        {
             count = iSharedFileSize - iSharedFilePosition;
         }
         ssize_t numread = read(iSharedFd, buffer, count);
         // unlock
         long long curpos = lseek64(iSharedFd, 0, SEEK_CUR);
-        if (curpos >= 0) {
+        if (curpos >= 0)
+        {
             iSharedFilePosition = curpos - iSharedFileOffset;
         }
-        if (numread < 0) {
+        if (numread < 0)
+        {
             return numread;
         }
         return numread / size;
@@ -490,7 +417,7 @@ int32 OsclNativeFile::EndOfFile()
 
 int32 OsclNativeFile::GetError()
 {
-//FIXME ENABLE_SHAREDFD_PLAYBACK 
+//FIXME ENABLE_SHAREDFD_PLAYBACK
     if (iFile)
         return ferror(iFile);
     return 0;

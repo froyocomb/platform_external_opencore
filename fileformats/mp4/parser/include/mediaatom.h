@@ -142,7 +142,7 @@ class MediaAtom : public Atom
             }
         }
 
-        int32 updateFileSize(uint32	filesize)
+        int32 updateFileSize(uint32 filesize)
         {
             if (_pmediaInformation != NULL)
             {
