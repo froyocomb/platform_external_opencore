@@ -330,15 +330,15 @@ class PvmfAssetInfo3GPPLocationStruct
         oscl_wchar* _astronomical_body;
         oscl_wchar* _additional_notes;
         OSCL_HeapString<OsclMemAllocator> Lang_code;
-        uint8	_role;
+        uint8   _role;
 
-        uint32	_longitude;//fixed-point 16.16 number indicating the longitude in degrees.
+        uint32  _longitude;//fixed-point 16.16 number indicating the longitude in degrees.
         //Negative values represent western longitude
 
-        uint32	_latitude;//fixed-point 16.16 number indicating the latitude in degrees.
+        uint32  _latitude;//fixed-point 16.16 number indicating the latitude in degrees.
         //Negative values represent southern latitude
 
-        uint32	_altitude;//fixed-point 16.16 number indicating the altitude in meters.
+        uint32  _altitude;//fixed-point 16.16 number indicating the altitude in meters.
         //The reference altitude, indicated by zero, is set to the sea level.
         uint16 _langCode;
 };
@@ -355,9 +355,6 @@ class PvmfAssetInfo3GPPLocationStruct
 #define OUTPUT_FORMATS_CAP_QUERY ".../output_formats;attr=cap"
 #define OUTPUT_FORMATS_CUR_QUERY ".../output_formats;attr=cur"
 #define OUTPUT_FORMATS_VALTYPE ".../output_formats;valtype=char*"
-
-// Key value pair to configure MIO for AUdioSource Type
-#define AUDIO_INPUT_SOURCE_TYPE ".../input_src;valtype=uint32"
 
 #define VIDEO_INPUT_WIDTH_CAP_QUERY ".../input/width;attr=cap"
 #define VIDEO_INPUT_WIDTH_CAP_RANGE ".../input/width;valtype=range_uint32"
@@ -517,7 +514,7 @@ class PvmfAssetInfo3GPPLocationStruct
 #define TEXT_INPUT_HEIGHT_CUR_VALUE ".../input/height;valtype=uint32"
 
 //AVC Encoder
-#define PVMF_AVC_ENCODER_ENCODINGMODE_KEY	"x-pvmf/encoder/video/encoding_mode;valtype=uint32"
+#define PVMF_AVC_ENCODER_ENCODINGMODE_KEY   "x-pvmf/encoder/video/encoding_mode;valtype=uint32"
 
 #define INPUT_TIMESCALE_CUR_QUERY ".../input/timescale;attr=cur"
 #define INPUT_TIMESCALE_CUR_VALUE ".../input/timescale;valtype=uint32"

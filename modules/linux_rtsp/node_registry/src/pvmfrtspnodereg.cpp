@@ -147,8 +147,8 @@ bool StreamingNodesCoreLibraryLoader::DeleteStreamingManagerNode(PVMFNodeInterfa
 
 
 class StreamingNodesRegistryInterface: public OsclSharedLibraryInterface,
-            public NodeRegistryPopulatorInterface,
-            public RecognizerPopulatorInterface
+        public NodeRegistryPopulatorInterface,
+        public RecognizerPopulatorInterface
 {
     public:
         StreamingNodesRegistryInterface() {};
@@ -226,11 +226,11 @@ class StreamingNodesRegistryInterface: public OsclSharedLibraryInterface,
 
 extern "C"
 {
-    OsclSharedLibraryInterface* PVGetInterface(void)
+    OSCL_EXPORT_REF OsclSharedLibraryInterface* PVGetInterface(void)
     {
         return OSCL_NEW(StreamingNodesRegistryInterface, ());
     }
-    void PVReleaseInterface(OsclSharedLibraryInterface* aInstance)
+    OSCL_EXPORT_REF void PVReleaseInterface(OsclSharedLibraryInterface* aInstance)
     {
         OSCL_DELETE(aInstance);
     }

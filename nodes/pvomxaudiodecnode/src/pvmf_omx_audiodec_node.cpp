@@ -37,11 +37,11 @@
 
 
 #define CONFIG_SIZE_AND_VERSION(param) \
-	    param.nSize=sizeof(param); \
-	    param.nVersion.s.nVersionMajor = SPECVERSIONMAJOR; \
-	    param.nVersion.s.nVersionMinor = SPECVERSIONMINOR; \
-	    param.nVersion.s.nRevision = SPECREVISION; \
-	    param.nVersion.s.nStep = SPECSTEP;
+        param.nSize=sizeof(param); \
+        param.nVersion.s.nVersionMajor = SPECVERSIONMAJOR; \
+        param.nVersion.s.nVersionMinor = SPECVERSIONMINOR; \
+        param.nVersion.s.nRevision = SPECREVISION; \
+        param.nVersion.s.nStep = SPECSTEP;
 
 
 
@@ -634,7 +634,7 @@ PVMFStatus PVMFOMXAudioDecNode::HandlePortReEnable()
         if (iPCMSamplingRate == 0) // use default sampling rate (i.e. 48000)
             iPCMSamplingRate = PVOMXAUDIODEC_DEFAULT_SAMPLINGRATE;
 
-        iNumberOfAudioChannels = Audio_Pcm_Param.nChannels;		// should be 1 or 2
+        iNumberOfAudioChannels = Audio_Pcm_Param.nChannels;     // should be 1 or 2
         if (iNumberOfAudioChannels != 1 && iNumberOfAudioChannels != 2)
         {
             PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
@@ -863,7 +863,7 @@ PVMFStatus PVMFOMXAudioDecNode::HandlePortReEnable()
 
 
         if (!ProvideBuffersToComponent(iOutBufMemoryPool, // allocator
-                                       iOutputAllocSize,	 // size to allocate from pool (hdr only or hdr+ buffer)
+                                       iOutputAllocSize,     // size to allocate from pool (hdr only or hdr+ buffer)
                                        iNumOutputBuffers, // number of buffers
                                        iOMXComponentOutputBufferSize, // actual buffer size
                                        iOutputPortIndex, // port idx
@@ -944,7 +944,7 @@ PVMFStatus PVMFOMXAudioDecNode::HandlePortReEnable()
 
 
         if (!ProvideBuffersToComponent(iInBufMemoryPool, // allocator
-                                       iInputAllocSize,	 // size to allocate from pool (hdr only or hdr+ buffer)
+                                       iInputAllocSize,  // size to allocate from pool (hdr only or hdr+ buffer)
                                        iNumInputBuffers, // number of buffers
                                        iOMXComponentInputBufferSize, // actual buffer size
                                        iInputPortIndex, // port idx
@@ -1032,7 +1032,7 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
 
 
     // loop through ports starting from the starting index to find index of the first input port
-    for (ii = AudioPortParameters.nStartPortNumber ;ii < AudioPortParameters.nStartPortNumber + NumPorts; ii++)
+    for (ii = AudioPortParameters.nStartPortNumber ; ii < AudioPortParameters.nStartPortNumber + NumPorts; ii++)
     {
         // get port parameters, and determine if it is input or output
         // if there are more than 2 ports, the first one we encounter that has input direction is picked
@@ -1072,7 +1072,7 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
 
 
     // loop through ports starting from the starting index to find index of the first output port
-    for (ii = AudioPortParameters.nStartPortNumber ;ii < AudioPortParameters.nStartPortNumber + NumPorts; ii++)
+    for (ii = AudioPortParameters.nStartPortNumber ; ii < AudioPortParameters.nStartPortNumber + NumPorts; ii++)
     {
         // get port parameters, and determine if it is input or output
         // if there are more than 2 ports, the first one we encounter that has output direction is picked
@@ -1713,7 +1713,7 @@ bool PVMFOMXAudioDecNode::GetSetCodecSpecificInfo()
     if (iPCMSamplingRate == 0) // use default sampling rate (i.e. 48000)
         iPCMSamplingRate = PVOMXAUDIODEC_DEFAULT_SAMPLINGRATE;
 
-    iNumberOfAudioChannels = Audio_Pcm_Param.nChannels;		// should be 1 or 2
+    iNumberOfAudioChannels = Audio_Pcm_Param.nChannels;     // should be 1 or 2
     if (iNumberOfAudioChannels != 1 && iNumberOfAudioChannels != 2)
         return false;
 
@@ -1773,8 +1773,8 @@ bool PVMFOMXAudioDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
 
 
     // NOTE: the component may not start decoding without providing the Output buffer to it,
-    //		here, we're sending input/config buffers.
-    //		Then, we'll go to ReadyToDecode state and send output as well
+    //      here, we're sending input/config buffers.
+    //      Then, we'll go to ReadyToDecode state and send output as well
 
     if (((PVMFOMXDecPort*)iInPort)->iFormat == PVMF_MIME_LATM)
     {
@@ -1806,7 +1806,7 @@ bool PVMFOMXAudioDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
         initbuffer = (uint8 *) DataFrag.getMemFragPtr();
         initbufsize = (int32) DataFrag.getMemFragSize();
 
-    }			// in some cases, initbufsize may be 0, and initbuf= NULL. Config is done after 1st frame of data
+    }           // in some cases, initbufsize may be 0, and initbuf= NULL. Config is done after 1st frame of data
     else if (((PVMFOMXDecPort*)iInPort)->iFormat == PVMF_MIME_AMR_IF2 ||
              ((PVMFOMXDecPort*)iInPort)->iFormat == PVMF_MIME_AMR_IETF ||
              ((PVMFOMXDecPort*)iInPort)->iFormat == PVMF_MIME_AMR ||
@@ -2067,7 +2067,7 @@ OMX_ERRORTYPE PVMFOMXAudioDecNode::EventHandlerProcessing(OMX_OUT OMX_HANDLETYPE
                     if (iPCMSamplingRate == 0) // use default sampling rate (i.e. 48000)
                         iPCMSamplingRate = PVOMXAUDIODEC_DEFAULT_SAMPLINGRATE;
 
-                    iNumberOfAudioChannels = Audio_Pcm_Param.nChannels;		// should be 1 or 2
+                    iNumberOfAudioChannels = Audio_Pcm_Param.nChannels;     // should be 1 or 2
                     if (iNumberOfAudioChannels != 1 && iNumberOfAudioChannels != 2)
                     {
                         PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
@@ -2116,7 +2116,7 @@ OMX_ERRORTYPE PVMFOMXAudioDecNode::EventHandlerProcessing(OMX_OUT OMX_HANDLETYPE
                     if (iPCMSamplingRate == 0) // use default sampling rate (i.e. 48000)
                         iPCMSamplingRate = PVOMXAUDIODEC_DEFAULT_SAMPLINGRATE;
 
-                    iNumberOfAudioChannels = Audio_Pcm_Param.nChannels;		// should be 1 or 2
+                    iNumberOfAudioChannels = Audio_Pcm_Param.nChannels;     // should be 1 or 2
                     if (iNumberOfAudioChannels != 1 && iNumberOfAudioChannels != 2)
                     {
                         PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
@@ -3057,9 +3057,9 @@ bool PVMFOMXAudioDecNode::VerifyParametersSync(PvmiMIOSession aSession, PvmiKvp*
     OMX_BOOL status = OMX_FALSE;
     OMX_U32 num_comps = 0, ii;
     OMX_STRING *CompOfRole;
-    //	uint32 ii;
+    //  uint32 ii;
     // call once to find out the number of components that can fit the role
-    OMX_GetComponentsOfRole(aInputParameters.cComponentRole, &num_comps, NULL);
+    OMX_MasterGetComponentsOfRole(aInputParameters.cComponentRole, &num_comps, NULL);
 
     if (num_comps > 0)
     {
@@ -3068,12 +3068,12 @@ bool PVMFOMXAudioDecNode::VerifyParametersSync(PvmiMIOSession aSession, PvmiKvp*
             CompOfRole[ii] = (OMX_STRING) oscl_malloc(PV_OMX_MAX_COMPONENT_NAME_LENGTH * sizeof(OMX_U8));
 
         // call 2nd time to get the component names
-        OMX_GetComponentsOfRole(aInputParameters.cComponentRole, &num_comps, (OMX_U8 **)CompOfRole);
+        OMX_MasterGetComponentsOfRole(aInputParameters.cComponentRole, &num_comps, (OMX_U8 **)CompOfRole);
 
         for (ii = 0; ii < num_comps; ii++)
         {
             aInputParameters.cComponentName = CompOfRole[ii];
-            status = OMXConfigParser(&aInputParameters, &aOutputParameters);
+            status = OMX_MasterConfigParser(&aInputParameters, &aOutputParameters);
             if (status == OMX_TRUE)
             {
                 break;
@@ -3207,9 +3207,9 @@ PVMFStatus PVMFOMXAudioDecNode::DoCapConfigVerifyParameters(PvmiKvp* aParameters
     OMX_BOOL status = OMX_FALSE;
     OMX_U32 num_comps = 0, ii;
     OMX_STRING *CompOfRole;
-    //	uint32 ii;
+    //  uint32 ii;
     // call once to find out the number of components that can fit the role
-    OMX_GetComponentsOfRole(aInputParameters.cComponentRole, &num_comps, NULL);
+    OMX_MasterGetComponentsOfRole(aInputParameters.cComponentRole, &num_comps, NULL);
 
     if (num_comps > 0)
     {
@@ -3218,12 +3218,12 @@ PVMFStatus PVMFOMXAudioDecNode::DoCapConfigVerifyParameters(PvmiKvp* aParameters
             CompOfRole[ii] = (OMX_STRING) oscl_malloc(PV_OMX_MAX_COMPONENT_NAME_LENGTH * sizeof(OMX_U8));
 
         // call 2nd time to get the component names
-        OMX_GetComponentsOfRole(aInputParameters.cComponentRole, &num_comps, (OMX_U8 **)CompOfRole);
+        OMX_MasterGetComponentsOfRole(aInputParameters.cComponentRole, &num_comps, (OMX_U8 **)CompOfRole);
 
         for (ii = 0; ii < num_comps; ii++)
         {
             aInputParameters.cComponentName = CompOfRole[ii];
-            status = OMXConfigParser(&aInputParameters, &aOutputParameters);
+            status = OMX_MasterConfigParser(&aInputParameters, &aOutputParameters);
             if (status == OMX_TRUE)
             {
                 break;

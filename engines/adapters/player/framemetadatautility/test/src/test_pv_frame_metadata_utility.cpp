@@ -35,6 +35,7 @@
 #include "oscl_string_utils.h"
 
 #include "OMX_Core.h"
+#include "pv_omxcore.h"
 
 #ifndef DEFAULTSOURCEFILENAME
 #error // The default source file needs to be defined in config file
@@ -51,20 +52,20 @@ FILE* file;
 class PVLoggerConfigFile
 {
         /*  To change the logging settings without the need to compile the test application
-        	Let us read the logging settings from the file instead of hard coding them over here
-        	The name of the config file is pvlogger.ini
-        	The format of entries in it is like
-        	First entry will decide if the file appender has to be used or error appender will be used.
-        	0 -> ErrAppender will be used
-        	1 -> File Appender will be used
-        	2 -> Mem Appender will be used
-        	Entries after this will decide the module whose logging has to be taken.For example, contents of one sample config file could be
-        	1
-        	1,PVPlayerEngine
-        	8,PVSocketNode
-        	(pls note that no space is allowed between loglevel and logger tag)
-        	This means, we intend to have logging of level 1 for the module PVPlayerEngine
-        	and of level 8 for the PVSocketNode on file.
+            Let us read the logging settings from the file instead of hard coding them over here
+            The name of the config file is pvlogger.ini
+            The format of entries in it is like
+            First entry will decide if the file appender has to be used or error appender will be used.
+            0 -> ErrAppender will be used
+            1 -> File Appender will be used
+            2 -> Mem Appender will be used
+            Entries after this will decide the module whose logging has to be taken.For example, contents of one sample config file could be
+            1
+            1,PVPlayerEngine
+            8,PVSocketNode
+            (pls note that no space is allowed between loglevel and logger tag)
+            This means, we intend to have logging of level 1 for the module PVPlayerEngine
+            and of level 8 for the PVSocketNode on file.
         */
     public:
 
@@ -270,7 +271,7 @@ class PVLoggerConfigFile
 //  -source sometestfile.mp4
 //
 //
-void FindSourceFile(cmd_line* command_line,	OSCL_HeapString<OsclMemAllocator>& aFileNameInfo, PVMFFormatType& aInputFileFormatType, FILE* aFile)
+void FindSourceFile(cmd_line* command_line, OSCL_HeapString<OsclMemAllocator>& aFileNameInfo, PVMFFormatType& aInputFileFormatType, FILE* aFile)
 {
     aFileNameInfo = SOURCENAME_PREPEND_STRING;
     aFileNameInfo += DEFAULTSOURCEFILENAME;
@@ -412,7 +413,7 @@ void FindSourceFile(cmd_line* command_line,	OSCL_HeapString<OsclMemAllocator>& a
 //Find test range args:
 //To run a range of tests by enum ID:
 //  -test 17 29
-void FindTestRange(cmd_line* command_line,	int32& iFirstTest, int32 &iLastTest, FILE* aFile)
+void FindTestRange(cmd_line* command_line,  int32& iFirstTest, int32 &iLastTest, FILE* aFile)
 {
     //default is to run all tests.
     iFirstTest = 0;
@@ -740,7 +741,7 @@ int local_main(FILE* filehandle, cmd_line* command_line)
     OsclBase::Init();
     OsclErrorTrap::Init();
     OsclMem::Init();
-    OMX_Init();
+    OMX_MasterInit();
 
     const int numArgs = 10; //change as per the number of args below
     char *argv[numArgs];
@@ -798,7 +799,7 @@ int local_main(FILE* filehandle, cmd_line* command_line)
     }
 
     //Cleanup
-    OMX_Deinit();
+    OMX_MasterDeinit();
 #if !(OSCL_BYPASS_MEMMGT)
     //Check for memory leaks before cleaning up OsclMem.
     OsclAuditCB auditCB;
@@ -831,7 +832,7 @@ int local_main(FILE* filehandle, cmd_line* command_line)
                 {
                     fprintf(file, "ERROR: Leak info is incomplete.\n");
                 }
-                for (uint32 i = 0;i < leakinfo;i++)
+                for (uint32 i = 0; i < leakinfo; i++)
                 {
                     fprintf(file, "Leak Info:\n");
                     fprintf(file, "  allocNum %d\n", info[i].allocNum);

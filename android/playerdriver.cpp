@@ -264,7 +264,7 @@ class PlayerDriver :
 
     PVPlayerDataSink        *mVideoSink;
     PVMFNodeInterface       *mVideoNode;
-    PvmiMIOControl          *mVideoOutputMIO;
+    AndroidSurfaceOutput    *mVideoOutputMIO;
 
     PvmiCapabilityAndConfig *mPlayerCapConfig;
 
@@ -297,6 +297,9 @@ class PlayerDriver :
 
     bool                    mEmulation;
     void*                   mLibHandle;
+
+    // video display surface
+    android::sp<android::ISurface> mSurface;
 };
 
 PlayerDriver::PlayerDriver(PVPlayer* pvPlayer) :
@@ -323,6 +326,7 @@ PlayerDriver::PlayerDriver(PVPlayer* pvPlayer) :
     mVideoSink = NULL;
     mVideoNode = NULL;
     mVideoOutputMIO = NULL;
+    mSurface = NULL;
 
     mPlayerCapConfig = NULL;
     mDownloadContextData = NULL;
@@ -390,7 +394,8 @@ PlayerCommand* PlayerDriver::dequeueCommand()
 status_t PlayerDriver::enqueueCommand(PlayerCommand* command)
 {
     if (mPlayer == NULL) {
-        delete command;
+        // Only commands which can come in this use-case is PLAYER_SETUP and PLAYER_QUIT
+        // The calling function should take responsibility to delete the command and cleanup
         return NO_INIT;
     }
 
@@ -622,13 +627,6 @@ int PlayerDriver::setupHttpStreamPost()
 
     int error = 0;
 
-    iKVPSetAsync.key = _STRLIT_CHAR("x-pvmf/net/user-agent;valtype=wchar*");
-    OSCL_wHeapString<OsclMemAllocator> userAgent = _STRLIT_WCHAR("CORE/6.506.4.1 OpenCORE/2.02 (Linux;Android 1.0)(AndroidMediaPlayer 1.0)");
-    iKVPSetAsync.value.pWChar_value=userAgent.get_str();
-    iErrorKVP=NULL;
-    OSCL_TRY(error, mPlayerCapConfig->setParametersSync(NULL, &iKVPSetAsync, 1, iErrorKVP));
-    OSCL_FIRST_CATCH_ANY(error, return -1);
-
     iKeyStringSetAsync=_STRLIT_CHAR("x-pvmf/net/http-timeout;valtype=uint32");
     iKVPSetAsync.key=iKeyStringSetAsync.get_str();
     iKVPSetAsync.value.uint32_value=20;
@@ -639,14 +637,6 @@ int PlayerDriver::setupHttpStreamPost()
     iKeyStringSetAsync=_STRLIT_CHAR("x-pvmf/net/num-redirect-attempts;valtype=uint32");
     iKVPSetAsync.key=iKeyStringSetAsync.get_str();
     iKVPSetAsync.value.uint32_value=4;
-    iErrorKVP=NULL;
-    OSCL_TRY(error, mPlayerCapConfig->setParametersSync(NULL, &iKVPSetAsync, 1, iErrorKVP));
-    OSCL_FIRST_CATCH_ANY(error, return -1);
-
-    // enable or disable HEAD request
-    iKeyStringSetAsync=_STRLIT_CHAR("x-pvmf/net/http-header-request-disabled;valtype=bool");
-    iKVPSetAsync.key=iKeyStringSetAsync.get_str();
-    iKVPSetAsync.value.bool_value=false;
     iErrorKVP=NULL;
     OSCL_TRY(error, mPlayerCapConfig->setParametersSync(NULL, &iKVPSetAsync, 1, iErrorKVP));
     OSCL_FIRST_CATCH_ANY(error, return -1);
@@ -705,47 +695,74 @@ void PlayerDriver::handleInit(PlayerInit* command)
         setupHttpStreamPost();
     }
 
+    {
+        PvmiKvp iKVPSetAsync;
+        PvmiKvp *iErrorKVP = NULL;
+
+        int error = 0;
+        iKVPSetAsync.key = _STRLIT_CHAR("x-pvmf/net/user-agent;valtype=wchar*");
+        OSCL_wHeapString<OsclMemAllocator> userAgent = _STRLIT_WCHAR("CORE/6.506.4.1 OpenCORE/2.02 (Linux;Android 2.0)(AndroidMediaPlayer 2.0)");
+        iKVPSetAsync.value.pWChar_value=userAgent.get_str();
+        iErrorKVP=NULL;
+        OSCL_TRY(error, mPlayerCapConfig->setParametersSync(NULL, &iKVPSetAsync, 1, iErrorKVP));
+        OSCL_FIRST_CATCH_ANY(error,
+                LOGE("handleInit- setParametersSync ERROR setting useragent");
+        );
+    }
+
     OSCL_TRY(error, mPlayer->Init(command));
     OSCL_FIRST_CATCH_ANY(error, commandFailed(command));
 }
 
 void PlayerDriver::handleSetVideoSurface(PlayerSetVideoSurface* command)
 {
-    int error = 0;
-    AndroidSurfaceOutput* mio = NULL;
 
-    // attempt to load device-specific video MIO
-    if (mLibHandle != NULL) {
-        VideoMioFactory f = (VideoMioFactory) ::dlsym(mLibHandle, VIDEO_MIO_FACTORY_NAME);
-        if (f != NULL) {
-            mio = f();
+    // create video MIO if needed
+    if (mVideoOutputMIO == NULL) {
+        int error = 0;
+        AndroidSurfaceOutput* mio = NULL;
+
+        // attempt to load device-specific video MIO
+        if (mLibHandle != NULL) {
+            VideoMioFactory f = (VideoMioFactory) ::dlsym(mLibHandle, VIDEO_MIO_FACTORY_NAME);
+            if (f != NULL) {
+                mio = f();
+            }
+        }
+
+        // if no device-specific MIO was created, use the generic one
+        if (mio == NULL) {
+            LOGW("Using generic video MIO");
+            mio = new AndroidSurfaceOutput();
+        }
+
+        // initialize the MIO parameters
+        status_t ret = mio->set(mPvPlayer, command->surface(), mEmulation);
+        if (ret != NO_ERROR) {
+            LOGE("Video MIO set failed");
+            commandFailed(command);
+            delete mio;
+            return;
+        }
+        mVideoOutputMIO = mio;
+
+        mVideoNode = PVMediaOutputNodeFactory::CreateMediaOutputNode(mVideoOutputMIO);
+        mVideoSink = new PVPlayerDataSinkPVMFNode;
+
+        ((PVPlayerDataSinkPVMFNode *)mVideoSink)->SetDataSinkNode(mVideoNode);
+        ((PVPlayerDataSinkPVMFNode *)mVideoSink)->SetDataSinkFormatType((char*)PVMF_MIME_YUV420);
+
+        OSCL_TRY(error, mPlayer->AddDataSink(*mVideoSink, command));
+        OSCL_FIRST_CATCH_ANY(error, commandFailed(command));
+    } else {
+        // change display surface
+        if (mVideoOutputMIO->setVideoSurface(command->surface()) == NO_ERROR) {
+            FinishSyncCommand(command);
+        } else {
+            LOGE("Video MIO set failed");
+            commandFailed(command);
         }
     }
-
-    // if no device-specific MIO was created, use the generic one
-    if (mio == NULL) {
-        LOGW("Using generic video MIO");
-        mio = new AndroidSurfaceOutput();
-    }
-
-    // initialize the MIO parameters
-    status_t ret = mio->set(mPvPlayer, command->surface(), mEmulation);
-    if (ret != NO_ERROR) {
-        LOGE("Video MIO set failed");
-        commandFailed(command);
-        delete mio;
-        return;
-    }
-    mVideoOutputMIO = mio;
-
-    mVideoNode = PVMediaOutputNodeFactory::CreateMediaOutputNode(mVideoOutputMIO);
-    mVideoSink = new PVPlayerDataSinkPVMFNode;
-
-    ((PVPlayerDataSinkPVMFNode *)mVideoSink)->SetDataSinkNode(mVideoNode);
-    ((PVPlayerDataSinkPVMFNode *)mVideoSink)->SetDataSinkFormatType((char*)PVMF_MIME_YUV420);
-
-    OSCL_TRY(error, mPlayer->AddDataSink(*mVideoSink, command));
-    OSCL_FIRST_CATCH_ANY(error, commandFailed(command));
 }
 
 void PlayerDriver::handleSetAudioSink(PlayerSetAudioSink* command)
@@ -985,8 +1002,8 @@ int PlayerDriver::playerThread()
         return -1;
     }
 
-    LOGV("OMX_Init");
-    OMX_Init();
+    LOGV("OMX_MasterInit");
+    OMX_MasterInit();
 
     LOGV("OsclScheduler::Init");
     OsclScheduler::Init("AndroidPVWrapper");
@@ -1008,7 +1025,12 @@ int PlayerDriver::playerThread()
     LOGV("OsclActiveScheduler::Current");
     OsclExecScheduler *sched = OsclExecScheduler::Current();
     LOGV("StartScheduler");
-    sched->StartScheduler(mSyncSem);
+    error = OsclErrNone;
+    OSCL_TRY(error, sched->StartScheduler(mSyncSem));
+    OSCL_FIRST_CATCH_ANY(error,
+                         // Some AO did a leave, log it
+                         LOGE("Player Engine AO did a leave, error=%d", error)
+                        );
 
     LOGV("DeletePlayer");
     PVPlayerFactory::DeletePlayer(mPlayer);
@@ -1044,7 +1066,7 @@ int PlayerDriver::playerThread()
     OsclScheduler::Cleanup();
     LOGV("OsclScheduler::Cleanup");
 
-    OMX_Deinit();
+    OMX_MasterDeinit();
     UninitializeForThread();
     return 0;
 }
@@ -1330,7 +1352,11 @@ PVPlayer::PVPlayer()
     LOGV("construct PlayerDriver");
     mPlayerDriver = new PlayerDriver(this);
     LOGV("send PLAYER_SETUP");
-    mInit = mPlayerDriver->enqueueCommand(new PlayerSetup(0,0));
+    PlayerSetup* setup = new PlayerSetup(0,0);
+    mInit = mPlayerDriver->enqueueCommand(setup);
+    if (mInit == NO_INIT) {
+        delete setup;
+    }
 }
 
 status_t PVPlayer::initCheck()
@@ -1562,12 +1588,20 @@ status_t PVPlayer::reset()
 {
     LOGV("reset");
     status_t ret = mPlayerDriver->enqueueCommand(new PlayerCancelAllCommands(0,0));
-    if (ret == NO_ERROR) {
-        ret = mPlayerDriver->enqueueCommand(new PlayerReset(0,0));
+
+    // Log failure from CancelAllCommands() and call Reset() regardless.
+    if (ret != NO_ERROR) {
+        LOGE("failed to cancel all exiting PV player engine commands with error code (%d)", ret);
     }
-    if (ret == NO_ERROR) {
+    ret = mPlayerDriver->enqueueCommand(new PlayerReset(0,0));
+
+    // We should never fail in Reset(), but logs the failure just in case.
+    if (ret != NO_ERROR) {
+        LOGE("failed to reset PV player engine with error code (%d)", ret);
+    } else {
         ret = mPlayerDriver->enqueueCommand(new PlayerRemoveDataSource(0,0));
     }
+
     mSurface.clear();
     LOGV("unmap file");
     if (mSharedFd >= 0) {

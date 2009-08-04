@@ -6,11 +6,7 @@ include $(CLEAR_VARS)
 # Set up the PV variables.
 include $(LOCAL_PATH)/Config.mk
 
-# Install the default configuration file
-# if no value-add configuration is present.
-ifneq ($(VALUE_ADD),1)
 $(call add-prebuilt-files, ETC, pvplayer.cfg)
-endif
 
 ifneq ($(VALUE_ADD),1)
 $(call add-prebuilt-files, ETC, 01_qc.cfg)

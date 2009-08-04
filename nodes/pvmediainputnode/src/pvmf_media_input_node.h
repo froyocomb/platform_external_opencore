@@ -123,9 +123,9 @@ typedef PVMFNodeCommandQueue<PvmfMediaInputNodeCmd, OsclMemAllocator> PvmfMediaI
  * class PvmfMediaInputNode is a node wrapper around the io interface
  */
 class PvmfMediaInputNode : public OsclActiveObject,
-            public PVMFNodeInterface,
-            public PvmiMIOObserver,
-            public PvmiCapabilityAndConfig
+        public PVMFNodeInterface,
+        public PvmiMIOObserver,
+        public PvmiCapabilityAndConfig
 {
     public:
         static PVMFNodeInterface* Create(PvmiMIOControl* aIOInterfacePtr);
@@ -177,7 +177,7 @@ class PvmfMediaInputNode : public OsclActiveObject,
         }
 
         // Setup MIO for Audio Source and Audio Format type
-        OSCL_IMPORT_REF PVMFStatus SetUpMIO(char *iAudioFormat, int nAudioSourceType);
+        OSCL_IMPORT_REF PVMFStatus SetUpMIO(char *iAudioFormat);
 
         // Pure virtual from PvInterface
         OSCL_IMPORT_REF void addRef();
@@ -327,7 +327,7 @@ class PvmfMediaInputNode : public OsclActiveObject,
             uint8 mode;
             uint32 duration;
             uint32 track_no;
-        }TimeStamp_KSV;
+        } TimeStamp_KSV;
         TimeStamp_KSV iErrorTimeStamp;
 #endif
 };

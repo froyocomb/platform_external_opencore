@@ -20,6 +20,14 @@
  * @file pvmp4ffcn_node.cpp
  * @brief Node for PV MPEG4 file format composer
  */
+#undef ANDROID
+#ifdef ANDROID
+// #define LOG_NDEBUG 0
+#define LOG_TAG "PvMp4Composer"
+#include <utils/Log.h>
+#include <utils/Errors.h>
+#include <utils/threads.h>
+#endif // ANDROID
 
 #ifndef PVMP4FFCN_NODE_H_INCLUDED
 #include "pvmp4ffcn_node.h"
@@ -36,6 +44,229 @@
 #ifndef OSCL_MEM_BASIC_FUNCTIONS_H
 #include "oscl_mem_basic_functions.h"
 #endif
+#include "pvmf_omx_basedec_node.h"  // for NUMBER_OUTPUT_BUFFER
+
+#ifdef ANDROID
+namespace android
+{
+
+// FragmentWriter is a queue of media fragment to be written in the
+// media file. The caller enqueues the next fragment and returns
+// immediately. An separate thread dequeues the fragment and writes it.
+//
+// This class is friend with the composer node it belongs to, in order
+// to be able to call the original AddMemFragToTrack which does all
+// the work.
+//
+// The queue is implemented using a circular buffer. mBuffer is the
+// start of the array and mEnd points just after the last element in
+// the array.
+// mFirst points to the oldest fragment.
+// mLast points to the next available cell for a new fragment.
+// When the array is empty or full mFirst == mLast.
+
+class FragmentWriter: public Thread
+{
+    public:
+        FragmentWriter(PVMp4FFComposerNode *composer) :
+                Thread(kThreadCallJava), mSize(0), mEnd(mBuffer + kCapacity),
+                mFirst(mBuffer), mLast(mBuffer), mComposer(composer),
+                mPrevWriteStatus(PVMFPending), mTid(NULL), mDropped(0), mExitRequested(false) {}
+
+        virtual ~FragmentWriter()
+        {
+            Mutex::Autolock l(mRequestMutex);
+            LOG_ASSERT(0 == mSize, "The queue should be empty by now.");
+            LOG_ASSERT(mExitRequested, "Deleting an active instance.");
+            LOGD_IF(0 < mSize, "Flushing %d frags in dtor", mSize);
+            while (0 < mSize)  // make sure we are flushed
+            {
+                decrPendingRequests();
+            }
+        }
+
+        // Mark the thread as exiting and kick it so it can see the
+        // exitPending state.
+        virtual void requestExit()
+        {
+            mExitRequested = true;
+            Thread::requestExit();
+            mRequestMutex.lock();
+            mRequestCv.signal();
+            mRequestMutex.unlock();
+        }
+
+        // Wait for all the fragment to be written.
+        virtual void flush()
+        {
+            LOG_ASSERT(androidGetThreadId() != mTid, "Reentrant call");
+
+            bool done = false;
+            size_t iter = 0;
+            while (!done)
+            {
+                mRequestMutex.lock();
+                done = mSize == 0 || iter > kMaxFlushAttempts;
+                if (!done) mRequestCv.signal();
+                mRequestMutex.unlock();
+                if (!done) usleep(kFlushSleepMicros);
+                ++iter;
+            }
+            LOG_ASSERT(iter <= kMaxFlushAttempts, "Failed to flush");
+        }
+
+        // Called by the ProcessIncomingMsg method from the
+        // PVMp4FFComposerNode to append the fragment to the track.
+        // @return The result of the *previous* fragment written. Since the call
+        //         is asynch we cannot wait.
+        PVMFStatus enqueueMemFragToTrack(Oscl_Vector<OsclMemoryFragment, OsclMemAllocator> aFrame,
+                                         OsclRefCounterMemFrag& aMemFrag, PVMFFormatType aFormat,
+                                         uint32& aTimestamp, int32 aTrackId, PVMp4FFComposerPort *aPort)
+        {
+            if (mExitRequested) return PVMFErrCancelled;
+            Mutex::Autolock lock(mRequestMutex);
+
+            // When the queue is full, we drop the request. This frees the
+            // memory fragment and keeps the system running. Decoders are
+            // unhappy when there is no buffer available to write the
+            // output.
+            // An alternative would be to discard the oldest fragment
+            // enqueued to free some space. However that would modify
+            // mFirst and require extra locking because the thread maybe
+            // in the process of writing it.
+            if (mSize == kCapacity)
+            {
+                ++mDropped;
+                LOGW_IF((mDropped % kLogDroppedPeriod) == 0, "Frame %d dropped.", mDropped);
+                // TODO: Should we return an error code here?
+                return mPrevWriteStatus;
+            }
+
+            mLast->set(aFrame, aMemFrag, aFormat, aTimestamp, aTrackId, aPort);
+            incrPendingRequests();
+
+            mRequestCv.signal();
+            return mPrevWriteStatus;
+        }
+
+    private:
+        static const bool kThreadCallJava = false;
+        static const size_t kLogDroppedPeriod = 10;  // Arbitrary.
+        // Must match the number of buffers allocated in the decoder.
+        static const size_t kCapacity = NUMBER_OUTPUT_BUFFER;
+        static const size_t kWarningThreshold = kCapacity * 3 / 4; // Warn at 75%
+        static const OsclRefCounterMemFrag kEmptyFrag;
+        // Flush blocks for 2 seconds max.
+        static const size_t kMaxFlushAttempts = 10;
+        static const int kFlushSleepMicros = 200 * 1000;
+
+        struct Request
+        {
+            void set(Oscl_Vector<OsclMemoryFragment, OsclMemAllocator> aFrame,
+                     OsclRefCounterMemFrag& aMemFrag, PVMFFormatType aFormat,
+                     uint32 aTimestamp, int32 aTrackId, PVMp4FFComposerPort *aPort)
+            {
+                mFrame = aFrame;
+                mFrag = aMemFrag;
+                mFormat = aFormat;
+                mTimestamp = aTimestamp;
+                mTrackId = aTrackId;
+                mPort = aPort;
+            }
+
+            Oscl_Vector<OsclMemoryFragment, OsclMemAllocator> mFrame;
+            OsclRefCounterMemFrag mFrag;
+            PVMFFormatType mFormat;
+            uint32 mTimestamp;
+            uint32 mTrackId;
+            PVMp4FFComposerPort *mPort;
+        };
+
+        void incrPendingRequests()
+        {
+            ++mLast;
+            if (mEnd == mLast) mLast = mBuffer;
+            ++mSize;
+        }
+
+        void decrPendingRequests()
+        {
+            mFirst->mFrame.clear();
+            // Release the memory fragment tracked using a refcount
+            // class. Need to assign an empty frag to release the memory
+            // fragment. We cannot wait for the array to wrap around.
+            mFirst->mFrag = kEmptyFrag;  // FIXME: This assignement to decr the ref count is ugly.
+            ++mFirst;
+            if (mEnd == mFirst) mFirst = mBuffer;
+            --mSize;
+        }
+
+        // Called by the base class Thread.
+        // @return true if there more work to do. false when done.
+        // @Override Thread
+        virtual bool threadLoop()
+        {
+            if (!mTid) mTid = androidGetThreadId();
+
+            LOG_ASSERT(androidGetThreadId() == mTid,
+                       "Thread id has changed!: %p != %p", mTid, androidGetThreadId());
+
+            size_t numFrags = 0;
+            // Check if there's work to do. Otherwise wait for new fragment.
+            mRequestMutex.lock();
+            numFrags = mSize;
+            mRequestMutex.unlock();
+
+            bool doneWaiting = numFrags != 0;
+            while (!doneWaiting)
+            {
+                mRequestMutex.lock();
+                mRequestCv.wait(mRequestMutex);
+                doneWaiting = mSize > 0 || mExitRequested;
+                numFrags = mSize;
+                mRequestMutex.unlock();
+            }
+
+            if (mExitRequested) return false;
+
+            LOGW_IF(numFrags > kWarningThreshold, "%d fragments in queue.", numFrags);
+            for (size_t i = 0; i < numFrags; ++i)
+            {
+                // Don't lock the array while we are calling
+                // AddMemFragToTrack, which may last a long time, because
+                // we are the only thread accessing mFirst.
+                mPrevWriteStatus = mComposer->AddMemFragToTrack(
+                                       mFirst->mFrame, mFirst->mFrag, mFirst->mFormat,
+                                       mFirst->mTimestamp, mFirst->mTrackId, mFirst->mPort);
+
+                mRequestMutex.lock();
+                decrPendingRequests();
+                mRequestMutex.unlock();
+            }
+            return true;
+        }
+
+
+        Mutex mRequestMutex;  // Protects mRequestCv, mBuffer, mFirst, mLast, mDropped
+        Condition mRequestCv;
+        Request mBuffer[kCapacity];
+        size_t mSize;
+        void *const mEnd;  // Marker for the end of the array.
+        Request *mFirst, *mLast;
+
+        // mComposer with the real implementation of the AddMemFragToTrack method.
+        PVMp4FFComposerNode *mComposer;
+        // TODO: lock needed for mPrevWriteStatus? Are int assignement atomic on arm?
+        PVMFStatus mPrevWriteStatus;
+
+        android_thread_id_t mTid;
+        size_t mDropped;
+        // Unlike exitPending(), stays to true once exit has been called.
+        bool mExitRequested;
+};
+const OsclRefCounterMemFrag FragmentWriter::kEmptyFrag;
+}
+#endif // ANDROID
 
 #define LOG_STACK_TRACE(m) PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE, m);
 #define LOG_DEBUG(m) PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_DEBUG, m);
@@ -56,6 +287,8 @@ const uint32 FAIL_NODE_CMD_RELEASE_PORT = 7;
 
 // Define entry point for this DLL
 OSCL_DLL_ENTRY_POINT_DEFAULT()
+
+
 
 ////////////////////////////////////////////////////////////////////////////
 OSCL_EXPORT_REF PVMFNodeInterface* PVMp4FFComposerNodeFactory::CreateMp4FFComposer(int32 aPriority)
@@ -166,6 +399,13 @@ PVMp4FFComposerNode::PVMp4FFComposerNode(int32 aPriority)
                          OSCL_LEAVE(err);
                         );
 
+#ifdef ANDROID
+    iMaxReachedEvent = 0;
+    iMaxReachedReported = false;
+    iFragmentWriter = new android::FragmentWriter(this);
+    iFragmentWriter->run(LOG_TAG);
+#endif
+
 #ifdef _TEST_AE_ERROR_HANDLING
     iErrorHandlingAddMemFrag = false;
     iErrorHandlingAddTrack = false;
@@ -191,6 +431,15 @@ PVMp4FFComposerNode::~PVMp4FFComposerNode()
         LogDiagnostics();
     }
 #endif
+
+#ifdef ANDROID
+    if (iFragmentWriter != NULL)
+    {
+        iFragmentWriter->requestExit(); // kick the thread
+        iFragmentWriter->requestExitAndWait();
+    }
+#endif
+
     if (iMpeg4File)
     {
         PVA_FF_IMpeg4File::DestroyMP4FileObject(iMpeg4File);
@@ -1624,6 +1873,9 @@ void PVMp4FFComposerNode::DoStop(PVMp4FFCNCmd& aCmd)
         case EPVMFNodeStarted:
         case EPVMFNodePaused:
         {
+#ifdef ANDROID
+            iFragmentWriter->flush();
+#endif
             if (!iNodeEndOfDataReached)
             {
                 WriteDecoderSpecificInfo();
@@ -1666,13 +1918,13 @@ void PVMp4FFComposerNode::WriteDecoderSpecificInfo()
     {
         trackId = iTrackId_H264;
 
-        for (i = 0;i < memvector_sps.size();i++)
+        for (i = 0; i < memvector_sps.size(); i++)
         {
             iConfigSize += 2;//2 bytes for SPS_len
             iConfigSize += memvector_sps[i]->len;
         }
 
-        for (i = 0;i < memvector_pps.size();i++)
+        for (i = 0; i < memvector_pps.size(); i++)
         {
             iConfigSize += 2;//2 bytes for PPS_len
             iConfigSize += memvector_pps[i]->len;
@@ -1685,7 +1937,7 @@ void PVMp4FFComposerNode::WriteDecoderSpecificInfo()
         oscl_memcpy((void*)(pConfig + offset), (const void*)&iNum_SPS_Set, 1);//Writing Number of SPS sets
         offset += 1;
 
-        for (i = 0;i < memvector_sps.size();i++)
+        for (i = 0; i < memvector_sps.size(); i++)
         {
             oscl_memcpy((void*)(pConfig + offset), (const void*)&memvector_sps[i]->len, 2);//Writing length of SPS
             offset += 2;
@@ -1696,7 +1948,7 @@ void PVMp4FFComposerNode::WriteDecoderSpecificInfo()
         oscl_memcpy((void*)(pConfig + offset), (const void*)&iNum_PPS_Set, 1);//Writing Number of PPS sets
         offset += 1;
 
-        for (i = 0;i < memvector_pps.size();i++)
+        for (i = 0; i < memvector_pps.size(); i++)
         {
             oscl_memcpy((void*)(pConfig + offset), (const void*)&memvector_pps[i]->len, 2);//Writing length of PPS
             offset += 2;//2 bytes for PPS Length
@@ -1708,7 +1960,7 @@ void PVMp4FFComposerNode::WriteDecoderSpecificInfo()
 
     if (iformat_text == PVMF_MIME_3GPP_TIMEDTEXT)
     {
-        for (uint32 ii = 0;ii < textdecodervector.size();ii++)
+        for (uint32 ii = 0; ii < textdecodervector.size(); ii++)
         {
             trackId = iTrackId_Text;
             iMpeg4File->setTextDecoderSpecificInfo(textdecodervector[ii], trackId);
@@ -1734,6 +1986,10 @@ PVMFStatus PVMp4FFComposerNode::RenderToFile()
             iMpeg4File = NULL;
         }
     }
+#endif
+
+#ifdef ANDROID
+    iFragmentWriter->flush();
 #endif
 
     if (!iMpeg4File || !iMpeg4File->renderToFile(iFileName))
@@ -1853,6 +2109,9 @@ void PVMp4FFComposerNode::FlushComplete()
             return;
         }
     }
+#ifdef ANDROID
+    iFragmentWriter->flush();
+#endif
     if (!iNodeEndOfDataReached)
     {
         WriteDecoderSpecificInfo();
@@ -1872,7 +2131,7 @@ void PVMp4FFComposerNode::FlushComplete()
     for (i = 0; i < iInPorts.size(); i++)
         iInPorts[i]->ResumeInput();
 
-    SetState( EPVMFNodePrepared );
+    SetState(EPVMFNodePrepared);
 
     if (!iCurrentCmd.empty())
     {
@@ -2072,6 +2331,7 @@ PVMFStatus PVMp4FFComposerNode::ProcessIncomingMsg(PVMFPortInterface* aPort)
                 //since we do not have data to process, we can safely break here.
                 break;
             }
+
             PVMFSharedMediaDataPtr mediaDataPtr;
             convertToPVMFMediaData(mediaDataPtr, msg);
 
@@ -2161,9 +2421,25 @@ PVMFStatus PVMp4FFComposerNode::ProcessIncomingMsg(PVMFPortInterface* aPort)
                     pFrame.push_back(memfragment);
                 }
             }
+
+#ifdef ANDROID
+            if (!iMaxReachedEvent)
+            {
+                // TODO: We are passing port and port->GetFormat(), should pass port only.
+                status = iFragmentWriter->enqueueMemFragToTrack(
+                             pFrame, memFrag, port->GetFormat(), timestamp,
+                             trackId, (PVMp4FFComposerPort*)aPort);
+            }
+            else if (!iMaxReachedReported)
+            {
+                iMaxReachedReported = true;
+                ReportInfoEvent(static_cast<PVMFComposerSizeAndDurationEvent>(iMaxReachedEvent), NULL);
+                status = PVMFSuccess;
+            }
+#else
             status = AddMemFragToTrack(pFrame, memFrag, port->GetFormat(), timestamp,
                                        trackId, (PVMp4FFComposerPort*)aPort);
-
+#endif
             if (status == PVMFFailure)
                 ReportErrorEvent(PVMF_MP4FFCN_ERROR_ADD_SAMPLE_TO_TRACK_FAILED, (OsclAny*)aPort);
         }
@@ -2225,7 +2501,7 @@ PVMFStatus PVMp4FFComposerNode::AddMemFragToTrack(Oscl_Vector<OsclMemoryFragment
     uint8 flags = 0;
     uint32 size = 0;
     uint8* data = NULL;
-    for (i = 0;i < aFrame.size();i++)
+    for (i = 0; i < aFrame.size(); i++)
     {
         size = aFrame[i].len;
         data = OSCL_REINTERPRET_CAST(uint8*, aFrame[i].ptr);
@@ -3046,6 +3322,14 @@ PVMFStatus PVMp4FFComposerNode::CheckMaxFileSize(uint32 aFrameSize)
 
         if ((metaDataSize + mediaDataSize + aFrameSize) >= iMaxFileSize)
         {
+#ifdef ANDROID
+            // This code is executed on the fragment writer thread, we
+            // don't want to call RenderToFile since it will call
+            // flush() on the writer from this very same
+            // thread. Instead, we use a marker to report an event to
+            // the author node next time a new fragment is processed.
+            iMaxReachedEvent = PVMF_COMPOSER_MAXFILESIZE_REACHED;
+#else
             // Finalized output file
             if (iSampleInTrack)
             {
@@ -3056,6 +3340,7 @@ PVMFStatus PVMp4FFComposerNode::CheckMaxFileSize(uint32 aFrameSize)
 
             ReportInfoEvent(PVMF_COMPOSER_MAXFILESIZE_REACHED, NULL);
             return PVMFSuccess;
+#endif
         }
 
         return PVMFPending;
@@ -3068,12 +3353,21 @@ PVMFStatus PVMp4FFComposerNode::CheckMaxFileSize(uint32 aFrameSize)
 PVMFStatus PVMp4FFComposerNode::CheckMaxDuration(uint32 aTimestamp)
 {
     //if(!iInfoObserver)
-    //	return PVMFFailure;
+    //  return PVMFFailure;
 
     if (iMaxDurationEnabled)
     {
         if (aTimestamp >= iMaxTimeDuration)
         {
+#ifdef ANDROID
+            // This code is executed on the fragment writer thread, we
+            // don't want to call RenderToFile since it will call
+            // flush() on the writer from this very same
+            // thread. Instead, we use a marker to report an event to
+            // the author node next time a new fragment is processed.
+            iMaxReachedEvent = PVMF_COMPOSER_MAXDURATION_REACHED;
+#else
+
             // Finalize output file
             if (iSampleInTrack)
             {
@@ -3082,9 +3376,9 @@ PVMFStatus PVMp4FFComposerNode::CheckMaxDuration(uint32 aTimestamp)
                     return PVMFFailure;
             }
 
-
             ReportInfoEvent(PVMF_COMPOSER_MAXDURATION_REACHED, NULL);
             return PVMFSuccess;
+#endif
         }
 
         return PVMFPending;
@@ -3143,8 +3437,3 @@ int32 PVMp4FFComposerNode::StoreCurrentCommand(PVMp4FFCNCmdQueue& aCurrentCmd, P
                         );
     return err;
 }
-
-
-
-
-
