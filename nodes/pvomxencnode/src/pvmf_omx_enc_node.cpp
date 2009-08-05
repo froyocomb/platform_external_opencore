@@ -373,6 +373,24 @@ PVMFOMXEncNode::~PVMFOMXEncNode()
         iInBufMemoryPool = NULL;
     }
 
+    if(st_list)
+    {
+        oscl_free(st_list);
+        st_list = NULL;
+    }
+
+    if(st_entry)
+    {
+        oscl_free(st_entry);
+        st_entry = NULL;
+    }
+
+    if(st_info)
+    {
+        oscl_free(st_info);
+        st_info = NULL;
+    }
+
     if (in_ctrl_struct_ptr)
     {
         oscl_free(in_ctrl_struct_ptr);
@@ -5957,6 +5975,68 @@ void PVMFOMXEncNode::DoPrepare(PVMFOMXEncNodeCommand& aCmd)
 
                 CommandComplete(iInputCommands, aCmd, PVMFErrNoResources);
                 return;
+            }
+
+            /* Allocate Private list data */
+            if(st_list)
+            {
+              oscl_free(st_list);
+              st_list = NULL;
+            }
+
+            if(st_entry)
+            {
+              oscl_free(st_entry);
+              st_entry = NULL;
+            }
+
+            if(st_info)
+            {
+              oscl_free(st_info);
+              st_info = NULL;
+            }
+
+            st_list = (OMX_QCOM_PLATFORM_PRIVATE_LIST1*) oscl_malloc(sizeof(OMX_QCOM_PLATFORM_PRIVATE_LIST1) * iNumInputBuffers);
+
+            if (st_list == NULL)
+            {
+              PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                                (0, "PVMFOMXEncNode-%s::DoPreapare st_list == NULL", iNodeTypeId));
+
+              CommandComplete(iInputCommands, aCmd, PVMFErrNoResources);
+              return ;
+            }
+
+            st_entry = (OMX_QCOM_PLATFORM_PRIVATE_ENTRY1*) oscl_malloc(sizeof(OMX_QCOM_PLATFORM_PRIVATE_ENTRY1) * iNumInputBuffers);
+
+            if (st_entry == NULL)
+            {
+              PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                              (0, "PVMFOMXEncNode-%s::DoPreapare st_entry == NULL", iNodeTypeId));
+
+              CommandComplete(iInputCommands, aCmd, PVMFErrNoResources);
+              return ;
+            }
+
+            st_info = (OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1*) oscl_malloc(sizeof(OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1) * iNumInputBuffers);
+            if (st_info == NULL)
+            {
+              PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                              (0, "PVMFOMXEncNode-%s::DoPreapare st_info == NULL", iNodeTypeId));
+
+              CommandComplete(iInputCommands, aCmd, PVMFErrNoResources);
+              return ;
+            }
+
+            /* Initialize and Establish the link between st_list, st_entry and st_info */
+            for(int ii = 0; ii < iNumInputBuffers; ii++)
+            {
+              st_info[ii].offset = 0;
+              st_info[ii].pmem_fd = 0;
+              st_entry[ii].entry = &st_info[ii];
+              st_entry[ii].type = OMX_QCOM_PLATFORM_PRIVATE_PMEM;
+              st_list[ii].entryList = &st_entry[ii];
+              st_list[ii].nEntries = 1;
             }
 
             if (in_ctrl_struct_ptr)
