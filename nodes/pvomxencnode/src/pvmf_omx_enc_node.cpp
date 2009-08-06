@@ -2454,7 +2454,7 @@ bool PVMFOMXEncNode::SetMP4EncoderParameters()
     Mpeg4Type.nIDCVLCThreshold = 0;
     Mpeg4Type.bACPred = OMX_TRUE;
     Mpeg4Type.nMaxPacketSize = iVideoEncodeParam.iPacketSize;
-    Mpeg4Type.nTimeIncRes = 1000; // (in relation to (should be higher than) frame rate )
+    Mpeg4Type.nTimeIncRes = 60; // (in relation to (should be higher than) frame rate )
     Mpeg4Type.nHeaderExtension = 0;
     Mpeg4Type.bReversibleVLC = ((iVideoEncodeParam.iRVLCEnable == true) ? OMX_TRUE : OMX_FALSE);
 
