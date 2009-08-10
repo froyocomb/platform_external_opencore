@@ -701,7 +701,20 @@ void PlayerDriver::handleInit(PlayerInit* command)
 
         int error = 0;
         iKVPSetAsync.key = _STRLIT_CHAR("x-pvmf/net/user-agent;valtype=wchar*");
-        OSCL_wHeapString<OsclMemAllocator> userAgent = _STRLIT_WCHAR("CORE/6.506.4.1 OpenCORE/2.02 (Linux;Android 2.0)(AndroidMediaPlayer 2.0)");
+        OSCL_wHeapString<OsclMemAllocator> userAgent = _STRLIT_WCHAR("CORE/6.506.4.1 OpenCORE/2.02 (Linux;Android ");
+
+#if (PROPERTY_VALUE_MAX < 8)
+#error "PROPERTY_VALUE_MAX must be at least 8"
+#endif
+        char value[PROPERTY_VALUE_MAX];
+        int len = property_get("ro.build.version.release", value, "Unknown");
+        if (len) {
+            LOGV("release string is %s len %d", value, len);
+            oscl_wchar output[len+ 1];
+            oscl_UTF8ToUnicode(value, len, output, len+1);
+            userAgent += output;
+        }
+        userAgent += _STRLIT_WCHAR(")");
         iKVPSetAsync.value.pWChar_value=userAgent.get_str();
         iErrorKVP=NULL;
         OSCL_TRY(error, mPlayerCapConfig->setParametersSync(NULL, &iKVPSetAsync, 1, iErrorKVP));
@@ -1279,9 +1292,13 @@ void PlayerDriver::HandleInformationalEvent(const PVAsyncInformationalEvent& aEv
             break;
 
         case PVMFInfoVideoTrackFallingBehind:
-            // TODO: This event should not be passed to the user in the ERROR channel.
+            // FIXME:
+            // When this happens, sometimes, we only have audio but no video and it
+            // is not recoverable. We use the same approach as we did in previous
+            // releases, and send an error event instead of an informational event
+            // when this happens.
             LOGW("Video track fell behind");
-            mPvPlayer->sendEvent(MEDIA_INFO, ::android::MEDIA_INFO_VIDEO_TRACK_LAGGING,
+            mPvPlayer->sendEvent(MEDIA_ERROR, ::android::MEDIA_ERROR_UNKNOWN,
                                  PVMFInfoVideoTrackFallingBehind);
             break;
 
@@ -1294,6 +1311,14 @@ void PlayerDriver::HandleInformationalEvent(const PVAsyncInformationalEvent& aEv
 
         case PVMFInfoContentTruncated:
             LOGE("Content is truncated.");
+            // FIXME:
+            // While streaming YouTube videos, we receive PVMFInfoContentTruncated event
+            // after some seek operation. PV is still looking into OpenCore to see whether
+            // there is any bug associated with it; Meanwhile, lets treat this as an error
+            // since after playerdriver receives this event, playback session cannot be
+            // recovered.
+            mPvPlayer->sendEvent(MEDIA_ERROR, ::android::MEDIA_ERROR_UNKNOWN,
+                                 PVMFInfoContentTruncated);
             break;
 
         /* Certain events we don't really care about, but don't
