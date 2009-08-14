@@ -1125,7 +1125,7 @@ int32 DecodePPS(mp4StreamType *psBits)
     ReadBits(psBits, 1, &entropy_coding_mode_flag);
     if (entropy_coding_mode_flag)
     {
-        return 1;
+        return 0;//Allowing entropy coding mode for h/w codec
     }
 
     return 0;
