@@ -1036,7 +1036,10 @@ OSCL_EXPORT_REF OMX_BOOL OMX_MasterConfigParser(
             }
 
             OMX_U32 index = pOMXMasterRegistry[ii].OMXCoreIndex;
-            if (pInterface[index]->GetpOMXConfigParser() == NULL)
+            if ((0 != oscl_strncmp(((OMXConfigParserInputs*)aInputParameters)->cComponentRole,
+            (OMX_STRING)"video_decoder",
+            oscl_strlen("video_decoder")))  ||
+            (pInterface[index]->GetpOMXConfigParser() == NULL))
             {
                 //The OMX core does not have config parser - use PV config parser
                 Status = PV_OMXConfigParser(aInputParameters, aOutputParameters);
