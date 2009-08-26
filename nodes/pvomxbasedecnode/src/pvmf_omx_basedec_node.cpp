@@ -1610,7 +1610,13 @@ PVMFStatus PVMFOMXBaseDecNode::HandleProcessingState()
                 PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_DEBUG,
                                 (0, "%s::HandleProcessingState() Sending previous - partially consumed input back to the OMX component", iName.Str()));
 
-                OMX_EmptyThisBuffer(iOMXDecoder, iInputBufferToResendToComponent);
+                if ( OMX_ErrorNone != OMX_EmptyThisBuffer(iOMXDecoder, iInputBufferToResendToComponent) )
+                {
+                    iInputBufferToResendToComponent = NULL; // do this only once
+                    status = PVMFPending;
+                    EmptyBufferDoneProcessing(iOMXDecoder, NULL, iInputBufferToResendToComponent);
+                    return status;
+                }
                 iInputBufferToResendToComponent = NULL; // do this only once
                 status = PVMFSuccess;
             }
@@ -1740,6 +1746,7 @@ bool PVMFOMXBaseDecNode::SendOutputBufferToOMXComponent()
 
     if ( OMX_ErrorNone != OMX_FillThisBuffer(iOMXDecoder, output_buf->pBufHdr) )
     {
+        FillBufferDoneProcessing(iOMXDecoder, NULL, output_buf->pBufHdr);
         return false;
     }
 
@@ -1845,7 +1852,11 @@ bool PVMFOMXBaseDecNode::SendEOSBufferToOMXComponent()
     input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_EOS;
 
     // send buffer to component
-    OMX_EmptyThisBuffer(iOMXDecoder, input_buf->pBufHdr);
+    if ( OMX_ErrorNone != OMX_EmptyThisBuffer(iOMXDecoder, input_buf->pBufHdr) )
+    {
+        EmptyBufferDoneProcessing(iOMXDecoder, NULL, input_buf->pBufHdr);
+        return false;
+    }
 
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                     (0, "%s::SendEOSBufferToOMXComponent() Out", iName.Str()));
@@ -1886,7 +1897,13 @@ OSCL_EXPORT_REF void PVMFOMXBaseDecNode::SendIncompleteBufferUnderConstruction()
         PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                         (0, "%s::SendIncompleteBufferUnderConstruction()  - Sending Incomplete Buffer 0x%x to OMX Component MARKER field set to %x, TS=%d", iName.Str(), iInputBufferUnderConstruction->pBufHdr->pBuffer, iInputBufferUnderConstruction->pBufHdr->nFlags, iInTimestamp));
 
-        OMX_EmptyThisBuffer(iOMXDecoder, iInputBufferUnderConstruction->pBufHdr);
+        if ( OMX_ErrorNone != OMX_EmptyThisBuffer(iOMXDecoder, iInputBufferUnderConstruction->pBufHdr) )
+        {
+            iInputBufferUnderConstruction = NULL;
+            iObtainNewInputBuffer = false;
+            EmptyBufferDoneProcessing(iOMXDecoder, NULL, iInputBufferUnderConstruction->pBufHdr);
+            return;
+        }
 
 
         iInputBufferUnderConstruction = NULL;
@@ -2609,6 +2626,7 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendInputBufferToOMXComponent()
 
                 if ( OMX_ErrorNone != OMX_EmptyThisBuffer(iOMXDecoder, input_buf->pBufHdr) )
                 {
+                    EmptyBufferDoneProcessing(iOMXDecoder, NULL, input_buf->pBufHdr);
                     return false;
                 }
                 iInputBufferUnderConstruction = NULL; // this buffer is gone to OMX component now
