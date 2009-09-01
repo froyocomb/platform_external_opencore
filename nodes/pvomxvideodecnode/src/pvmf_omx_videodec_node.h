@@ -212,6 +212,10 @@ class PVMFOMXVideoDecNode
 
         uint32 iNewWidth , iNewHeight;
 
+        uint8* iH264InitBuffer;
+        int32 iH264InitBufSize;
+        uint16 iH264FragSize;
+
 };
 
 
