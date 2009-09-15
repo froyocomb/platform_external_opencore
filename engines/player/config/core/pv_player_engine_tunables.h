@@ -24,8 +24,8 @@
 
 // Synchronization margin for media tracks in milliseconds
 // Default
-#define PVPLAYERENGINE_CONFIG_SYNCMARGIN_EARLY_DEF -150
-#define PVPLAYERENGINE_CONFIG_SYNCMARGIN_LATE_DEF 150
+#define PVPLAYERENGINE_CONFIG_SYNCMARGIN_EARLY_DEF -50
+#define PVPLAYERENGINE_CONFIG_SYNCMARGIN_LATE_DEF 200
 
 // Platforms that need the video decoder node priority to be lower than the
 // rest of the nodes need to set the following to 1
