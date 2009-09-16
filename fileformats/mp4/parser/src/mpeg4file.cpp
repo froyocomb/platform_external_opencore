@@ -1792,24 +1792,22 @@ uint64 Mpeg4File::getMovieDuration() const
         }
         oscl_free(trackList);
 
-        overallMovieDuration = _pmovieAtom->getDuration();
-        if (trackDuration > overallMovieDuration) {
-            TrackAtom *trackAtom = NULL;
-            uint32 mediaTimeScale = 0xFFFFFFFE;
+        TrackAtom *trackAtom = NULL;
+        uint32 mediaTimeScale = 0xFFFFFFFE;
 
-            trackAtom = _pmovieAtom->getTrackForID(id);
-            if (trackAtom != NULL)
+        trackAtom = _pmovieAtom->getTrackForID(id);
+        if (trackAtom != NULL)
+        {
+            mediaTimeScale = trackAtom->getMediaTimescale();
+            if (mediaTimeScale != 0)
             {
-                mediaTimeScale = trackAtom->getMediaTimescale();
-                if (mediaTimeScale == 0)
-                {
-                    // unlikely : getMediaTimescale can return 0
-                    mediaTimeScale = 0xFFFFFFFE;
-                }
+                Oscl_Int64_Utils::set_uint64(overallMovieDuration, 0, trackDuration);
+                overallMovieDuration = (overallMovieDuration * (uint64)getMovieTimescale()) / (uint64)mediaTimeScale;
             }
-            Oscl_Int64_Utils::set_uint64(overallMovieDuration, 0, trackDuration);
+        }
 
-            overallMovieDuration *= getMovieTimescale() / mediaTimeScale;
+        if (overallMovieDuration < _pmovieAtom->getDuration()) {
+            overallMovieDuration = _pmovieAtom->getDuration();
         }
         // Get the overall duration of the Mpeg-4 presentation
         return overallMovieDuration;
