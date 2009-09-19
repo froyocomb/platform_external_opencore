@@ -234,34 +234,26 @@ class PVMFPortActivityHandler
 
 class OSCL_IMPORT_REF PVMFNodeInterface: public PVMFPortActivityHandler
 {
-  public:
+    public:
 
-    virtual ~PVMFNodeInterface()
-    {
-        iSessions.clear();
-    }
+        virtual ~PVMFNodeInterface()
+        {
+            iSessions.clear();
+        }
 
-    /**
-     To Configure the MIO for the proper AudioFormat
-    **/
-    virtual PVMFStatus SetUpMIO(char *iAudioFormat)
-    {
-        return PVMFSuccess;
-    }
+        virtual PVMFStatus ThreadLogon() = 0;
+        virtual PVMFStatus ThreadLogoff() = 0;
 
-    virtual PVMFStatus ThreadLogon() = 0;
-    virtual PVMFStatus ThreadLogoff() = 0;
+        virtual PVMFSessionId Connect(const PVMFNodeSessionInfo &aSession)
+        {
+            PVMFNodeSession session;
+            session.iId = iSessions.size();
+            session.iInfo = aSession;
+            iSessions.push_back(session);
+            return session.iId;
+        }
 
-    virtual PVMFSessionId Connect(const PVMFNodeSessionInfo &aSession)
-    {
-        PVMFNodeSession session;
-        session.iId = iSessions.size();
-        session.iInfo = aSession;
-        iSessions.push_back(session);
-        return session.iId;
-    }
-
-    virtual PVMFStatus Disconnect(PVMFSessionId aSessionId)
+        virtual PVMFStatus Disconnect(PVMFSessionId aSessionId)
         {
             for (uint32 i = 0; i < iSessions.size(); i++)
             {
@@ -485,6 +477,14 @@ class OSCL_IMPORT_REF PVMFNodeInterface: public PVMFPortActivityHandler
         {
             return iOsclSharedLibrary;
         }
+
+	    /**
+	     To Configure the MIO for the proper AudioFormat
+	    **/
+	    virtual PVMFStatus SetUpMIO(char *iAudioFormat)
+	    {
+	        return PVMFSuccess;
+	    }
 
     protected:
         PVMFNodeInterface(int32 aSessionReserve = PVMF_NODE_DEFAULT_SESSION_RESERVE):

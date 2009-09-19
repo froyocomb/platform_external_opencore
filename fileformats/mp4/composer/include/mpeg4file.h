@@ -388,7 +388,6 @@ class PVA_FF_Mpeg4File : public PVA_FF_IMpeg4File, public PVA_FF_Parentable
         bool _oWMFTrack;
         bool _oMPEGTrack;
         bool _oPVMMTrack;
-        bool _o3GPP2Track;
 
         uint32 _fileAuthoringFlags;
         bool   _oInterLeaveEnabled;
@@ -425,6 +424,8 @@ class PVA_FF_Mpeg4File : public PVA_FF_IMpeg4File, public PVA_FF_Parentable
         bool        _oFirstSampleEditMode;
         uint32      iCacheSize;
         bool        _oIsFileOpen;
+
+        bool _o3GPP2Track;
 };
 
 

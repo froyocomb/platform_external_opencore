@@ -677,9 +677,6 @@ class PVMFOMXBaseDecNode
         bool iPauseCommandWasSentToComponent;
         bool iStopCommandWasSentToComponent;
 
-        // flag to indicate configuration is in progress
-        bool iConfigInProgress;
-
         OMX_BUFFERHEADERTYPE *iInputBufferToResendToComponent; // ptr to input buffer that is not empty, but that the OMX component returned
         // we need to resend this same buffer back to the component
 
@@ -817,6 +814,8 @@ class PVMFOMXBaseDecNode
         PVMFFixedSizeBufferAlloc* ipFixedSizeBufferAlloc;
         bool iCompactFSISettingSucceeded;
 
+        // flag to indicate configuration is in progress
+        bool iConfigInProgress;
 };
 
 

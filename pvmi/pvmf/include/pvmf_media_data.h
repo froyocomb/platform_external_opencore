@@ -83,7 +83,6 @@ class PVMFMediaData : public PVMFMediaMsg
         OSCL_IMPORT_REF virtual uint32 getStreamID();
         OSCL_IMPORT_REF virtual uint32 getSeqNum();
         OSCL_IMPORT_REF virtual PVUid32 getFormatID();
-        OSCL_IMPORT_REF virtual PVUid32 getPmemFD();
         OSCL_IMPORT_REF virtual bool queryInterface(const PVUuid& uuid, PVInterface*& iface);
         OSCL_IMPORT_REF virtual bool getFormatSpecificInfo(OsclRefCounterMemFrag& memfrag);
         OSCL_IMPORT_REF virtual void setFormatSpecificInfo(OsclRefCounterMemFrag& memfrag);
@@ -92,7 +91,7 @@ class PVMFMediaData : public PVMFMediaMsg
         OSCL_IMPORT_REF virtual void setDuration(const uint32& duration);
         OSCL_IMPORT_REF virtual void setStreamID(uint32 id);
         OSCL_IMPORT_REF virtual void setSeqNum(uint32 seqnum);
-        OSCL_IMPORT_REF virtual void setPmemFd(uint32 seqnum);
+
         OSCL_IMPORT_REF uint32 getMarkerInfo();
         OSCL_IMPORT_REF bool setMarkerInfo(uint32 aMarker);
         OSCL_IMPORT_REF uint32 getErrorsFlag();
@@ -103,8 +102,9 @@ class PVMFMediaData : public PVMFMediaMsg
         OSCL_IMPORT_REF uint32 getFilledSize();
         OSCL_IMPORT_REF uint32 getCapacity();
         OSCL_IMPORT_REF const PVMFMediaMsgHeader* getMessageHeader();
-        
-		OSCL_IMPORT_REF static OsclSharedPtr<PVMFMediaData>
+
+
+        OSCL_IMPORT_REF static OsclSharedPtr<PVMFMediaData>
         createMediaData(OsclSharedPtr<PVMFMediaDataImpl>& in_impl_ptr,
                         Oscl_DefAlloc* gen_alloc = NULL);
 
@@ -112,6 +112,9 @@ class PVMFMediaData : public PVMFMediaMsg
         createMediaData(OsclSharedPtr<PVMFMediaDataImpl>& in_impl_ptr,
                         const PVMFMediaMsgHeader* msgHeader,
                         Oscl_DefAlloc* gen_alloc = NULL);
+
+        OSCL_IMPORT_REF virtual void setPmemFd(uint32 seqnum);
+        OSCL_IMPORT_REF virtual PVUid32 getPmemFD();
 
     private:
         PVMFMediaData(): hdr_ptr(0), impl_ptr() {};

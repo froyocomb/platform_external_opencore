@@ -592,30 +592,6 @@ class MediaInformationAtom : public Atom
             }
         }
 
-        int32 getNumQCELPFramesPerSample()
-        {
-            if (_psampleTableAtom != NULL)
-            {
-                return (_psampleTableAtom->getNumQCELPFramesPerSample());
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
-        int32 getNumEVRCFramesPerSample()
-        {
-            if (_psampleTableAtom != NULL)
-            {
-                return (_psampleTableAtom->getNumEVRCFramesPerSample());
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
         MP4_ERROR_CODE getMaxTrackTimeStamp(uint32 fileSize, uint32& timeStamp)
         {
             if (_psampleTableAtom != NULL)
@@ -697,6 +673,30 @@ class MediaInformationAtom : public Atom
                 return (_psampleTableAtom->isMultipleSampleDescriptionAvailable());
             }
             return 0;
+        }
+
+        int32 getNumQCELPFramesPerSample()
+        {
+            if (_psampleTableAtom != NULL)
+            {
+                return (_psampleTableAtom->getNumQCELPFramesPerSample());
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        int32 getNumEVRCFramesPerSample()
+        {
+            if (_psampleTableAtom != NULL)
+            {
+                return (_psampleTableAtom->getNumEVRCFramesPerSample());
+            }
+            else
+            {
+                return 0;
+            }
         }
 
     private:

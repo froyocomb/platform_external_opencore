@@ -324,10 +324,6 @@ class PVMP4FFNodeTrackPortInfo : public OsclMemPoolFixedChunkAllocatorObserver,
         // Format specific variables
         // AMR track
         uint32 iNumAMRSamplesToRetrieve;
-        // QCELP track
-        uint32 iNumQCELPSamplesToRetrieve;
-        // EVRC track
-        uint32 iNumEVRCSamplesToRetrieve;
         // Timed text track
         uint32 iCurrentTextSampleEntryIndex;
         OsclSharedPtr<PVMFTimedTextSampleEntry> iCurrentTextSampleEntry;
@@ -350,6 +346,11 @@ class PVMP4FFNodeTrackPortInfo : public OsclMemPoolFixedChunkAllocatorObserver,
 
         // no-render related
         uint32 iTargetNPTInMediaTimeScale;
+
+        // QCELP track
+        uint32 iNumQCELPSamplesToRetrieve;
+        // EVRC track
+        uint32 iNumEVRCSamplesToRetrieve;
 };
 
 class PVMP4FFNodeTrackOMA2DRMInfo

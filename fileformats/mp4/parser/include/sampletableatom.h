@@ -481,16 +481,6 @@ class SampleTableAtom : public Atom
             return _numAMRFramesPerSample;
         }
 
-        int32 getNumQCELPFramesPerSample()
-        {
-            return _numQCELPFramesPerSample;
-        }
-
-        int32 getNumEVRCFramesPerSample()
-        {
-            return _numEVRCFramesPerSample;
-        }
-
         MP4_ERROR_CODE getMaxTrackTimeStamp(uint32 fileSize, uint32& timeStamp);
 
         MP4_ERROR_CODE getSampleNumberClosestToTimeStamp(uint32 &sampleNumber,
@@ -549,6 +539,16 @@ class SampleTableAtom : public Atom
                 return (_psampleDescriptionAtom->getTrackLevelOMA2DRMInfo());
             }
             return NULL;
+        }
+
+        int32 getNumQCELPFramesPerSample()
+        {
+            return _numQCELPFramesPerSample;
+        }
+
+        int32 getNumEVRCFramesPerSample()
+        {
+            return _numEVRCFramesPerSample;
         }
 
     private:

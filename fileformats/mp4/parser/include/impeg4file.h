@@ -275,10 +275,6 @@ class IMpeg4File : public ISucceedFail
 
         virtual int32 getNumAMRFramesPerSample(uint32 trackID) = 0;
 
-        virtual int32 getNumQCELPFramesPerSample(uint32 trackID) = 0;
-
-        virtual int32 getNumEVRCFramesPerSample(uint32 trackID) = 0;
-
         virtual uint8 parseBufferAndGetNumAMRFrames(uint8* buffer, uint32 size) = 0;
 
         virtual uint32 getNumAVCSampleEntries(uint32 trackID) = 0;
@@ -492,6 +488,9 @@ class IMpeg4File : public ISucceedFail
         virtual uint32 getNumRating() = 0;
         virtual PVMFStatus getRating(uint32 index, OSCL_wString& aVal, uint16& aLangCode, MP4FFParserOriginalCharEnc& aCharEncType) = 0;
 
+        virtual int32 getNumQCELPFramesPerSample(uint32 trackID) = 0;
+
+        virtual int32 getNumEVRCFramesPerSample(uint32 trackID) = 0;
 
 };
 

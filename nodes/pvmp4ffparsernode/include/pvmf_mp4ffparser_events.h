@@ -315,16 +315,6 @@ typedef enum
     PVMFMP4FFParserErrAMRSampleEntryReadFailed,
 
     /**
-     When MP4 FF reports error READ_QCELP_SAMPLE_ENTRY_FAILED
-    **/
-    PVMFMP4FFParserErrQCELPSampleEntryReadFailed,
-
-    /**
-     When MP4 FF reports error READ_EVRC_SAMPLE_ENTRY_FAILED
-    **/
-    PVMFMP4FFParserErrEVRCSampleEntryReadFailed,
-
-    /**
      When MP4 FF reports error READ_H263_SAMPLE_ENTRY_FAILED
     **/
     PVMFMP4FFParserErrH263SampleEntryReadFailed,
@@ -578,6 +568,16 @@ typedef enum
      When MP4 FF reports error READ_MPEG4_BITRATE_BOX_FAILED
     **/
     PVMFMP4FFParserErrReadMPEG4BitRateBoxFailed,
+
+    /**
+     When MP4 FF reports error READ_QCELP_SAMPLE_ENTRY_FAILED
+    **/
+    PVMFMP4FFParserErrQCELPSampleEntryReadFailed,
+
+    /**
+     When MP4 FF reports error READ_EVRC_SAMPLE_ENTRY_FAILED
+    **/
+    PVMFMP4FFParserErrEVRCSampleEntryReadFailed,
 
     /**
      Placeholder for the last PV MP4 FF parser error event

@@ -76,7 +76,6 @@ const PVOMXBaseDecNodeKeyStringData PVOMXVideoDecNodeConfigRenderKeys[PVOMXVIDEO
     {"height", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32},
     {"display_width", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32},
     {"display_height", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32},
-
 };
 
 
@@ -178,7 +177,6 @@ class PVMFOMXVideoDecNode
         PVMFStatus DoGetH263DecoderParameter(PvmiKvp*& aParameters, int& aNumParamElements, int32 aIndex, PvmiKvpAttr reqattr);
         PVMFStatus DoGetM4VDecoderParameter(PvmiKvp*& aParameters, int& aNumParamElements, int32 aIndex, PvmiKvpAttr reqattr);
         PVMFStatus DoVerifyAndSetVideoDecNodeParameter(PvmiKvp& aParameter, bool aSetParam);
-        PVMFStatus DoVerifyAndSetVidRenderParameter(PvmiKvp& aParameter, bool aSetParam);
         PVMFStatus DoVerifyAndSetH263DecoderParameter(PvmiKvp& aParameter, bool aSetParam);
         PVMFStatus DoVerifyAndSetM4VDecoderParameter(PvmiKvp& aParameter, bool aSetParam);
 
@@ -196,12 +194,6 @@ class PVMFOMXVideoDecNode
         uint32 iLastYUVWidth;
         // Last stored value of hight
         uint32 iLastYUVHeight;
-        // Display width of decoded frame
-        uint32 iDispWidth;
-        // Display height of decoded frame
-        uint32 iDispHeight;
-
-        bool iUpstreamParsing;
 
         uint32 iH263MaxBitstreamFrameSize;
         uint32 iH263MaxWidth;
@@ -211,6 +203,15 @@ class PVMFOMXVideoDecNode
         uint32 iM4VMaxHeight;
 
         uint32 iNewWidth , iNewHeight;
+
+        PVMFStatus DoVerifyAndSetVidRenderParameter(PvmiKvp& aParameter, bool aSetParam);
+
+        // Display width of decoded frame
+        uint32 iDispWidth;
+        // Display height of decoded frame
+        uint32 iDispHeight;
+
+        bool iUpstreamParsing;
 
         uint8* iH264InitBuffer;
         int32 iH264InitBufSize;

@@ -176,9 +176,6 @@ class PvmfMediaInputNode : public OsclActiveObject,
             OSCL_UNUSED_ARG(aActivity);
         }
 
-        // Setup MIO for Audio Source and Audio Format type
-        OSCL_IMPORT_REF PVMFStatus SetUpMIO(char *iAudioFormat);
-
         // Pure virtual from PvInterface
         OSCL_IMPORT_REF void addRef();
         OSCL_IMPORT_REF void removeRef();
@@ -215,6 +212,9 @@ class PvmfMediaInputNode : public OsclActiveObject,
 
         // function used in getParametersSync of capability class
         PVMFStatus GetConfigParameter(PvmiKvp*& aParameters, int& aNumParamElements, int32 aIndex, PvmiKvpAttr reqattr);
+
+        // Setup MIO for Audio Source and Audio Format type
+        OSCL_IMPORT_REF PVMFStatus SetUpMIO(char *iAudioFormat);
     private:
         typedef enum
         {

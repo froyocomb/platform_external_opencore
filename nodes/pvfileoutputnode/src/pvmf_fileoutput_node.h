@@ -432,9 +432,6 @@ class PVMFFileOutputNode :  public OsclActiveObject, public PVMFNodeInterface,
         /** Clear all pending port activity after max file size or duration is reached. */
         void ClearPendingPortActivity();
 
-        /** Create the QCP header with the required information, to create a QCP file */
-        void CreateQCPHeader();
-
         // Queue of commands
         PVMFCommandId iCmdIdCounter;
 
@@ -487,6 +484,9 @@ class PVMFFileOutputNode :  public OsclActiveObject, public PVMFNodeInterface,
         PVMFMediaClock* iClock;
         int32 iEarlyMargin;
         int32 iLateMargin;
+
+        /** Create the QCP header with the required information, to create a QCP file */
+        void CreateQCPHeader();
 
         // QCP header structure
         struct qcp_header append_header;

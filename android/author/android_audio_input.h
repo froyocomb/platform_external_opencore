@@ -390,9 +390,6 @@ private:
 
     int32 iFrameSize;
     int32 iDataEventCounter;
-    // Variable to track AudioSource type.
-    int iAudioFormatType;
-    bool iBufferForceWrite;
 
     // Functions specific to this MIO
 
@@ -448,6 +445,10 @@ private:
     Condition *iAudioThreadStartCV;
     volatile status_t iAudioThreadStartResult;
     volatile bool iAudioThreadStarted;
+
+    // Variable to track AudioSource type.
+    int iAudioFormatType;
+    bool iBufferForceWrite;
 };
 
 }; // namespace android

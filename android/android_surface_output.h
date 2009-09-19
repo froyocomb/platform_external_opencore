@@ -307,7 +307,6 @@ protected:
     // frame buffer support
     static const int kBufferCount = 2;
     int                         mFrameBufferIndex;
-    sp<MemoryHeapBase>          mFrameHeap;
     ISurface::BufferHeap        mBufferHeap;
     size_t                      mFrameBuffers[kBufferCount];
 
@@ -319,6 +318,7 @@ protected:
         PVProfile PVOmapVideoProfile;
 #endif
 
+	sp<MemoryHeapBase>          mFrameHeap;
 };
 
 #endif // ANDROID_SURFACE_OUTPUT_H_INCLUDED

@@ -285,8 +285,6 @@ class PVMp4FFComposerNode : public PVMFNodeInterface,
         PVMFStatus AddMemFragToTrack(Oscl_Vector<OsclMemoryFragment, OsclMemAllocator> aFrame, OsclRefCounterMemFrag& aMemFrag, PVMFFormatType aFormat,
                                      uint32& aTimestamp, int32 aTrackId, PVMp4FFComposerPort *aPort);
         int32 GetIETFFrameSize(uint8 aFrameType, int32 aCodecType);
-        int32 GetQCELPFrameSize(uint8 aBitRate);
-        int32 GetEVRCFrameSize(uint8 aBitRate);
 
         /////////////////////////////////////////////////////
         //    Progress and max size / duration routines
@@ -343,6 +341,9 @@ class PVMp4FFComposerNode : public PVMFNodeInterface,
         void ReportErrorEvent(PvmfMp4FFCNError aEventType, OsclAny* aEventData = NULL);
         void ReportInfoEvent(PVMFEventType aEventType, OsclAny* aEventData = NULL);
         void SetState(TPVMFNodeInterfaceState);
+
+        int32 GetQCELPFrameSize(uint8 aBitRate);
+        int32 GetEVRCFrameSize(uint8 aBitRate);
 
     private:
         void GenerateDiagnostics(uint32 aTime, uint32 aSize);

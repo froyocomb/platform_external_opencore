@@ -455,8 +455,6 @@ class MovieAtom : public Atom
         SampleEntry *getTextSampleEntryAt(uint32 id, uint32 index);
 
         int32 getNumAMRFramesPerSample(uint32 trackID);
-        int32 getNumQCELPFramesPerSample(uint32 trackID);
-        int32 getNumEVRCFramesPerSample(uint32 trackID);
 
 
         MP4_ERROR_CODE getMaxTrackTimeStamp(uint32 trackID,
@@ -779,6 +777,9 @@ class MovieAtom : public Atom
             else
                 return temp;
         }
+
+        int32 getNumQCELPFramesPerSample(uint32 trackID);
+        int32 getNumEVRCFramesPerSample(uint32 trackID);
 
     private:
         void addTrackAtom(TrackAtom *a);

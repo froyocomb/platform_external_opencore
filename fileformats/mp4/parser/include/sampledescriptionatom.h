@@ -54,14 +54,6 @@
 #include "amrsampleentry.h"
 #endif
 
-#ifndef QCELPSAMPLEENTRY_H_INCLUDED
-#include "qcelpsampleentry.h"
-#endif
-
-#ifndef EVRCSAMPLEENTRY_H_INCLUDED
-#include "evrcsampleentry.h"
-#endif
-
 #ifndef H263SAMPLEENTRY_H_INCLUDED
 #include "h263sampleentry.h"
 #endif
@@ -78,6 +70,13 @@
 #include "avclayerentry.h"
 #endif
 
+#ifndef QCELPSAMPLEENTRY_H_INCLUDED
+#include "qcelpsampleentry.h"
+#endif
+
+#ifndef EVRCSAMPLEENTRY_H_INCLUDED
+#include "evrcsampleentry.h"
+#endif
 
 class ProtectionSchemeInformationBox;
 
@@ -150,16 +149,6 @@ class SampleDescriptionAtom : public FullAtom
             return _pAMRSampleEntryAtom;
         }
 
-        QCELPSampleEntry *getQCELPSampleEntry()
-        {
-            return _pQCELPSampleEntryAtom;
-        }
-
-        EVRCSampleEntry *getEVRCSampleEntry()
-        {
-            return _pEVRCSampleEntryAtom;
-        }
-
         H263SampleEntry *getH263SampleEntry()
         {
             return _pH263SampleEntryAtom;
@@ -206,6 +195,17 @@ class SampleDescriptionAtom : public FullAtom
 
         int32 getHeight();
         int32 getWidth();
+
+        QCELPSampleEntry *getQCELPSampleEntry()
+        {
+            return _pQCELPSampleEntryAtom;
+        }
+
+        EVRCSampleEntry *getEVRCSampleEntry()
+        {
+            return _pEVRCSampleEntryAtom;
+        }
+
     private:
         uint32 _entryCount;
         uint32 _handlerType;
@@ -214,8 +214,6 @@ class SampleDescriptionAtom : public FullAtom
         uint32 _pMediaType;
 
         AMRSampleEntry  *_pAMRSampleEntryAtom;
-        QCELPSampleEntry  *_pQCELPSampleEntryAtom;
-        EVRCSampleEntry  *_pEVRCSampleEntryAtom;
         H263SampleEntry *_pH263SampleEntryAtom;
         Oscl_Vector<AVCSampleEntry*, OsclMemAllocator> *_pAVCSampleEntryVec;
         AVCSubSequenceEntry *_pavcSubSequenceEntry;
@@ -224,11 +222,15 @@ class SampleDescriptionAtom : public FullAtom
         bool _o3GPPAMR;
         bool _o3GPPH263;
         bool _o3GPPWBAMR;
-        bool _o3GPP2QCELP;
-        bool _o3GPP2EVRC;
         bool _oAVC;
 
         ProtectionSchemeInformationBox* _pProtectionSchemeInformationBox;
+
+        QCELPSampleEntry  *_pQCELPSampleEntryAtom;
+        EVRCSampleEntry  *_pEVRCSampleEntryAtom;
+
+        bool _o3GPP2QCELP;
+        bool _o3GPP2EVRC;
 };
 
 
