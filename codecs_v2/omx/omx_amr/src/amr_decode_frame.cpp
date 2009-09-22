@@ -60,6 +60,7 @@ static const OMX_S32 WBIETFFrameSize[16] =
     , 1
     , 1
     , 1
+    , 1
     , 1		// WBAMR Frame No Data
     , 1		// WBAMR Frame No Data
 };
