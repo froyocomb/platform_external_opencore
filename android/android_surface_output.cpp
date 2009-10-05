@@ -348,13 +348,6 @@ PVMFCommandId AndroidSurfaceOutput::Pause(const OsclAny* aContext)
 
         iState=STATE_PAUSED;
         status=PVMFSuccess;
-
-        // post last buffer to prevent stale data
-        // if not configured, PVMFMIOConfigurationComplete is not sent
-        // there should not be any media data.
-    if(iIsMIOConfigured) { 
-        postLastFrame();
-        }
         break;
 
     default:
@@ -937,6 +930,7 @@ void AndroidSurfaceOutput::Run()
     if (iEosReceived) {
         LOGV("Flushing buffers after EOS");
         processWriteResponseQueue(0);
+        iEosReceived = false;
     } else {
         processWriteResponseQueue(1);
     }
