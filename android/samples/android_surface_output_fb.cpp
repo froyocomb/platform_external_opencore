@@ -194,11 +194,11 @@ PVMFStatus AndroidSurfaceOutputFB::writeFrameBuf(uint8* aData, uint32 aDataLen, 
         }
         mSurface->postBuffer(mOffset);
     } else {
-
-        // software codec
-        convertFrame(aData, static_cast<uint8*>(mHeapPmem->base()) + mFrameBuffers[mFrameBufferIndex], aDataLen);
-        // post to SurfaceFlinger
+       // software codec
         if (++mFrameBufferIndex == kBufferCount) mFrameBufferIndex = 0;
+        convertFrame(aData, static_cast<uint8*>(mHeapPmem->base()) + mFrameBuffers[mFrameBufferIndex], aDataLen);
+
+        // post to SurfaceFlinger
         mSurface->postBuffer(mFrameBuffers[mFrameBufferIndex]);
     }
 
@@ -208,7 +208,10 @@ PVMFStatus AndroidSurfaceOutputFB::writeFrameBuf(uint8* aData, uint32 aDataLen, 
 // post the last video frame to refresh screen after pause
 void AndroidSurfaceOutputFB::postLastFrame()
 {
-    mSurface->postBuffer(mOffset);
+    if(mHardwareCodec)
+        mSurface->postBuffer(mOffset);
+    else
+        mSurface->postBuffer(mFrameBuffers[mFrameBufferIndex]);
 }
 
 void AndroidSurfaceOutputFB::closeFrameBuf()
