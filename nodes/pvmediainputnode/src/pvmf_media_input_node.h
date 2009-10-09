@@ -212,9 +212,6 @@ class PvmfMediaInputNode : public OsclActiveObject,
 
         // function used in getParametersSync of capability class
         PVMFStatus GetConfigParameter(PvmiKvp*& aParameters, int& aNumParamElements, int32 aIndex, PvmiKvpAttr reqattr);
-
-        // Setup MIO for Audio Source and Audio Format type
-        OSCL_IMPORT_REF PVMFStatus SetUpMIO(char *iAudioFormat);
     private:
         typedef enum
         {
@@ -330,6 +327,10 @@ class PvmfMediaInputNode : public OsclActiveObject,
         } TimeStamp_KSV;
         TimeStamp_KSV iErrorTimeStamp;
 #endif
+
+    public:
+        // Setup MIO for Audio Source and Audio Format type
+        OSCL_IMPORT_REF PVMFStatus SetUpMIO(char *iAudioFormat);
 };
 
 #endif // PVMF_MEDIA_INPUT_NODE_H_INCLUDED

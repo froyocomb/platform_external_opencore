@@ -778,9 +778,6 @@ class MovieAtom : public Atom
                 return temp;
         }
 
-        int32 getNumQCELPFramesPerSample(uint32 trackID);
-        int32 getNumEVRCFramesPerSample(uint32 trackID);
-
     private:
         void addTrackAtom(TrackAtom *a);
 
@@ -801,7 +798,9 @@ class MovieAtom : public Atom
 
         OSCL_wHeapString<OsclMemAllocator> _emptyString;
 
-
+    public:
+        int32 getNumQCELPFramesPerSample(uint32 trackID);
+        int32 getNumEVRCFramesPerSample(uint32 trackID);
 };
 
 #endif // MOVIEATOM_H_INCLUDED

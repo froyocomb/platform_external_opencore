@@ -478,14 +478,6 @@ class OSCL_IMPORT_REF PVMFNodeInterface: public PVMFPortActivityHandler
             return iOsclSharedLibrary;
         }
 
-	    /**
-	     To Configure the MIO for the proper AudioFormat
-	    **/
-	    virtual PVMFStatus SetUpMIO(char *iAudioFormat)
-	    {
-	        return PVMFSuccess;
-	    }
-
     protected:
         PVMFNodeInterface(int32 aSessionReserve = PVMF_NODE_DEFAULT_SESSION_RESERVE):
                 iInterfaceState(EPVMFNodeCreated)
@@ -536,6 +528,15 @@ class OSCL_IMPORT_REF PVMFNodeInterface: public PVMFPortActivityHandler
         OSCL_IMPORT_REF virtual void ReportInfoEvent(PVMFEventType aEventType,
                 void* aEventData = NULL,
                 PVInterface*aExtMsg = NULL);
+
+    public:
+        /*
+         * To Configure the MIO for the proper AudioFormat
+         */
+        virtual PVMFStatus SetUpMIO(char *iAudioFormat)
+        {
+            return PVMFSuccess;
+        }
 };
 
 #endif

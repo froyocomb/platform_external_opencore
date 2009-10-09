@@ -1282,29 +1282,6 @@ class Mpeg4File : public IMpeg4File, public Parentable
                 Oscl_FileServer* aFileServSession);
         void DestroyDataStreamForExternalDownload();
 
-        int32 getNumQCELPFramesPerSample(uint32 trackID)
-        {
-            if (_pmovieAtom != NULL)
-            {
-                return (_pmovieAtom->getNumQCELPFramesPerSample(trackID));
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
-        int32 getNumEVRCFramesPerSample(uint32 trackID)
-        {
-            if (_pmovieAtom != NULL)
-            {
-                return (_pmovieAtom->getNumEVRCFramesPerSample(trackID));
-            }
-            else
-            {
-                return 0;
-            }
-        }
 
     private:
         void ReserveMemoryForLangCodeVector(Oscl_Vector<uint16, OsclMemAllocator> &iLangCode, int32 capacity, int32 &leavecode);
@@ -1414,6 +1391,31 @@ class Mpeg4File : public IMpeg4File, public Parentable
         oscl_wchar _id3v1Comment[ID3V1_STR_MAX_SIZE];
         uint32 _id3v1Year;
         uint32 _fileSize;
+
+    public:
+        int32 getNumQCELPFramesPerSample(uint32 trackID)
+        {
+            if (_pmovieAtom != NULL)
+            {
+                return (_pmovieAtom->getNumQCELPFramesPerSample(trackID));
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        int32 getNumEVRCFramesPerSample(uint32 trackID)
+        {
+            if (_pmovieAtom != NULL)
+            {
+                return (_pmovieAtom->getNumEVRCFramesPerSample(trackID));
+            }
+            else
+            {
+                return 0;
+            }
+        }
 
 };
 

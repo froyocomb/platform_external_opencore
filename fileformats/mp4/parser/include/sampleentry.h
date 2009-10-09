@@ -71,13 +71,17 @@ class SampleEntry : public Atom
         virtual uint32 getMaxBitrate() const;
         virtual uint16 getWidth() const;
         virtual uint16 getHeight() const;
-        virtual uint32 getSampleEntrySize() const;
 
 
     protected:
         // Reserved constants
         uint8 _reserved[6];
         uint16 _dataReferenceIndex;
+
+    public:
+        virtual uint32 getSampleEntrySize() const;
+
+    protected:
         uint32 sampleEntrySize;
 };
 

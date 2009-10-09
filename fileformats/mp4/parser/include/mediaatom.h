@@ -736,6 +736,14 @@ class MediaAtom : public Atom
             return 0;
         }
 
+    private:
+        MediaHeaderAtom *_pmediaHeader;
+        HandlerAtom *_phandler;
+        MediaInformationAtom *_pmediaInformation;
+
+        uint32 _trackStartOffset;
+
+    public:
         int32 getNumQCELPFramesPerSample()
         {
             if (_pmediaInformation != NULL)
@@ -759,13 +767,6 @@ class MediaAtom : public Atom
                 return 0;
             }
         }
-
-    private:
-        MediaHeaderAtom *_pmediaHeader;
-        HandlerAtom *_phandler;
-        MediaInformationAtom *_pmediaInformation;
-
-        uint32 _trackStartOffset;
 };
 
 #endif // MEDIAATOM_H_INCLUDED
