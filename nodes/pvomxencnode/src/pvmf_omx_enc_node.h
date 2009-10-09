@@ -1426,9 +1426,6 @@ class PVMFOMXEncNode
         OsclAny **in_ctrl_struct_ptr ;
         OsclAny **in_buff_hdr_ptr ;
 
-        OMX_QCOM_PLATFORM_PRIVATE_LIST1  *st_list;
-        OMX_QCOM_PLATFORM_PRIVATE_ENTRY1 *st_entry;
-        OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1 *st_info;
 
 
 #ifdef _TEST_AE_ERROR_HANDLING
@@ -1441,6 +1438,10 @@ class PVMFOMXEncNode
         uint32 iErrorDataPathStall;
 #endif
         bool bIsQCOMOmxComp;
+
+        OMX_QCOM_PLATFORM_PRIVATE_LIST1  *st_list;
+        OMX_QCOM_PLATFORM_PRIVATE_ENTRY1 *st_entry;
+        OMX_QCOM_PLATFORM_PRIVATE_PMEM_INFO1 *st_info;
 };
 
 

@@ -113,13 +113,14 @@ class PVMFMediaData : public PVMFMediaMsg
                         const PVMFMediaMsgHeader* msgHeader,
                         Oscl_DefAlloc* gen_alloc = NULL);
 
-        OSCL_IMPORT_REF virtual void setPmemFd(uint32 seqnum);
-        OSCL_IMPORT_REF virtual PVUid32 getPmemFD();
-
     private:
         PVMFMediaData(): hdr_ptr(0), impl_ptr() {};
         PVMFMediaMsgHeader* hdr_ptr;
         OsclSharedPtr<PVMFMediaDataImpl> impl_ptr;
+
+    public:
+        OSCL_IMPORT_REF virtual void setPmemFd(uint32 seqnum);
+        OSCL_IMPORT_REF virtual PVUid32 getPmemFD();
 };
 
 typedef OsclSharedPtr<PVMFMediaData> PVMFSharedMediaDataPtr;

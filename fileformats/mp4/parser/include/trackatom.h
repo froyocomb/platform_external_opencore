@@ -785,6 +785,18 @@ class TrackAtom : public Atom
             return 0;
         }
 
+    private:
+        UserDataAtom         *_puserdataatom;
+        EditAtom             *_pEditAtom;
+        TrackHeaderAtom      *_ptrackHeader;
+        TrackReferenceAtom   *_ptrackReference;
+        MediaAtom            *_pmediaAtom;
+        uint32 _trackStartOffset;
+        int32  _pMediaType;
+
+        OMADRMKMSBox* _pOMADRMKMSBox;
+
+    public:
         int32 getNumQCELPFramesPerSample()
         {
             if (_pmediaAtom != NULL)
@@ -808,17 +820,6 @@ class TrackAtom : public Atom
                 return 0;
             }
         }
-
-    private:
-        UserDataAtom         *_puserdataatom;
-        EditAtom             *_pEditAtom;
-        TrackHeaderAtom      *_ptrackHeader;
-        TrackReferenceAtom   *_ptrackReference;
-        MediaAtom            *_pmediaAtom;
-        uint32 _trackStartOffset;
-        int32  _pMediaType;
-
-        OMADRMKMSBox* _pOMADRMKMSBox;
 };
 
 #endif // TRACKATOM_H_INCLUDED
