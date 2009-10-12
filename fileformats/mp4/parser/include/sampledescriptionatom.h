@@ -195,17 +195,6 @@ class SampleDescriptionAtom : public FullAtom
 
         int32 getHeight();
         int32 getWidth();
-
-        QCELPSampleEntry *getQCELPSampleEntry()
-        {
-            return _pQCELPSampleEntryAtom;
-        }
-
-        EVRCSampleEntry *getEVRCSampleEntry()
-        {
-            return _pEVRCSampleEntryAtom;
-        }
-
     private:
         uint32 _entryCount;
         uint32 _handlerType;
@@ -226,6 +215,18 @@ class SampleDescriptionAtom : public FullAtom
 
         ProtectionSchemeInformationBox* _pProtectionSchemeInformationBox;
 
+    public:
+        QCELPSampleEntry *getQCELPSampleEntry()
+        {
+            return _pQCELPSampleEntryAtom;
+        }
+
+        EVRCSampleEntry *getEVRCSampleEntry()
+        {
+            return _pEVRCSampleEntryAtom;
+        }
+
+    private:
         QCELPSampleEntry  *_pQCELPSampleEntryAtom;
         EVRCSampleEntry  *_pEVRCSampleEntryAtom;
 

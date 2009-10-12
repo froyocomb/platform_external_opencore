@@ -541,16 +541,6 @@ class SampleTableAtom : public Atom
             return NULL;
         }
 
-        int32 getNumQCELPFramesPerSample()
-        {
-            return _numQCELPFramesPerSample;
-        }
-
-        int32 getNumEVRCFramesPerSample()
-        {
-            return _numEVRCFramesPerSample;
-        }
-
     private:
 
         TimeToSampleAtom        *_ptimeToSampleAtom;
@@ -583,8 +573,6 @@ class SampleTableAtom : public Atom
         uint32  _IsUpdateFileSize;
 
         int32 _numAMRFramesPerSample;
-        int32 _numQCELPFramesPerSample;
-        int32 _numEVRCFramesPerSample;
 
         uint8 *_pAMRTempBuffer;
         bool  _oResidualSample;
@@ -605,6 +593,20 @@ class SampleTableAtom : public Atom
         OSCL_wStackString<16> _defaultMimeType;
         uint32 _currChunkOffset;
 
+    public:
+        int32 getNumQCELPFramesPerSample()
+        {
+            return _numQCELPFramesPerSample;
+        }
+
+        int32 getNumEVRCFramesPerSample()
+        {
+            return _numEVRCFramesPerSample;
+        }
+
+    private:
+        int32 _numQCELPFramesPerSample;
+        int32 _numEVRCFramesPerSample;
 };
 
 #endif // SAMPLETABLEATOM_H_INCLUDED

@@ -342,9 +342,6 @@ class PVMp4FFComposerNode : public PVMFNodeInterface,
         void ReportInfoEvent(PVMFEventType aEventType, OsclAny* aEventData = NULL);
         void SetState(TPVMFNodeInterfaceState);
 
-        int32 GetQCELPFrameSize(uint8 aBitRate);
-        int32 GetEVRCFrameSize(uint8 aBitRate);
-
     private:
         void GenerateDiagnostics(uint32 aTime, uint32 aSize);
         void LogDiagnostics();
@@ -492,6 +489,10 @@ class PVMp4FFComposerNode : public PVMFNodeInterface,
         uint32 iFileDuration;
         uint32 iErrorDataPathStall;
 #endif
+
+    public:
+        int32 GetQCELPFrameSize(uint8 aBitRate);
+        int32 GetEVRCFrameSize(uint8 aBitRate);
 };
 
 #endif // PVMP4FFC_NODE_H_INCLUDED

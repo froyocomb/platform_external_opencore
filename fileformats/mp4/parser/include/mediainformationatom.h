@@ -675,6 +675,18 @@ class MediaInformationAtom : public Atom
             return 0;
         }
 
+    private:
+
+        // This is actually a pointer to the base class.  The possible
+        // derived classes include VideoMediaHeaderAtom, SoundMediaHeaderAtom,
+        // HintMediaHeaderAtom, and Mpeg4MediaHeaderAtom.
+        MediaInformationHeaderAtom *_pmediaInformationHeader;
+        DataInformationAtom        *_pdataInformationAtom;
+        SampleTableAtom            *_psampleTableAtom;
+
+        uint32 _trackStartOffset;
+
+    public:
         int32 getNumQCELPFramesPerSample()
         {
             if (_psampleTableAtom != NULL)
@@ -698,18 +710,6 @@ class MediaInformationAtom : public Atom
                 return 0;
             }
         }
-
-    private:
-
-        // This is actually a pointer to the base class.  The possible
-        // derived classes include VideoMediaHeaderAtom, SoundMediaHeaderAtom,
-        // HintMediaHeaderAtom, and Mpeg4MediaHeaderAtom.
-        MediaInformationHeaderAtom *_pmediaInformationHeader;
-        DataInformationAtom        *_pdataInformationAtom;
-        SampleTableAtom            *_psampleTableAtom;
-
-        uint32 _trackStartOffset;
-
 };
 
 #endif // MEDIAINFORMATIONATOM_H_INCLUDED
