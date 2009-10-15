@@ -54,6 +54,10 @@
 #include "chunkoffsetatom.h"
 #endif
 
+#ifndef CHUNKLARGEOFFSETATOM_H_INCLUDED
+#include "chunklargeoffsetatom.h"
+#endif
+
 #ifndef SAMPLETOCHUNKATOM_H_INCLUDED
 #include "sampletochunkatom.h"
 #endif
@@ -607,6 +611,8 @@ class SampleTableAtom : public Atom
     private:
         int32 _numQCELPFramesPerSample;
         int32 _numEVRCFramesPerSample;
+        ChunkLargeOffsetAtom  *_pchunkLargeOffsetAtom;
+        uint32 chunk_large_offset_exists;
 };
 
 #endif // SAMPLETABLEATOM_H_INCLUDED
