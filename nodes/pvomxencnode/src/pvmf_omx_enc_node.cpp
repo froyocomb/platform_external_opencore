@@ -3663,10 +3663,13 @@ bool PVMFOMXEncNode::SetDefaultCapabilityFlags()
 
     iOMXComponentSupportsExternalOutputBufferAlloc = false;
     iOMXComponentSupportsExternalInputBufferAlloc = false;
-    if (iInFormat != PVMF_MIME_PCM16)
-      iOMXComponentSupportsExternalInputBufferAlloc = true;
-
     iOMXComponentSupportsMovableInputBuffers = false;
+
+    if(iInFormat != PVMF_MIME_PCM16)
+    {
+      iOMXComponentSupportsExternalInputBufferAlloc = true;
+      iOMXComponentSupportsMovableInputBuffers = true;
+    }
 
     iOMXComponentUsesNALStartCodes = true;
     iOMXComponentSupportsPartialFrames = false;
@@ -3903,7 +3906,16 @@ bool PVMFOMXEncNode::SendInputBufferToOMXComponent()
             // set pointer to the data, length, offset
             input_buf->pBufHdr->pBuffer = (uint8 *)frag.getMemFragPtr();
             input_buf->pBufHdr->nFilledLen = frag.getMemFragSize();
+            // init variables
+            iCopyPosition = 0;
 
+            if (iOMXComponentSupportsExternalInputBufferAlloc)
+               {
+                   input_buf->pBufHdr->pBuffer = ((uint8 *)frag.getMemFragPtr()+ iCopyPosition);
+                   st_info[ii].offset = 0;
+                   st_info[ii].pmem_fd = iDataIn->getPmemFD();
+                   input_buf->pBufHdr->pPlatformPrivate = &st_list[ii];
+               }
             PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                             (0, "PVMFOMXEncNode-%s::SendInputBufferToOMXComponent() - Buffer 0x%x of size %d, %d frag out of tot. %d, TS=%d", iNodeTypeId, input_buf->pBufHdr->pBuffer, frag.getMemFragSize(), iCurrFragNum + 1, iDataIn->getNumFragments(), iInTimestamp));
 
@@ -3927,21 +3939,10 @@ bool PVMFOMXEncNode::SendInputBufferToOMXComponent()
             if (iFragmentSizeRemainingToCopy <= (input_buf->pBufHdr->nAllocLen))
             {
 
+                oscl_memcpy(input_buf->pBufHdr->pBuffer,
+                             (void *)((uint8 *)frag.getMemFragPtr() + iCopyPosition),
+                             iFragmentSizeRemainingToCopy);
 
-                if (iOMXComponentSupportsExternalInputBufferAlloc)
-                {
-                    input_buf->pBufHdr->pBuffer = ((uint8 *)frag.getMemFragPtr()+ iCopyPosition);
-                    /* The index was determined before, use the same mapping */
-                    st_info[ii].offset = 0;
-                    st_info[ii].pmem_fd = iDataIn->getPmemFD();
-                    input_buf->pBufHdr->pPlatformPrivate = &st_list[ii];
-                }
-                else
-                {
-                    oscl_memcpy(input_buf->pBufHdr->pBuffer,
-                                (void *)((uint8 *)frag.getMemFragPtr() + iCopyPosition),
-                                iFragmentSizeRemainingToCopy);
-                }
 
                 input_buf->pBufHdr->nFilledLen = iFragmentSizeRemainingToCopy;
 
