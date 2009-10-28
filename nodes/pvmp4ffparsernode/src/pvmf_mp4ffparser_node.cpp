@@ -2930,6 +2930,20 @@ PVMFStatus PVMFMP4FFParserNode::DoPause(PVMFMP4FFParserNodeCommand& aCmd)
         }
 
     }
+
+    int32 minTs = 0x7FFFFFFF;
+    for (uint32 i = 0; i < iNodeTrackPortList.size(); ++i)
+    {
+        iNodeTrackPortList[i].iClockConverter->set_clock(iNodeTrackPortList[i].iTimestamp, 0);
+        uint32 millisecTS = iNodeTrackPortList[i].iClockConverter->get_converted_ts(1000);
+        if (millisecTS < minTs)
+        {
+            minTs = millisecTS;
+            minFileOffsetTrackID = iNodeTrackPortList[i].iTrackId;
+        }
+        iNodeTrackPortList[i].iFirstFrameAfterPause = true;
+    }
+
     return PVMFSuccess;
 }
 
@@ -4030,6 +4044,34 @@ void PVMFMP4FFParserNode::HandleTrackState()
                         //LOGE("Ln %d UGLY? Yes. minFileOffsetTrackID %d Skipped iTrackId %d", __LINE__, minFileOffsetTrackID , iNodeTrackPortList[j].iTrackId);
                         break;
                     }
+                }
+                if (iNodeTrackPortList[i].iFirstFrameAfterPause)
+                {
+                    // after continuous pause-resume, sometimes audio is played and
+                    // video track falls behind, need to make sure they are in sync here
+                    uint32 j = 0;
+                    for (j = 0; j < iNodeTrackPortList.size(); ++j)
+                    {
+                        if (minFileOffsetTrackID == iNodeTrackPortList[j].iTrackId)
+                        {
+                            break;
+                        }
+                    }
+                    // stall this track until other track has either ended or has catched up
+                    if (i != j && iNodeTrackPortList[j].iState != PVMP4FFNodeTrackPortInfo::TRACKSTATE_ENDOFTRACK)
+                    {
+                        iNodeTrackPortList[i].iClockConverter->set_clock(iNodeTrackPortList[i].iTimestamp, 0);
+                        uint32 trackTS = iNodeTrackPortList[i].iClockConverter->get_converted_ts(1000);
+
+                        iNodeTrackPortList[j].iClockConverter->set_clock(iNodeTrackPortList[j].iTimestamp, 0);
+                        uint32 minTrackTS = iNodeTrackPortList[j].iClockConverter->get_converted_ts(1000);
+
+                        if (trackTS > minTrackTS)
+                        {
+                            break;
+                        }
+                    }
+                    iNodeTrackPortList[i].iFirstFrameAfterPause = false;
                 }
 
                 if (!RetrieveTrackData(iNodeTrackPortList[i]))
