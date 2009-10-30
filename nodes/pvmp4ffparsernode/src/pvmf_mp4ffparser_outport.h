@@ -351,6 +351,8 @@ class PVMP4FFNodeTrackPortInfo : public OsclMemPoolFixedChunkAllocatorObserver,
         uint32 iNumQCELPSamplesToRetrieve;
         // EVRC track
         uint32 iNumEVRCSamplesToRetrieve;
+        // Flag to indicate that next frame will be the first frame after a pause
+        bool iFirstFrameAfterPause;
 };
 
 class PVMP4FFNodeTrackOMA2DRMInfo
