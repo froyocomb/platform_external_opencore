@@ -1095,17 +1095,17 @@ int AndroidAudioInput::audin_thread_func() {
     if (iAudioFormatType == android::AudioSystem::FORMAT_AMR_IETF)
     {
       nFrameSize = 32;     // Full rate frame size
-      kBufferSize = 3200;
+      kBufferSize = 1280;
     }
     else if (iAudioFormatType == android::AudioSystem::FORMAT_EVRC)
     {
       nFrameSize = 23; // Full rate frame size
-      kBufferSize = 2300;
+      kBufferSize = 1150;
     }
     else if (iAudioFormatType == android::AudioSystem::FORMAT_QCELP)
     {
       nFrameSize = 35; // Full rate frame size
-      kBufferSize = 3500;
+      kBufferSize = 1050;
     }
 
     // Making the Configuration as per the MIO configuration
