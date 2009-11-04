@@ -56,6 +56,9 @@ class PVMFRecognizerResult
     public:
         PVMFRecognizerResult()
         {
+            iRecognizedFormat = PVMF_MIME_FORMAT_UNKNOWN;
+            iRecognitionConfidence = PVMFRecognizerConfidenceCertain;
+            iAdditionalBytesRequired = 0;
         };
 
         // Copy constructor for use in Oscl_Vector
@@ -63,19 +66,26 @@ class PVMFRecognizerResult
         {
             iRecognizedFormat = aSrc.iRecognizedFormat;
             iRecognitionConfidence = aSrc.iRecognitionConfidence;
-            //  iRecognizerSubFormatList=aSrc.iRecognizerSubFormatList;
+            iAdditionalBytesRequired = aSrc.iAdditionalBytesRequired;
         };
 
         ~PVMFRecognizerResult()
         {
         };
 
+        void Reset()
+        {
+            iRecognizedFormat = PVMF_MIME_FORMAT_UNKNOWN;
+            iRecognitionConfidence = PVMFRecognizerConfidenceCertain;
+            iAdditionalBytesRequired = 0;
+        };
+
         // The format of interest as a MIME string
         OSCL_HeapString<OsclMemAllocator> iRecognizedFormat;
         // The confidence level of recognition
         PVMFRecognizerConfidence iRecognitionConfidence;
-        // If the format is a container format, the format of content within
-//  Oscl_Vector<PVMFRecognizerResult, OsclMemAllocator> iRecognizerSubFormatList;
+        //additional bytes required in case recognizer is not sure
+        uint32 iAdditionalBytesRequired;
 };
 
 

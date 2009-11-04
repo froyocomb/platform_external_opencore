@@ -30,9 +30,12 @@ PVMFStatus PVQCPFFRecognizerPlugin::SupportedFormats(PVMFRecognizerMIMEStringLis
 
 
 PVMFStatus PVQCPFFRecognizerPlugin::Recognize(PVMFDataStreamFactory& aSourceDataStreamFactory, PVMFRecognizerMIMEStringList* aFormatHint,
-        Oscl_Vector<PVMFRecognizerResult, OsclMemAllocator>& aRecognizerResult)
+        PVMFRecognizerResult& aRecognizerResult)
 {
     OSCL_UNUSED_ARG(aFormatHint);
+    //set it up for a definite no - in case of errors we can still say format unknown
+    aRecognizerResult.iRecognizedFormat = PVMF_MIME_FORMAT_UNKNOWN;
+    aRecognizerResult.iRecognitionConfidence = PVMFRecognizerConfidenceCertain;
     // Instantiate the IQcpFile object, which is the class representing the qcp ff parser library.
     OSCL_wStackString<1> tmpfilename;
     QCPErrorType eSuccess = QCP_SUCCESS;
@@ -49,16 +52,16 @@ PVMFStatus PVQCPFFRecognizerPlugin::Recognize(PVMFDataStreamFactory& aSourceData
     if (eSuccess == QCP_SUCCESS)
     {
         // It is an QCP file so add positive result
-        result.iRecognizedFormat = PVMF_MIME_QCPFF;
-        result.iRecognitionConfidence = PVMFRecognizerConfidenceCertain;
-        aRecognizerResult.push_back(result);
+        aRecognizerResult.iRecognizedFormat = PVMF_MIME_QCPFF;
+        aRecognizerResult.iRecognitionConfidence = PVMFRecognizerConfidenceCertain;
     }
     else if (eSuccess == QCP_INSUFFICIENT_DATA)
     {
         // It could be an QCP file, but not sure
-        result.iRecognizedFormat = PVMF_MIME_QCPFF;
-        result.iRecognitionConfidence = PVMFRecognizerConfidencePossible;
-        aRecognizerResult.push_back(result);
+        aRecognizerResult.iRecognizedFormat = PVMF_MIME_QCPFF;
+        aRecognizerResult.iRecognitionConfidence = PVMFRecognizerConfidencePossible;
+        //FIXME: We need to return a more meaningful value here. FF should provide it.
+        aRecognizerResult.iAdditionalBytesRequired = 194;
     }
     if (qcpFile)
     {
