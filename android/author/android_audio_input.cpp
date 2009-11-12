@@ -31,7 +31,7 @@
 using namespace android;
 
 // TODO: get buffer size from AudioFlinger
-static const int kBufferSize = 2048;
+static int kBufferSize = 2048; // PCM buffer size
 
 // Define entry point for this DLL
 OSCL_DLL_ENTRY_POINT_DEFAULT()
@@ -1095,14 +1095,17 @@ int AndroidAudioInput::audin_thread_func() {
     if (iAudioFormatType == android::AudioSystem::FORMAT_AMR_IETF)
     {
       nFrameSize = 32;     // Full rate frame size
+      kBufferSize = 1280;
     }
     else if (iAudioFormatType == android::AudioSystem::FORMAT_EVRC)
     {
       nFrameSize = 23; // Full rate frame size
+      kBufferSize = 1150;
     }
     else if (iAudioFormatType == android::AudioSystem::FORMAT_QCELP)
     {
       nFrameSize = 35; // Full rate frame size
+      kBufferSize = 1050;
     }
 
     // Making the Configuration as per the MIO configuration
