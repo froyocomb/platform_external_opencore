@@ -1227,7 +1227,9 @@ int AndroidAudioInput::audin_thread_func() {
 
         // This is to ensure that the last read buffer is written to the file
         // before the Audio thread is stopped and the MIO is disconnected
-        if ((iState == STATE_STOPPED) && (numOfBytes > 0))
+        // This check is not done for uncompressed inputs, since this is
+        // causing issue with software encoders.
+        if ((iState == STATE_STOPPED) && (numOfBytes > 0) && (iAudioFormatType != android::AudioSystem::PCM_16_BIT))
         {
           iBufferForceWrite = 1; 
           SendMicData();
