@@ -49,6 +49,9 @@
 #ifndef PVAE_NODE_UTILITY_H_INCLUDED
 #include "pvaenodeutility.h"
 #endif
+#ifndef PVMF_MEDIA_CLOCK_H_INCLUDED
+#include "pvmf_media_clock.h"
+#endif
 
 #ifndef PVMI_CONFIG_AND_CAPABILITY_H_INCLUDED
 #include "pvmi_config_and_capability.h"
@@ -395,6 +398,10 @@ class PVAuthorEngine : public PVAuthorEngineInterface,
         PvmiConfigAndCapabilityCmdObserver *iCfgCapCmdObserver;
         int iAsyncNumElements;
         bool iDoResetNodeContainers;
+	//authoring clock related
+	PVMFTimebase_Tickcount iAuthorClockTimebase;
+	PVMFMediaClock iAuthorClock;
+	PVMFStatus SendAuthoringClockToDataSources(bool aReset = false);
 };
 
 

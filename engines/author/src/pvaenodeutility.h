@@ -44,14 +44,21 @@
 /** Structure to contain a node and all ports and extensions associated to it */
 struct PVAENodeContainer
 {
-    PVMFNodeInterface* iNode;
-    PVMFSessionId iSessionId;
-    PVUuid iUuid;
-    Oscl_Vector<PVMFPortInterface*, OsclMemAllocator> iInputPorts;
-    Oscl_Vector<PVMFPortInterface*, OsclMemAllocator> iOutputPorts;
-    Oscl_Vector<PVInterface*, OsclMemAllocator> iExtensions;
-    Oscl_Vector<PVUuid, OsclMemAllocator> iExtensionUuids;
-    PVInterface* iNodeCapConfigIF;
+public:
+        PVAENodeContainer()
+        {
+           iNode = NULL;
+           iSessionId = 0;
+           iNodeCapConfigIF = NULL;
+        };
+	PVMFNodeInterface* iNode;
+	PVMFSessionId iSessionId;
+	PVUuid iUuid;
+	Oscl_Vector<PVMFPortInterface*, OsclMemAllocator> iInputPorts;
+	Oscl_Vector<PVMFPortInterface*, OsclMemAllocator> iOutputPorts;
+	Oscl_Vector<PVInterface*, OsclMemAllocator> iExtensions;
+	Oscl_Vector<PVUuid, OsclMemAllocator> iExtensionUuids;
+	PVInterface* iNodeCapConfigIF;
 };
 
 /** A vector of node container structures */

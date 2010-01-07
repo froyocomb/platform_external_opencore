@@ -54,6 +54,9 @@
 #ifndef ANDROID_AUDIO_INPUT_THREADSAFE_CALLBACK_AO_H_INCLUDED
 #include "android_audio_input_threadsafe_callbacks.h"
 #endif
+#ifndef PVMF_MEDIA_CLOCK_H_INCLUDED
+#include "pvmf_media_clock.h"
+#endif
 
 #include <utils/RefBase.h>
 
@@ -207,7 +210,8 @@ class AndroidAudioInput : public OsclTimerObject,
     public PvmiMIOControl,
     public PvmiMediaTransfer,
     public PvmiCapabilityAndConfig,
-    public RefBase
+    public RefBase,
+    public PVMFMediaClockStateObserver
 {
 public:
     AndroidAudioInput(uint32 audioSource);
@@ -295,6 +299,11 @@ public:
     /* Set the input number of channels */
     bool setAudioNumChannels(int32 iNumChannels);
 
+    /* From PVMFMediaClockStateObserver and its base*/
+    void ClockStateUpdated();
+    void NotificationsInterfaceDestroyed();
+
+
 private:
     AndroidAudioInput();
     void Run();
@@ -340,6 +349,8 @@ private:
     // passed in is "timeInFrames".
     void RampVolume(int32 timeInFrames, int32 kAutoRampDurationFrames,
                     void *_data, size_t numBytes) const;
+
+    void RemoveDestroyClockStateObs();
 
     // Command queue
     uint32 iCmdIdCounter;
@@ -452,6 +463,17 @@ private:
 
     // Audio input thread
     OsclThread AudioInput_Thread;
+
+    PVMFMediaClock *iAuthorClock;
+    PVMFMediaClockNotificationsInterface *iClockNotificationsInf;
+    // These variables tracks whether or not first audio frame was received.
+    // This is needed to start the clock since the time origin is synced to the
+    // first audio sample.
+    volatile bool iFirstFrameReceived;
+    volatile PVMFTimestamp iFirstFrameTs;
+    // This stores the Start cmd when Audio MIO is waiting for
+    // first audio frame to be received from the device.
+    AndroidAudioInputCmd iStartCmd;
 };
 
 }; // namespace android
