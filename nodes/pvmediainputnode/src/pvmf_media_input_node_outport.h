@@ -131,6 +131,11 @@ class PvmfMediaInputNodeOutPort : public OsclTimerObject,
         OSCL_IMPORT_REF uint32 getCapabilityMetric(PvmiMIOSession aSession);
         OSCL_IMPORT_REF PVMFStatus verifyParametersSync(PvmiMIOSession aSession, PvmiKvp* aParameters, int num_elements);
         void SendEndOfTrackCommand(const PvmiMediaXferHeader& data_header_info);
+
+        PVMFPortInterface* getConnectedPort() {
+            return iConnectedPort;
+       }
+
     private:
 
         void Run();

@@ -153,7 +153,7 @@ class FragmentWriter: public Thread
         static const bool kThreadCallJava = false;
         static const size_t kLogDroppedPeriod = 10;  // Arbitrary.
         // Must match the number of buffers allocated in the decoder.
-        static const size_t kCapacity = NUMBER_OUTPUT_BUFFER;
+        static const size_t kCapacity = NUMBER_OUTPUT_BUFFER * 2; // x2 for audio+video
         static const size_t kWarningThreshold = kCapacity * 3 / 4; // Warn at 75%
         static const OsclRefCounterMemFrag kEmptyFrag;
         // Flush blocks for 2 seconds max.
