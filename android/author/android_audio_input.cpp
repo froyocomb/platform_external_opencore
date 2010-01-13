@@ -521,7 +521,12 @@ PVMFStatus AndroidAudioInput::getParametersSync(PvmiMIOSession session,
     if( pv_mime_strcmp(identifier, OUTPUT_FORMATS_CAP_QUERY) == 0 ||
             pv_mime_strcmp(identifier, OUTPUT_FORMATS_CUR_QUERY) == 0)
     {
+#ifndef SURF8K
+        // No. of Supported audio format types
+        num_parameter_elements = 4;
+#else
         num_parameter_elements = 1;
+#endif
         status = AllocateKvp(parameters, OUTPUT_FORMATS_VALTYPE, num_parameter_elements);
         if(status != PVMFSuccess)
         {
@@ -531,6 +536,12 @@ PVMFStatus AndroidAudioInput::getParametersSync(PvmiMIOSession session,
         else
         {
             parameters[0].value.pChar_value = (char*)PVMF_MIME_PCM16;
+#ifndef SURF8K
+            // Supported audio format types
+            parameters[1].value.pChar_value = (char*)PVMF_MIME_AMR_IETF;
+            parameters[2].value.pChar_value = (char*)PVMF_MIME_QCELP;
+            parameters[3].value.pChar_value = (char*)PVMF_MIME_EVRC;
+#endif
         }
     }
     else if(pv_mime_strcmp(identifier, OUTPUT_TIMESCALE_CUR_QUERY) == 0)
