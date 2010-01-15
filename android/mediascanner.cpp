@@ -599,8 +599,6 @@ status_t MediaScanner::processFile(const char *path, const char* mimeType, Media
         ( strcasecmp(extension, ".mid") == 0 || strcasecmp(extension, ".smf") == 0
         || strcasecmp(extension, ".imy") == 0)) {
         result = parseMidi(path, client);
-    } else if (extension && strcasecmp(extension, ".wma") == 0) {
-        result = parseWMA(path, client);
     } else if (extension && strcasecmp(extension, ".qcp") == 0) {
         result = parseQCP(path, client);
     } else {
