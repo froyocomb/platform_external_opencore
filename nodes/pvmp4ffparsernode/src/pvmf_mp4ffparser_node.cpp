@@ -8370,12 +8370,10 @@ PVMFStatus PVMFMP4FFParserNode::GetVideoFrameWidth(uint32 aId, int32& aWidth, in
         {
             if (ptr->getMaxWidth() > 0)
             {
-                aDisplayWidth = display_width = (int32)(ptr->getMaxWidth());
+                aWidth = width = aDisplayWidth = display_width = (int32)(ptr->getMaxWidth());
             }
         }
 
-        if (width == 0)
-        {
             //get width from the first frame
             MediaMetaInfo info;
             uint32 numSamples = 1;
@@ -8433,7 +8431,6 @@ PVMFStatus PVMFMP4FFParserNode::GetVideoFrameWidth(uint32 aId, int32& aWidth, in
                     OSCL_ARRAY_DELETE(sampleBuf);
                 }
             }
-        }
     }
     else if (oscl_strncmp(trackMIMEType.get_str(), PVMF_MIME_H264_VIDEO_MP4, oscl_strlen(PVMF_MIME_H264_VIDEO_MP4)) == 0)
     {
@@ -8529,11 +8526,9 @@ PVMFStatus PVMFMP4FFParserNode::GetVideoFrameHeight(uint32 aId, int32& aHeight, 
         {
             if (ptr->getMaxHeight() > 0)
             {
-                aDisplayHeight = display_height = (int32)(ptr->getMaxHeight());
+                aHeight = height = aDisplayHeight = display_height = (int32)(ptr->getMaxHeight());
             }
         }
-        if (height == 0)
-        {
             //get height from the first frame
             MediaMetaInfo info;
             uint32 numSamples = 1;
@@ -8591,7 +8586,6 @@ PVMFStatus PVMFMP4FFParserNode::GetVideoFrameHeight(uint32 aId, int32& aHeight, 
                     OSCL_ARRAY_DELETE(sampleBuf);
                 }
             }
-        }
     }
     if (oscl_strncmp(trackMIMEType.get_str(), PVMF_MIME_H264_VIDEO_MP4, oscl_strlen(PVMF_MIME_H264_VIDEO_MP4)) == 0)
     {
