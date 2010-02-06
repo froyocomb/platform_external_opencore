@@ -18,6 +18,7 @@
 //#define LOG_NDEBUG 0
 #define LOG_TAG "PlayerDriver"
 #include <utils/Log.h>
+#include <cutils/properties.h>
 
 #include <sys/prctl.h>
 #include <sys/resource.h>
@@ -62,6 +63,7 @@
 #include "pvmf_duration_infomessage.h"
 #include "android_surface_output.h"
 #include "android_audio_output.h"
+#include "android_audio_lpadecode.h"
 #include "android_audio_stream.h"
 #include "pv_media_output_node_factory.h"
 #include "pvmf_format_type.h"  // for PVMFFormatType
@@ -70,6 +72,8 @@
 #include "pvmf_download_data_source.h"
 #include "OMX_Core.h"
 #include "pv_omxcore.h"
+
+#include "pv_mime_string_utils.h" // for strcmp
 
 // color converter
 #include "cczoomrotation16.h"
@@ -834,9 +838,73 @@ void PlayerDriver::handleSetVideoSurface(PlayerSetVideoSurface* command)
 void PlayerDriver::handleSetAudioSink(PlayerSetAudioSink* command)
 {
     int error = 0;
+
+    // 1. To determine if there ia a support for compressed MIO
+    PVMFFormatType iFormatType;
+    bool           bIsAudioLPADecode = false;
+
     if (command->audioSink()->realtime()) {
         LOGV("Create realtime output");
-        mAudioOutputMIO = new AndroidAudioOutput();
+
+#ifdef SURF7x30
+
+        char value[128];
+
+        property_get("lpa.decode",value,"0");
+        if(strcmp("true",value) == 0)
+        {
+            if (mPlayer->GetDataSourceFormatSync(iFormatType) == PVMFSuccess)
+            {
+                LOGE("FormatType that is returned is %s", iFormatType.getMIMEStrPtr());
+                if (iFormatType != NULL)
+                {
+                    if ( (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_MP3FF) >= 0) ||
+                         (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_MP3) >= 0) )
+                    {
+                        LOGE("Creating LPA decode mode playback - format %s", iFormatType.getMIMEStrPtr());
+                        mAudioOutputMIO = new AndroidAudioLPADecode(); // Need to create custom MIO
+
+                        if (mAudioOutputMIO && (PVMFSuccess == mAudioOutputMIO->initCheck()))
+                        {
+                            uint32   nDuration = 0;
+                            // Check for the duration of the . If it is only greater than 1 second enable LPA decode
+                            if (mPlayer->GetSourceDurationSync(nDuration) == PVMFSuccess)
+                            {
+                                LOGE("Duration that is retuned is %d sec", (nDuration / 1000));
+                                // Only if the duration is greater than 1 second enable lpa decode.
+                                if (nDuration > 60000)
+                                {
+                                    LOGE("LPA decode mode success");
+                                    bIsAudioLPADecode = true;
+                                }
+                            }
+
+                            if (!bIsAudioLPADecode)
+                            {
+                              LOGE("LPA decode mode not supported duration %d sec", (nDuration / 1000));
+                              delete mAudioOutputMIO;
+                              mAudioOutputMIO = NULL;
+                            }
+                        }
+                        else
+                        {
+                           LOGE("LPA decode mode failed");
+                           if (mAudioOutputMIO)
+                           {
+                              delete mAudioOutputMIO;
+                              mAudioOutputMIO = NULL;
+                           }
+                        }
+                    }
+                }
+            }
+        }
+ #endif
+        if (!bIsAudioLPADecode)
+        {
+            LOGE("Creating Non-Tunnel mode playback - uncompressed MIO");
+            mAudioOutputMIO = new AndroidAudioOutput();
+        }
     } else {
         LOGV("Create stream output");
         mAudioOutputMIO = new AndroidAudioStream();
@@ -917,6 +985,7 @@ void PlayerDriver::handleStart(PlayerStart* command)
             end.iIndeterminate = true;
             mPlayer->SetPlaybackRange(begin, end, false, NULL);
         }
+
         OSCL_TRY(error, mPlayer->Resume(command));
         OSCL_FIRST_CATCH_ANY(error, commandFailed(command));
         mIsPausing = false;
@@ -1345,6 +1414,7 @@ void PlayerDriver::HandleInformationalEvent(const PVAsyncInformationalEvent& aEv
 
     switch (status) {
         case PVMFInfoEndOfData:
+
             mEndOfData = true;
             if (mIsLooping) {
                 mDoLoop = true;

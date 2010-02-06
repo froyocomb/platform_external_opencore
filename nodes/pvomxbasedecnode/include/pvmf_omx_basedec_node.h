@@ -114,6 +114,10 @@
 #include "media_clock_converter.h"
 #endif
 
+#ifndef PVMF_PMEM_BUFFER_ALLOC_H_INCLUDED
+#include "pvmf_pmem_buffer_alloc.h"
+#endif
+
 #define MAX_NAL_PER_FRAME 100
 
 typedef struct OutputBufCtrlStruct
@@ -776,6 +780,9 @@ class PVMFOMXBaseDecNode
         // Time stamp to be used on output buffer
         uint32 iOutTimeStamp;
 
+        // PMEM fd for the output buffer
+        int32  pmem_fd;
+
         // Node configuration update
         PVMFOMXBaseDecNodeConfig iNodeConfig;
 
@@ -837,6 +844,9 @@ class PVMFOMXBaseDecNode
         // validate if the input sample was properly decoded.
         Oscl_Vector<uint32, OsclMemAllocator> iTimestampVec;
         OMX_BOOL bHWAccelerated;
+
+        // PMEM Allocator usage
+        PVMFPMemBufferAlloc * ipPMemBufferAlloc;
 };
 
 

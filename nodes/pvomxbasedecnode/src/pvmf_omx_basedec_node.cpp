@@ -41,6 +41,7 @@
         param.nVersion.s.nStep = SPECSTEP;
 
 #define PVOMXBASEDEC_MEDIADATA_CHUNKSIZE 128
+
 #if 0
 #include <utils/Log.h>
 #undef LOG_TAG
@@ -301,6 +302,12 @@ OSCL_EXPORT_REF PVMFOMXBaseDecNode::~PVMFOMXBaseDecNode()
         iInBufMemoryPool = NULL;
     }
 
+    if (ipPMemBufferAlloc)
+    {
+        delete ipPMemBufferAlloc;
+        ipPMemBufferAlloc = NULL;
+    }
+
     //Thread logoff
     if (IsAdded())
     {
@@ -552,7 +559,8 @@ OSCL_EXPORT_REF PVMFOMXBaseDecNode::PVMFOMXBaseDecNode(int32 aPriority, const ch
         iResetMsgSent(false),
         iStopInResetMsgSent(false),
         iCompactFSISettingSucceeded(false),
-        bHWAccelerated(accelerated? OMX_TRUE: OMX_FALSE)
+        bHWAccelerated(accelerated? OMX_TRUE: OMX_FALSE),
+        ipPMemBufferAlloc(NULL)
 {
     iThreadSafeHandlerEventHandler = NULL;
     iThreadSafeHandlerEmptyBufferDone = NULL;
@@ -2988,7 +2996,8 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::CreateOutMemPool(uint32 num_buffers)
         // In case of an external output buffer allocator interface, output buffer memory will be allocated
         // outside the node and hence iOutputAllocSize need not be incremented here
 
-        if (NULL == ipExternalOutputBufferAllocatorInterface)
+        if ( (NULL == ipExternalOutputBufferAllocatorInterface) ||
+             (NULL == ipPMemBufferAlloc))
         {
             PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                             (0, "%s::CreateOutMemPool() Allocating output buffers of size %d as well", iName.Str(), iOMXComponentOutputBufferSize));
@@ -3163,8 +3172,6 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::ProvideBuffersToComponent(OsclMemPoolFi
         return false;
     }
 
-
-
     // Now, go through all buffers and tell component to
     // either use a buffer, or to allocate its own buffer
     for (ii = 0; ii < aNumBuffers; ii++)
@@ -3264,6 +3271,40 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::ProvideBuffersToComponent(OsclMemPoolFi
                     out_ctrl_struct_ptr[ii] = ctrl_struct_ptr[ii];
                     out_buff_hdr_ptr[ii] = temp->pBufHdr;
 
+                }
+                else if (ipPMemBufferAlloc)
+                {
+                    // Actual buffer memory will be allocated outside the node from
+                    // an PMEM buffer allocator interface.
+                    int32    pmemfd = -1;
+
+                    uint8 *pB = (uint8*) ipPMemBufferAlloc->allocate(aActualBufferSize, &pmemfd);
+                    if (NULL == pB)
+                    {
+                        //  error
+                        PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
+                                        (0, "%s::ProvideBuffersToComponent ->allocate() failed due to some general error", iName.Str()));
+                        ReportErrorEvent(PVMFFailure);
+                        ChangeNodeState(EPVMFNodeError);
+                        return false;
+                    }
+
+                    OutputBufCtrlStruct *temp = (OutputBufCtrlStruct *)ctrl_struct_ptr[ii];
+
+                    err = OMX_UseBuffer(iOMXDecoder,    // hComponent
+                                        &(temp->pBufHdr),       // address where ptr to buffer header will be stored
+                                        aPortIndex,             // port index (for port for which buffer is provided)
+                                        ctrl_struct_ptr[ii],    // App. private data = pointer to beginning of allocated data
+                                        //              to have a context when component returns with a callback (i.e. to know
+                                        //              what to free etc.
+                                        (OMX_U32)aActualBufferSize,     // buffer size
+                                        pB);                        // buffer data ptr
+
+                    // Once the buffer header is allocated by OMX component, assign the PMEM fd
+                    temp->pBufHdr->pOutputPortPrivate = (void*)pmemfd;
+
+                    out_ctrl_struct_ptr[ii] = ctrl_struct_ptr[ii];
+                    out_buff_hdr_ptr[ii] = temp->pBufHdr;
                 }
                 else
                 {
@@ -3430,6 +3471,19 @@ bool PVMFOMXBaseDecNode::FreeBuffersFromComponent(OsclMemPoolFixedChunkAllocator
                 iNumOutstandingOutputBuffers++;
                 OutputBufCtrlStruct *temp = (OutputBufCtrlStruct *) ctrl_struct_ptr[ii];
                 ipFixedSizeBufferAlloc->deallocate((OsclAny*) temp->pBufHdr->pBuffer);
+
+                err = OMX_FreeBuffer(iOMXDecoder,
+                                     aPortIndex,
+                                     temp->pBufHdr);
+            }
+            else if (ipPMemBufferAlloc)
+            {
+                //Deallocate the output buffer memory that was allocated outside the node
+                //using an pmem output buffer allocator interface
+
+                iNumOutstandingOutputBuffers++;
+                OutputBufCtrlStruct *temp = (OutputBufCtrlStruct *) ctrl_struct_ptr[ii];
+                ipPMemBufferAlloc->deallocate((OsclAny*) temp->pBufHdr->pBuffer, (int32) temp->pBufHdr->pOutputPortPrivate);
 
                 err = OMX_FreeBuffer(iOMXDecoder,
                                      aPortIndex,
@@ -3782,8 +3836,16 @@ OMX_ERRORTYPE PVMFOMXBaseDecNode::FillBufferDoneProcessing(OMX_OUT OMX_HANDLETYP
 
         ipPrivateData = (OsclAny *) aBuffer->pPlatformPrivate; // record the pointer
 
+        // By default set the pmem fd to -1 (Software decoders will not have support for pmem)
+        pmem_fd = -1;
+
+        if (ipPMemBufferAlloc)
+        {
+            // If hardware decoder is used, get the fd from the buffer header.
+            pmem_fd = (int32) aBuffer->pOutputPortPrivate;
+        }
         PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
-                        (0, "%s::FillBufferDoneProcessing: Wrapping buffer %x of size %d", iName.Str(), pBufdata, aBuffer->nFilledLen));
+                        (0, "%s::FillBufferDoneProcessing: Wrapping buffer %x of size %d with pmem_fd %d", iName.Str(), pBufdata, aBuffer->nFilledLen, pmem_fd));
         // wrap the buffer into the MediaDataImpl wrapper, and queue it for sending downstream
         // wrapping will create a refcounter. When refcounter goes to 0 i.e. when media data
         // is released in downstream components, the custom deallocator will automatically release the buffer back to the
@@ -4273,8 +4335,22 @@ void PVMFOMXBaseDecNode::DoPrepare(PVMFOMXBaseDecNodeCommand& aCmd)
                 iOMXComponentUsesNALStartCodes = (OMX_TRUE == Cap_flags.iOMXComponentUsesNALStartCodes) ? true : false;
                 iOMXComponentCanHandleIncompleteFrames = (OMX_TRUE == Cap_flags.iOMXComponentCanHandleIncompleteFrames) ? true : false;
                 iOMXComponentUsesFullAVCFrames = (OMX_TRUE == Cap_flags.iOMXComponentUsesFullAVCFrames) ? true : false;
-            }
 
+                // 1. If the target is 7x30 &
+                // 2. If the format is MP3 &
+                // 3. If by default bHWAccelerated is set to false (use software decoder)
+                // 4. Then it should be definitely LPA decode -> Use PMemBufferAlloc interface.
+#ifdef SURF7x30
+                if ( (format == PVMF_MIME_MP3) ||
+                     (format == PVMF_MIME_MP3FF))
+                {
+                    if (!bHWAccelerated)
+                    {
+                        ipPMemBufferAlloc = new PVMFPMemBufferAlloc();
+                    }
+                }
+#endif
+            }
             // do some sanity checking
 
             if ((format != PVMF_MIME_H264_VIDEO) && (format != PVMF_MIME_H264_VIDEO_MP4) && (format != PVMF_MIME_H264_VIDEO_RAW))

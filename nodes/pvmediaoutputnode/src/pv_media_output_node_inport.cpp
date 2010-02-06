@@ -1223,6 +1223,7 @@ void PVMediaOutputNodePort::SendMediaData()
         mediaxferhdr.stream_id = mediaData->getStreamID();
         mediaxferhdr.private_data_length = privatedatalength;
         mediaxferhdr.private_data_ptr = privatedataptr;
+        mediaxferhdr.pmem_fd = mediaData->getPMEMFD();
         err = WriteDataToMIO(cmdId, mediaxferhdr, frag);
 
         if (err != OsclErrNone)

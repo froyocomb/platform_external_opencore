@@ -12,6 +12,9 @@ LOCAL_CFLAGS :=  $(PV_CFLAGS)
 
 ifeq ($(TARGET_BOARD_PLATFORM),msm7k)
     LOCAL_CFLAGS += -DUSE_HW_AAC_DEC
+    ifeq ($(BOARD_USES_QCOM_AUDIO_V2), true)
+        LOCAL_CFLAGS += -DSURF7x30
+    endif
 endif
 
 LOCAL_STATIC_LIBRARIES := 

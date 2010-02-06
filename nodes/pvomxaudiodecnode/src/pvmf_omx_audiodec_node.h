@@ -85,7 +85,7 @@ class PVMFOMXAudioDecNode
 
 {
     public:
-        PVMFOMXAudioDecNode(int32 aPriority);
+        PVMFOMXAudioDecNode(int32 aPriority, bool aHwAccelerated);
         ~PVMFOMXAudioDecNode();
 
         // From PVMFNodeInterface
@@ -149,6 +149,7 @@ class PVMFOMXAudioDecNode
         PV_LATM_Parser *iLATMParser;
         uint8 *iLATMConfigBuffer;
         uint32 iLATMConfigBufferSize;
+        bool   bHWAccelerated;
 
 };
 

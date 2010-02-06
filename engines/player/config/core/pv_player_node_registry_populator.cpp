@@ -184,7 +184,7 @@ void PVPlayerRegistryPopulator::RegisterAllNodes(PVPlayerNodeRegistryInterface* 
     nodeinfo.iNodeUUID = KPVMFOMXAudioDecNodeUuid;
     nodeinfo.iOutputType.clear();
     nodeinfo.iOutputType.push_back(PVMF_MIME_PCM16);
-    nodeinfo.iNodeCreateFunc = PVMFOMXAudioDecNodeFactory::CreatePVMFOMXAudioDecNode;
+    nodeinfo.iNodeCreateFunc = (PVMFNodeInterface*(*)(int32))PVMFOMXAudioDecNodeFactory::CreatePVMFOMXAudioDecNode;
     nodeinfo.iNodeReleaseFunc = PVMFOMXAudioDecNodeFactory::DeletePVMFOMXAudioDecNode;
     aRegistry->RegisterNode(nodeinfo);
 #endif
