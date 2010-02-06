@@ -114,10 +114,12 @@ PVMFStatus PVMFOMXAudioDecNode::ThreadLogon()
 /////////////////////////////////////////////////////////////////////////////
 // Class Constructor
 /////////////////////////////////////////////////////////////////////////////
-PVMFOMXAudioDecNode::PVMFOMXAudioDecNode(int32 aPriority) :
-        PVMFOMXBaseDecNode(aPriority, "PVMFOMXAudioDecNode")
+PVMFOMXAudioDecNode::PVMFOMXAudioDecNode(int32 aPriority, bool aHwAccelerated) :
+        PVMFOMXBaseDecNode(aPriority, "PVMFOMXAudioDecNode", aHwAccelerated)
 {
     iInterfaceState = EPVMFNodeCreated;
+
+    bHWAccelerated = aHwAccelerated;
 
     iNodeConfig.iMimeType = PVOMXAUDIODECNODE_CONFIG_MIMETYPE_DEF;
 
@@ -699,6 +701,25 @@ PVMFStatus PVMFOMXAudioDecNode::HandlePortReEnable()
         if (iNumOutputBuffers < iParamPort.nBufferCountMin)
             iNumOutputBuffers = iParamPort.nBufferCountMin;
 
+#ifdef SURF7x30
+
+        if (!bHWAccelerated)
+        {
+            PVMFFormatType Format = PVMF_MIME_FORMAT_UNKNOWN;
+
+            if (iInPort != NULL)
+            {
+                Format = ((PVMFOMXDecPort*)iInPort)->iFormat;
+            }
+
+            if ( (Format == PVMF_MIME_MP3) ||
+                 (Format == PVMF_MIME_MP3FF))
+            {
+                iNumOutputBuffers = 4; // This is using software lpa decode - 4 o/p of 512 KB each
+                iOMXComponentOutputBufferSize =  (512 * 1024); // 512 KB
+            }
+        }
+#endif
         PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                         (0, "PVMFOMXAudioDecNode::HandlePortReEnable() new output buffers %d, size %d", iNumOutputBuffers, iOMXComponentOutputBufferSize));
 
@@ -912,9 +933,29 @@ PVMFStatus PVMFOMXAudioDecNode::HandlePortReEnable()
         // this is input port
 
         iOMXComponentInputBufferSize = iParamPort.nBufferSize;
+
         // do we need to increase the number of buffers?
         if (iNumInputBuffers < iParamPort.nBufferCountMin)
             iNumInputBuffers = iParamPort.nBufferCountMin;
+
+
+#ifdef SURF7x30
+        if (!bHWAccelerated)
+        {
+            PVMFFormatType Format = PVMF_MIME_FORMAT_UNKNOWN;
+
+            if (iInPort != NULL)
+            {
+                Format = ((PVMFOMXDecPort*)iInPort)->iFormat;
+            }
+
+            if ( (Format == PVMF_MIME_MP3) ||
+                 (Format == PVMF_MIME_MP3FF))
+            {
+                iNumInputBuffers = 4; // This is using software lpa decode - 4 i/p of 32KB
+            }
+        }
+#endif
 
         PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                         (0, "PVMFOMXAudioDecNode::HandlePortReEnable() new buffers %d, size %d", iNumInputBuffers, iOMXComponentInputBufferSize));
@@ -1163,14 +1204,29 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
 
     iOMXComponentInputBufferSize = iParamPort.nBufferSize;
 
+#ifdef SURF7x30
+        if (!bHWAccelerated)
+        {
+            PVMFFormatType Format = PVMF_MIME_FORMAT_UNKNOWN;
+
+            if (iInPort != NULL)
+            {
+                Format = ((PVMFOMXDecPort*)iInPort)->iFormat;
+            }
+
+            if ( (Format == PVMF_MIME_MP3) ||
+                 (Format == PVMF_MIME_MP3FF))
+            {
+                iNumInputBuffers = 4; // This is using software lpa decode - 4 i/p of 32KB
+            }
+        }
+#endif
+
     iParamPort.nBufferCountActual = iNumInputBuffers;
 
     // set the number of actual input buffers
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                     (0, "PVMFOMXAudioDecNode::NegotiateComponentParameters() Inport buffers %d,size %d", iNumInputBuffers, iOMXComponentInputBufferSize));
-
-
-
 
     CONFIG_SIZE_AND_VERSION(iParamPort);
     iParamPort.nPortIndex = iInputPortIndex;
@@ -1392,6 +1448,28 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
         }
     }
 
+    PVMFFormatType Format = PVMF_MIME_FORMAT_UNKNOWN;
+
+ #ifdef SURF7x30
+
+    if (!bHWAccelerated)
+    {
+        if (iInPort != NULL)
+        {
+            Format = ((PVMFOMXDecPort*)iInPort)->iFormat;
+        }
+
+        if ( (Format == PVMF_MIME_MP3) ||
+             (Format == PVMF_MIME_MP3FF))
+        {
+            iNumOutputBuffers = 4; // This is using software lpa decode - 4 o/p of 512 KB each
+            iOMXComponentOutputBufferSize = (512 * 1024); // 512 KB
+        }
+
+        Format = PVMF_MIME_FORMAT_UNKNOWN;
+    }
+ #endif
+
 
     iParamPort.nBufferCountActual = iNumOutputBuffers;
 
@@ -1413,7 +1491,6 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
     //This is need it since a single component could handle differents roles
 
     // Init to desire format
-    PVMFFormatType Format = PVMF_MIME_FORMAT_UNKNOWN;
     if (iInPort != NULL)
     {
         Format = ((PVMFOMXDecPort*)iInPort)->iFormat;
@@ -2288,6 +2365,8 @@ bool PVMFOMXAudioDecNode::QueueOutputBuffer(OsclSharedPtr<PVMFMediaDataImpl> &me
         // set stream id
         mediaDataOut->setStreamID(iStreamID);
 
+        //set the corresponding pmem_fd
+        mediaDataOut->setPMEMFD(pmem_fd);
 
         PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iDataPathLogger, PVLOGMSG_INFO, (0, ":PVMFOMXAudioDecNode::QueueOutputFrame(): - SeqNum=%d, TS=%d", iSeqNum, iOutTimeStamp));
         int fsiErrorCode = 0;
@@ -2377,7 +2456,6 @@ bool PVMFOMXAudioDecNode::QueueOutputBuffer(OsclSharedPtr<PVMFMediaDataImpl> &me
             {
                 PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
                                 (0, "PVMFOMXAudioDecNode::QueueOutputFrame(): Queued frame OK "));
-
             }
             else
             {

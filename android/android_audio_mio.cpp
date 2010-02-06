@@ -50,6 +50,13 @@ OSCL_EXPORT_REF AndroidAudioMIO::AndroidAudioMIO(const char* name)
     : OsclTimerObject(OsclActiveObject::EPriorityNominal, name),
     iWriteCompleteAO(NULL)
 {
+    bIsAudioLPADecode = false;
+
+    // Determine if it is LPADecode MIO request
+    if (strstr(name,"LPADecode")) {
+       LOGV("LPADecode mode MIO Initialization");
+       bIsAudioLPADecode = true;
+    }
     initData();
 }
 
@@ -112,6 +119,8 @@ void AndroidAudioMIO::Cleanup()
         iWriteCompleteAO = NULL;
     }
     iWriteResponseQueueLock.Close();
+
+    bIsAudioLPADecode = false;
     LOGV("Cleanup out");
 }
 
@@ -142,7 +151,15 @@ PvmiMediaTransfer* AndroidAudioMIO::createMediaTransfer(PvmiMIOSession& aSession
     // it can put the buffer on the write response queue
     // and schedule this MIO to run, to return the buffer
     // to the engine
-    iWriteCompleteAO = OSCL_NEW(AndroidAudioOutputThreadSafeCallbackAO,(this, 5));
+
+    if (!bIsAudioLPADecode)
+    {
+        iWriteCompleteAO = OSCL_NEW(AndroidAudioOutputThreadSafeCallbackAO,(this, 5));
+    }
+    else
+    {
+       iWriteCompleteAO = OSCL_NEW(AndroidAudioLPADecodeThreadSafeCallbackAO,(this, 5));
+    }
 
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE, (0,"AndroidAudioMIO::createMediaTransfer() called"));
     return (PvmiMediaTransfer*)this;
@@ -355,6 +372,8 @@ PVMFCommandId AndroidAudioMIO::writeAsync(uint8 aFormatType, int32 aFormatIndex,
 
     bool bWriteComplete = true;
 
+    LOGV("Buffer with the address %x and PMEM fd is %d", aData, data_header_info.pmem_fd);
+
     //LOGV("writeAsync() called seqnum %d ts %d flags %d context %d formattype %d formatindex %d",aSeqNum, aTimestamp, flags,aContext,aFormatType,aFormatIndex);
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
         (0,"AndroidAudioMIO::writeAsync() seqnum %d ts %d flags %d context %d",
@@ -453,7 +472,12 @@ PVMFCommandId AndroidAudioMIO::writeAsync(uint8 aFormatType, int32 aFormatIndex,
         iWriteResponseQueueLock.Unlock();
         RunIfNotReady();
     } else if (!iWriteBusy) {
-        writeAudioBuffer(aData, aDataLen, cmdid, aContext, aTimestamp);
+        if (bIsAudioLPADecode) {
+            writeAudioLPABuffer(aData, aDataLen, cmdid, aContext, aTimestamp, data_header_info.pmem_fd);
+        }
+        else {
+            writeAudioBuffer(aData, aDataLen, cmdid, aContext, aTimestamp);
+        }
     }
     LOGV("data queued = %u", iDataQueued);
 
@@ -523,6 +547,17 @@ PVMFStatus AndroidAudioMIO::verifyParametersSync(PvmiMIOSession aSession, PvmiKv
             else {
                 return PVMFErrNotSupported;
             }
+        }
+        // For lpa decode, just return if this is supported - for Engine to choose default software decoder
+        else if ( pv_mime_strcmp(compstr, _STRLIT_CHAR("x-pvmf/media/support-LPAdecode")) == 0) {
+            if (bIsAudioLPADecode) {
+                return PVMFSuccess;
+            }
+            else
+            {
+                return PVMFErrNotSupported;
+            }
+
         }
     }
     return PVMFSuccess;
