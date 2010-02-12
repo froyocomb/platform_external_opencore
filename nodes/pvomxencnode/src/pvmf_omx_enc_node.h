@@ -1413,13 +1413,13 @@ class PVMFOMXEncNode
         uint32 iEndOfFrameFlagPrevious;
         uint32 iKeyFrameFlagPrevious;
         uint32 iEndOfNALFlagPrevious;
-        uint32 iTimeStampPrevious;
+        OMX_TICKS iTimeStampPrevious;
         uint32 iBufferLenPrevious;
 
         uint32 iEndOfFrameFlagOut;
         uint32 iKeyFrameFlagOut;
         uint32 iEndOfNALFlagOut;
-        uint32 iTimeStampOut;
+        OMX_TICKS iTimeStampOut;
         uint32 iBufferLenOut;
         OsclAny **out_ctrl_struct_ptr ;
         OsclAny **out_buff_hdr_ptr ;
