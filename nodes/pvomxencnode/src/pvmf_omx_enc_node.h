@@ -1248,7 +1248,7 @@ class PVMFOMXEncNode
         uint32 iCodecSeqNum;    // sequence number tracking
         uint32 iInPacketSeqNum;
 
-        uint32 iInTimestamp;
+        OMX_TICKS iInTimestamp;
         uint32 iInDuration;
         uint32 iInNumFrags;
         uint32 iCurrentMsgMarkerBit;
@@ -1310,7 +1310,7 @@ class PVMFOMXEncNode
         // BOS
         bool iSendBOS;
         uint32 iStreamID;
-        uint32 iBOSTimestamp;
+        OMX_TICKS iBOSTimestamp;
 
         //EOS control flags
         bool iIsEOSSentToComponent;
