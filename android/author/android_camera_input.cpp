@@ -94,6 +94,11 @@ void AndroidCameraInput::ReleaseQueuedFrames()
 #endif
         mCamera->releaseRecordingFrame(data.iFrameBuffer);
     }
+    if(pPmemInfo)
+    {
+        delete pPmemInfo;
+        pPmemInfo = NULL;
+    }
     iFrameQueueMutex.Unlock();
 }
 
@@ -126,11 +131,6 @@ AndroidCameraInput::~AndroidCameraInput()
     }
     iFrameQueueMutex.Close();
     mListener.clear();
-    if(pPmemInfo)
-    {
-        delete pPmemInfo;
-        pPmemInfo = NULL;
-    }
 }
 
 PVMFStatus AndroidCameraInput::connect(PvmiMIOSession& aSession,
@@ -798,6 +798,9 @@ void AndroidCameraInput::Run()
 
     // dequeue frame buffers and write to peer
     if (NULL != iPeer) {
+        if (iState != STATE_STARTED) {
+            ReleaseQueuedFrames();
+        }
         iFrameQueueMutex.Lock();
         while (!iFrameQueue.empty()) {
             AndroidCameraInputMediaData data = iFrameQueue[0];
@@ -1124,14 +1127,9 @@ PVMFStatus AndroidCameraInput::DoStop(const AndroidCameraInputCmd& aCmd)
     iDataEventCounter = 0;
     iWriteState = EWriteOK;
     if (mCamera != NULL) {
-    mCamera->setListener(NULL);
-    mCamera->stopRecording();
-    ReleaseQueuedFrames();
-    if(pPmemInfo)
-    {
-        delete pPmemInfo;
-        pPmemInfo = NULL;
-    }
+        mCamera->setListener(NULL);
+        mCamera->stopRecording();
+        ReleaseQueuedFrames();
     }
     iState = STATE_STOPPED;
     return PVMFSuccess;
@@ -1335,7 +1333,11 @@ PVMFStatus AndroidCameraInput::postWriteAsync(nsecs_t timestamp, const sp<IMemor
     data.iXferHeader.flags = 0;
     data.iXferHeader.duration = 0;
     data.iXferHeader.stream_id = 0;
+    data.iFrameSize = size;
+    data.iFrameBuffer = frame;
 
+    // lock muteddx and queue frame buffer
+    iFrameQueueMutex.Lock();
     {//compose private data
         //could size be zero?
         if(NULL == pPmemInfo)
@@ -1346,6 +1348,7 @@ PVMFStatus AndroidCameraInput::postWriteAsync(nsecs_t timestamp, const sp<IMemor
             if(NULL == pPmemInfo)
             {
                 LOGE("Failed to allocate the camera pmem info buffer array. iCalculateNoOfCameraPreviewBuffer %d",iCalculateNoOfCameraPreviewBuffer);
+                iFrameQueueMutex.Unlock();
                 return PVMFFailure;
             }
         }
@@ -1357,11 +1360,6 @@ PVMFStatus AndroidCameraInput::postWriteAsync(nsecs_t timestamp, const sp<IMemor
         LOGV("struct size %d, pmem_info - %x, &pmem_info[iIndex] - %x, iIndex =%d, pmem_info.pmem_fd = %d, pmem_info.offset = %d", sizeof(CAMERA_PMEM_INFO), pPmemInfo, &pPmemInfo[iIndex], iIndex, pPmemInfo[iIndex].pmem_fd, pPmemInfo[iIndex].offset );
     }
 
-    data.iFrameBuffer = frame;
-    data.iFrameSize = size;
-
-    // lock mutex and queue frame buffer
-    iFrameQueueMutex.Lock();
     iFrameQueue.push_back(data);
     iFrameQueueMutex.Unlock();
 
@@ -1369,7 +1367,7 @@ PVMFStatus AndroidCameraInput::postWriteAsync(nsecs_t timestamp, const sp<IMemor
     OsclAny* P = NULL;
     iPostCameraFrameAO->ReceiveEvent(P);
 
-    return PVMFSuccess; 
+    return PVMFSuccess;
 }
 
 // camera callback interface
