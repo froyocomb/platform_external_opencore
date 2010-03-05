@@ -906,6 +906,10 @@ bool PVMFOMXVideoDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
     {
         iYUVFormat = PVMF_MIME_YUV420_SEMIPLANAR_YVU; // semiplanar with Y and VU interleaved
     }
+    else if (iOMXVideoColorFormat == 0x7F000000)
+    {
+        iYUVFormat = PVMF_MIME_YUV420_PACKEDSEMIPLANAR_TILE;
+    }
     else
     {
         iYUVFormat = PVMF_MIME_FORMAT_UNKNOWN;
@@ -1644,7 +1648,7 @@ bool PVMFOMXVideoDecNode::QueueOutputBuffer(OsclSharedPtr<PVMFMediaDataImpl> &me
 
 
         // in case of special YVU format, attach fsi to every outgoing message containing ptr to private data
-        if ((iYUVFormat == PVMF_MIME_YUV420_SEMIPLANAR_YVU) || (iYUVFormat == PVMF_MIME_YUV420_SEMIPLANAR))
+        if ((iYUVFormat == PVMF_MIME_YUV420_SEMIPLANAR_YVU) || (iYUVFormat == PVMF_MIME_YUV420_SEMIPLANAR) || (iYUVFormat == PVMF_MIME_YUV420_PACKEDSEMIPLANAR_TILE))
         {
             OsclRefCounterMemFrag privatedataFsiMemFrag;
 
