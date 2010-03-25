@@ -2194,7 +2194,7 @@ PVMFStatus PVMFMP4FFParserNode::DoRequestPort(PVMFMP4FFParserNodeCommand& aCmd, 
             else
             {
                 // Assume 1 QCELP frame per sample
-                trackportinfo.iNumQCELPSamplesToRetrieve = QCELP_NUMFRAMES;
+                trackportinfo.iNumQCELPSamplesToRetrieve = 1;
             }
         }
         trackportinfo.iNumSamples = trackportinfo.iNumQCELPSamplesToRetrieve;
@@ -2222,7 +2222,7 @@ PVMFStatus PVMFMP4FFParserNode::DoRequestPort(PVMFMP4FFParserNodeCommand& aCmd, 
             else
             {
                 // Assume 1 EVRC frame per sample
-                trackportinfo.iNumEVRCSamplesToRetrieve = EVRC_NUMFRAMES;
+                trackportinfo.iNumEVRCSamplesToRetrieve = 1;
             }
         }
         trackportinfo.iNumSamples = trackportinfo.iNumEVRCSamplesToRetrieve;
