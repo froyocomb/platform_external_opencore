@@ -2375,6 +2375,12 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendInputBufferToOMXComponent()
                 bytes_remaining_in_buffer = (input_buf->pBufHdr->nAllocLen - input_buf->pBufHdr->nFilledLen);
             }
 
+            // Incrementing Time stamp of AAC-LATM fragments when multiple frames present in single buffer
+            if((iCurrFragNum != 0) && (((PVMFOMXDecPort*)iInPort)->iFormat == PVMF_MIME_LATM))
+            {
+                iInTimestamp += iMsPerFrame;
+            }
+
             if (iFragmentSizeRemainingToCopy <= bytes_remaining_in_buffer)
             {
 

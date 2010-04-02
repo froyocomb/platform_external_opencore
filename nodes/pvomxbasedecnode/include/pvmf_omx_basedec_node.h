@@ -606,6 +606,7 @@ class PVMFOMXBaseDecNode
 
         // Size of output buffer (negotiated with component)
         uint32 iOMXComponentOutputBufferSize;
+        uint32 iMsPerFrame;
 
         // size of output to allocate (OMX_ALLOCATE_BUFFER =  size of buf header )
         // (OMX_USE_BUFFER = size of buf header + iOMXCoponentOutputBufferSize)
