@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
  * Copyright (C) 2008 HTC Inc.
+ * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +54,8 @@ AndroidCameraInput::AndroidCameraInput()
     iAuthorClock(NULL),
     iClockNotificationsInf(NULL),
     iAudioFirstFrameTs(0),
-    pPmemInfo(NULL)
+    pPmemInfo(NULL),
+    iPostCameraFrameAO(NULL)
 {
     LOGV("constructor(%p)", this);
     iCmdIdCounter = 0;
@@ -98,6 +100,13 @@ void AndroidCameraInput::ReleaseQueuedFrames()
 AndroidCameraInput::~AndroidCameraInput()
 {
     LOGV("destructor");
+
+    if(iPostCameraFrameAO)
+    {
+        OSCL_DELETE(iPostCameraFrameAO);
+        iPostCameraFrameAO = NULL;
+    }
+
     if (mCamera != NULL) {
         mCamera->setListener(NULL);
         ReleaseQueuedFrames();
@@ -177,6 +186,8 @@ PvmiMediaTransfer* AndroidCameraInput::createMediaTransfer(
         OSCL_LEAVE(OsclErrArgument);
         return NULL;
     }
+
+    iPostCameraFrameAO = OSCL_NEW(AndroidCameraInputThreadSafeCallbackAO,(this,10));
 
     return (PvmiMediaTransfer*)this;
 }
@@ -814,7 +825,11 @@ void AndroidCameraInput::Run()
                 //release buffer immediately if write fails
                 mCamera->releaseRecordingFrame(data.iFrameBuffer);
                 iFrameQueue.erase(iFrameQueue.begin());
-                iWriteState = EWriteBusy;
+                if(error == OsclErrBusy)
+                {
+                    LOGE(" AndroidCameraInput::Run Set Write state to BUSY \n");
+                    iWriteState = EWriteBusy;
+                }
                 break;
             }
         }
@@ -1302,7 +1317,10 @@ PVMFStatus AndroidCameraInput::postWriteAsync(nsecs_t timestamp, const sp<IMemor
     iFrameQueueMutex.Lock();
     iFrameQueue.push_back(data);
     iFrameQueueMutex.Unlock();
-    RunIfNotReady();
+
+    // Call RunIfNotReady from threadsafecallback AO
+    OsclAny* P = NULL;
+    iPostCameraFrameAO->ReceiveEvent(P);
 
     return PVMFSuccess; 
 }
