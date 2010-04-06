@@ -78,11 +78,6 @@ PVMFMediaClock::ConstructMediaClockNotificationsInterface(PVMFMediaClockNotifica
 
     PVMFMediaClockNotificationsInterfaceImpl* ifaceImpl = NULL;
 
-    if (RUNNING == iState)
-    {
-        return PVMFErrInvalidState;
-    }
-
     ifaceImpl = OSCL_NEW(PVMFMediaClockNotificationsInterfaceImpl, (this, aLatency, aNotificationInterfaceDestroyedCallback));
     aIface = OSCL_STATIC_CAST(PVMFMediaClockNotificationsInterface*, ifaceImpl);
 
@@ -2065,6 +2060,7 @@ OSCL_EXPORT_REF void PVMFMediaClockNotificationsInterfaceImpl::RemoveClockObserv
 OSCL_EXPORT_REF void PVMFMediaClockNotificationsInterfaceImpl::SetClockStateObserver(PVMFMediaClockStateObserver& aObserver)
 {
     iClockStateObserver = &aObserver;
+    iClockStateObserver->ClockStateUpdated();
 }
 
 OSCL_EXPORT_REF void PVMFMediaClockNotificationsInterfaceImpl::RemoveClockStateObserver(PVMFMediaClockStateObserver& aObserver)
