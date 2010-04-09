@@ -3159,6 +3159,11 @@ int32 SampleTableAtom::getOffsetByTime(uint32 ts, int32* sampleFileOffset)
         sampleNum = numSamples - 1;
     }
 
+    if (sampleNum == PV_ERROR)
+    {
+        return DEFAULT_ERROR;
+    }
+
     int32 sampleSizeOffset = 0;
     if (ts != (uint32) getTimestampForSampleNumber(sampleNum))
     {
