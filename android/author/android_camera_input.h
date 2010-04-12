@@ -89,6 +89,8 @@ typedef enum
 #define ANDROID_DEFAULT_I_FRAME_INTERVAL 1  // encode one I frame every 1 second.
 #define ANDROID_VIDEO_FORMAT       PVMF_MIME_YUV420
 
+#define VIDEO_PULL_DURATION_7x27            231
+
 //FIXME mime string now
 /*
 #if ANDROID_VIDEO_FORMAT == PVMF_MIME_YUV420
@@ -437,6 +439,8 @@ private:
     PVMFMediaClockNotificationsInterface *iClockNotificationsInf;
     uint32 iAudioFirstFrameTs;
 
+    uint32 iVideoFrameSkipCnt;
+    uint32 iVideoDurationToPull;
 };
 
 #ifdef HIDE_MIO_SYMBOLS
