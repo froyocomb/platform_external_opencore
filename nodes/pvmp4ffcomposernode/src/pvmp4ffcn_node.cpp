@@ -2407,61 +2407,6 @@ PVMFStatus PVMp4FFComposerNode::ProcessIncomingMsg(PVMFPortInterface* aPort)
             }
 
             Oscl_Vector<OsclMemoryFragment, OsclMemAllocator> pFrame; //vector to store the nals in the particular case of AVC
-            if (!mediaDataPtr->getMediaFragment(0, memFrag))
-            {
-                    return PVMFFailure;
-            }
-            uint8_t *bufPtrPos =(uint8_t *) (memFrag.getMemFragPtr());
-            // multiple frames in single fragment support
-            if(((*((uint32_t*)(bufPtrPos))) == 0x51434F4D) /* magic number to indicate tunnel mode encoding support */
-                  && (port->GetFormat() == PVMF_MIME_MPEG4_AUDIO))
-            {
-                uint16_t frameSize;
-                uint8_t *frameptr;
-                uint32 initialTimeStamp = timestamp;
-                PVMP4FFCNFormatSpecificConfig* config = port->GetFormatSpecificConfig();
-
-                bufPtrPos+=4; //skip magic number
-                uint16_t frameCount  = *((uint16_t*)(bufPtrPos));
-                bufPtrPos+=2;//skip frame counter
-
-                for(int i=0;i<frameCount;i++)
-                {
-                    frameSize = *((uint16_t*)(bufPtrPos));
-                    bufPtrPos+=2;
-                    frameptr = bufPtrPos ;
-                    OsclMemoryFragment memfragment;
-                    memfragment.len = frameSize;
-                    memfragment.ptr = frameptr;
-                    pFrame.push_back(memfragment);
-                    bufPtrPos += frameSize;
-                    timestamp = initialTimeStamp + (((1024 *1000)/(float)config->iSamplingRate) * i);
-#ifdef ANDROID
-                if (!iMaxReachedEvent)
-                {
-                    // TODO: We are passing port and port->GetFormat(), should pass port only.
-                    status = iFragmentWriter->enqueueMemFragToTrack(
-                                 pFrame, memFrag, port->GetFormat(), timestamp,
-                                 trackId, (PVMp4FFComposerPort*)aPort);
-                }
-                else if (!iMaxReachedReported)
-                {
-                    iMaxReachedReported = true;
-                    ReportInfoEvent(static_cast<PVMFComposerSizeAndDurationEvent>(iMaxReachedEvent), NULL);
-                    status = PVMFSuccess;
-                }
-#else
-                status = AddMemFragToTrack(pFrame, memFrag, port->GetFormat(), timestamp,
-                                           trackId, (PVMp4FFComposerPort*)aPort);
-#endif
-                if (status == PVMFFailure)
-                    ReportErrorEvent(PVMF_MP4FFCN_ERROR_ADD_SAMPLE_TO_TRACK_FAILED, (OsclAny*)aPort);
-
-                     pFrame.erase(&pFrame[0]);
-                 }
-            }
-            else  //single frame in multiple fragments
-            {
                  for (uint32 i = 0; (i < numFrags) && status == PVMFSuccess; i++)
                  {
                    if (!mediaDataPtr->getMediaFragment(i, memFrag))
@@ -2496,7 +2441,6 @@ PVMFStatus PVMp4FFComposerNode::ProcessIncomingMsg(PVMFPortInterface* aPort)
 #endif
                 if (status == PVMFFailure)
                     ReportErrorEvent(PVMF_MP4FFCN_ERROR_ADD_SAMPLE_TO_TRACK_FAILED, (OsclAny*)aPort);
-            }
         }
         break;
 
@@ -3133,6 +3077,10 @@ PVMFStatus PVMp4FFComposerNode::AddMemFragToTrack(Oscl_Vector<OsclMemoryFragment
 
     else if (aFormat == PVMF_MIME_MPEG4_AUDIO)
     {
+        uint8_t *bufPtrPos =(uint8_t *) (aMemFrag.getMemFragPtr());
+        if((*((uint32_t*)(bufPtrPos))) != 0x51434F4D)
+        {
+        //non-tunnel mode encode - single frame
         status = CheckMaxDuration(aTimestamp);
         if (status == PVMFFailure)
         {
@@ -3201,6 +3149,101 @@ PVMFStatus PVMp4FFComposerNode::AddMemFragToTrack(Oscl_Vector<OsclMemoryFragment
         ++(stats->iNumFrames);
         stats->iDuration = aTimestamp;
 #endif
+         }
+         else
+         {
+            //multiple frames in single fragment support
+            uint32 numFrags = aFrame.size();
+            uint32 timestamp = aTimestamp;
+            Oscl_Vector<OsclMemoryFragment, OsclMemAllocator> pFrame;
+            uint16_t frameSize;
+            uint8_t *frameptr;
+            uint32 initialTimeStamp = timestamp;
+            PVMP4FFCNFormatSpecificConfig* config = aPort->GetFormatSpecificConfig();
+
+            bufPtrPos+=4; //skip magic number
+            uint16_t frameCount  = *((uint16_t*)(bufPtrPos));
+            bufPtrPos+=2;//skip frame counter
+
+            for(int i=0;i<frameCount;i++)
+            {
+                // Check for max duration
+                status = CheckMaxDuration(timestamp);
+                if (status == PVMFFailure)
+                {
+                      PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
+                          (0, "PVMp4FFComposerNode::AddMemFragToTrack: Error - CheckMaxDuration failed"));
+                      return status;
+                }
+                else if (status == PVMFSuccess)
+                {
+                      PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_DEBUG,
+                               (0, "PVMp4FFComposerNode::AddMemFragToTrack: Maxmimum duration reached"));
+                      return status;
+                }
+
+                // Update clock converter
+                iClockConverter.set_timescale(timeScale);
+                iClockConverter.set_clock_other_timescale(timestamp, 1000);
+
+               frameSize = *((uint16_t*)(bufPtrPos));
+               bufPtrPos+=2;
+               frameptr = bufPtrPos ;
+               OsclMemoryFragment memfragment;
+               memfragment.len = frameSize;
+               memfragment.ptr = frameptr;
+               pFrame.push_back(memfragment);
+               bufPtrPos += frameSize;
+
+               status = CheckMaxFileSize(frameSize);
+               if (status == PVMFFailure)
+               {
+                   PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
+                                   (0, "PVMp4FFComposerNode::AddMemFragToTrack: Error - CheckMaxFileSize failed"));
+                   return status;
+               }
+               else if (status == PVMFSuccess)
+               {
+                   PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_DEBUG,
+                                   (0, "PVMp4FFComposerNode::AddMemFragToTrack: Maxmimum file size reached"));
+                   return status;
+               }
+
+               if (iRealTimeTS)
+               {
+                   if (timestamp <= aPort->GetLastTS())
+                   {
+                        timestamp = aPort->GetLastTS() + 1;
+                   }
+                   aPort->SetLastTS(timestamp);
+               }
+
+                PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                                (0, "PVMp4FFComposerNode::AddMemFragToTrack: Calling addSampleToTrack(%d, 0x%x, %d, %d, %d)",
+                                 aTrackId, data, frameSize, iClockConverter.get_current_timestamp(), flags));
+
+               uint32 aacts = iClockConverter.get_current_timestamp();
+               if (!iMpeg4File->addSampleToTrack(aTrackId, pFrame, aacts, flags))
+               {
+                   PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
+                                     (0, "PVMp4FFComposerNode::AddMemFragToTrack: Error - addSampleToTrack failed"));
+                   return PVMFFailure;
+               }
+               iSampleInTrack = true;
+               // Send progress report after sample is successfully added
+               SendProgressReport(timestamp);
+               if (status == PVMFFailure)
+                   ReportErrorEvent(PVMF_MP4FFCN_ERROR_ADD_SAMPLE_TO_TRACK_FAILED, (OsclAny*)aPort);
+               pFrame.erase(&pFrame[0]);
+
+#if PROFILING_ON
+               ++(stats->iNumFrames);
+               stats->iDuration = timestamp;
+#endif
+               timestamp = initialTimeStamp + (((1024 *1000)/(float)config->iSamplingRate) * i);
+
+            }
+         }
     }
 
     return PVMFSuccess;
