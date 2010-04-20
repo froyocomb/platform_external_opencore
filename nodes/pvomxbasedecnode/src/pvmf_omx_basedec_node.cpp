@@ -2376,7 +2376,7 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendInputBufferToOMXComponent()
             }
 
             // Incrementing Time stamp of AAC fragments when multiple frames present in single buffer
-            if(iCurrFragNum != 0)
+            if((iCurrFragNum != 0) && ((((PVMFOMXDecPort*)iInPort)->iFormat == PVMF_MIME_LATM) || (((PVMFOMXDecPort*)iInPort)->iFormat == PVMF_MIME_3640)))
             {
                 iInTimestamp += iMsPerFrame;
             }
