@@ -1319,10 +1319,7 @@ int AndroidAudioInput::audin_thread_func() {
 
             if (iFirstFrameReceived == false) {
                 iFirstFrameReceived = true;
-            }
 
-            if (iAudioFormatType == android::AudioSystem::PCM_16_BIT)
-            {
                 // Get the AudioRecord latency and
                 // get the system clock at this point
                 // The difference in 2 will give the actual time
@@ -1332,16 +1329,30 @@ int AndroidAudioInput::audin_thread_func() {
 
                 // Get the latency now
                 size_t kernelBufferSize = 0;
-                status_t ret = AudioSystem::getInputBufferSize(iAudioSamplingRate,
-                                                               AudioSystem::PCM_16_BIT,
-                                                               iAudioNumChannels, &kernelBufferSize);
 
-                if (ret == NO_ERROR) {
+                if (iAudioFormatType == android::AudioSystem::PCM_16_BIT ) {
+                  status_t ret = AudioSystem::getInputBufferSize(iAudioSamplingRate,
+                                                                 iAudioFormatType,
+                                                                 iAudioNumChannels, &kernelBufferSize);
+                  if (ret == NO_ERROR) {
                     uint32 readBufferFrames = kBufferSize/2/iAudioNumChannels;
                     uint32 kernelFrames = kernelBufferSize/2/iAudioNumChannels;
                     recordLatency  = ((readBufferFrames - 1)/kernelFrames + 1) * (kernelFrames*1000)/iAudioSamplingRate;
-                } else {
+                  }
+                  else {
                     LOGE("AudioSystem::getInputBufferSize returned error");
+                  }
+
+                }
+                else if (iAudioFormatType == android::AudioSystem::AMR_NB ||
+                         iAudioFormatType == android::AudioSystem::QCELP ||
+                         iAudioFormatType == android::AudioSystem::EVRC ){
+                  //latency to get first encoded frame
+                  recordLatency = 25;
+                }
+                else if ( iAudioFormatType == android::AudioSystem::AAC ){
+                  //latency to get first encoded frame
+                  recordLatency  = (1024*1000)/iAudioSamplingRate;
                 }
 
                 iFirstFrameTs = systime - recordLatency;
