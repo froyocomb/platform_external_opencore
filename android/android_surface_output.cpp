@@ -60,7 +60,8 @@ OSCL_EXPORT_REF AndroidSurfaceOutput::AndroidSurfaceOutput() :
     if(atoi(value)) mStatistics = true;
     property_get("ro.product.device",value,"0");
     if(strcmp("msm7627_surf",value) == 0 || strcmp("msm7627_ffa",value) == 0 ||
-       strcmp("msm7625_surf",value) == 0 || strcmp("msm7625_ffa",value) == 0)
+       strcmp("msm7625_surf",value) == 0 || strcmp("msm7625_ffa",value) == 0 ||
+       strcmp("msm7630_surf",value) == 0)
         mNumberOfFramesToHold = 1;
     else
         mNumberOfFramesToHold = 2;
