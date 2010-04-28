@@ -155,7 +155,17 @@ OSCL_EXPORT_REF MovieAtom::MovieAtom(MP4_FF_FILE *fp,
                 {
                     count -= DEFAULT_ATOM_SIZE;
                     AtomUtils::seekFromCurrPos(fp,atomSize);
+                    break;
                 }
+                if (count < (int32)atomSize)
+                {
+                    _success = false;
+                    _mp4ErrorCode = READ_FAILED;
+                    break;
+                }
+                count -= atomSize;
+                atomSize -= DEFAULT_ATOM_SIZE;
+                AtomUtils::seekFromCurrPos(fp, atomSize);
             }
             else if (atomType == MOVIE_HEADER_ATOM)
             {
