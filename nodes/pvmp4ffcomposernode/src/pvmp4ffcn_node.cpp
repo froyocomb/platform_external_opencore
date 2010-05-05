@@ -3240,7 +3240,7 @@ PVMFStatus PVMp4FFComposerNode::AddMemFragToTrack(Oscl_Vector<OsclMemoryFragment
                ++(stats->iNumFrames);
                stats->iDuration = timestamp;
 #endif
-               timestamp = initialTimeStamp + (((1024 *1000)/(float)config->iSamplingRate) * (i + 1));
+               timestamp = initialTimeStamp + (((1024 *1000)/(float)config->iSamplingRate) * i);
 
             }
          }
