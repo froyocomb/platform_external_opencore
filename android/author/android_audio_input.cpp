@@ -29,6 +29,12 @@
 #include <media/mediarecorder.h>
 #include <sys/prctl.h>
 
+//Change value to 1 to print out
+//timestamps calculated for an audio buffer
+//using the data duration and the current
+//system time
+#define DEBUG_TIMESTAMP 0
+
 using namespace android;
 
 // TODO: get buffer size from AudioFlinger
@@ -1289,6 +1295,10 @@ int AndroidAudioInput::audin_thread_func() {
         int64_t numFramesRecorded = 0;
         int numOfBytes = 0;
 
+#ifdef DEBUG_TIMESTAMP
+        uint32 prevTimeStamp = 0;
+        uint32 iSysTimeStamp = 0;
+#endif
         const int32 kAutoRampStartFrames =
             AUTO_RAMP_START_MS * iAudioSamplingRate / 1000;
 
@@ -1408,9 +1418,15 @@ int AndroidAudioInput::audin_thread_func() {
                 iFirstFrameTs = systime - recordLatency;
                 LOGV("First Audio Frame received systime %d, recordLatency %d, iFirstFrameTs %d", systime, recordLatency, iFirstFrameTs);
             }
+#ifdef DEBUG_TIMESTAMP
             else{
-              iTimeStamp = (uint32) (systemTime() / 1000000L) - iFirstFrameTs;
+              prevTimeStamp = iSysTimeStamp;
+              iSysTimeStamp = (uint32)(systemTime( ) / 1000000L) - iFirstFrameTs - dataDuration;
             }
+
+           LOGV("Audio Ts = %u, ts(data) = %u, ts - tsd = %u, delta = %u", iSysTimeStamp, iTimeStamp,
+                iSysTimeStamp - iTimeStamp, iSysTimeStamp - prevTimeStamp);
+#endif
 
            MicData micdata(data, numOfBytes, iTimeStamp,
                            dataDuration);
@@ -1418,6 +1434,7 @@ int AndroidAudioInput::audin_thread_func() {
            iWriteResponseQueue.push_back(micdata);
            iWriteResponseQueueLock.Unlock();
 
+           iTimeStamp += dataDuration;
            // Queue the next data event
            OsclAny* P = NULL;
            iWriteCompleteAO->ReceiveEvent(P);
