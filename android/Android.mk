@@ -11,7 +11,20 @@ LOCAL_SRC_FILES := \
     android_audio_output.cpp \
     android_audio_stream.cpp \
     android_audio_mio.cpp \
-    android_audio_output_threadsafe_callbacks.cpp
+    android_audio_output_threadsafe_callbacks.cpp \
+    android_audio_lpadecode.cpp \
+    android_audio_lpadecode_threadsafe_callbacks.cpp
+
+LOCAL_CFLAGS := $(PV_CFLAGS)
+
+# board-specific configuration
+LOCAL_CFLAGS += $(BOARD_OPENCORE_FLAGS)
+
+ifeq ($(TARGET_BOARD_PLATFORM),msm7k)
+    ifeq ($(BOARD_USES_QCOM_AUDIO_V2), true)
+        LOCAL_CFLAGS += -DSURF7x30
+    endif
+endif
 
 LOCAL_C_INCLUDES := $(PV_INCLUDES) \
     $(PV_TOP)/engines/common/include \

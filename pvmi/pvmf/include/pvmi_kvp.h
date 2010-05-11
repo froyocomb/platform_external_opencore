@@ -424,6 +424,9 @@ class PvmfAssetInfo3GPPLocationStruct
 // key for format type for any type of media
 #define PVMF_FORMAT_TYPE_VALUE_KEY "x-pvmf/media/format-type;valtype=char*"
 
+// key to check if LPADecoding is supported (To select Software decoder by default)
+#define PVMF_LPA_DECODE_VALUE_KEY "x-pvmf/media/support-LPAdecode;valtype=uint32"
+
 // key for audio decoder format
 #define PVMF_AUDIO_DEC_FORMAT_TYPE_VALUE_KEY "x-pvmf/audio/decoder/format-type;valtype=char*"
 
