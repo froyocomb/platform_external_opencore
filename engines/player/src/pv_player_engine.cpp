@@ -6761,13 +6761,20 @@ PVMFStatus PVPlayerEngine::DoSinkNodeTrackSelection(PVCommandId aCmdId, OsclAny*
                         }
                     }
 
-                    // Check if the MIO supports the LPA decode mode
-                    status = iDatapathList[i].iSinkNodeCapConfigIF->verifyParametersSync(NULL, &kvpLPADecode, 1);
-
-                    if (status == PVMFSuccess)
+                    // If the Source Format Type is MP3 only, check for LPA
+                    // support
+                    if ( (iSourceFormatType == PVMF_MIME_MP3FF) ||
+                         (iSourceFormatType == PVMF_MIME_MP3) )
                     {
-                        // MIO is LPA decode enabled. Disable Hardware acceleration.
-                        iHwAccelerated = false;
+
+                        // Check if the MIO supports the LPA decode mode
+                        status = iDatapathList[i].iSinkNodeCapConfigIF->verifyParametersSync(NULL, &kvpLPADecode, 1);
+
+                        if (status == PVMFSuccess)
+                        {
+                            // MIO is LPA decode enabled. Disable Hardware acceleration.
+                            iHwAccelerated = false;
+                        }
                     }
                 }
                 // if any of the above verifyParameterSync returns a failure, just move onto the next track.
