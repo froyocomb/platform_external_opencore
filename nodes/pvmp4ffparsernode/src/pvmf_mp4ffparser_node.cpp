@@ -5533,6 +5533,13 @@ bool PVMFMP4FFParserNode::GetAVCNALLength(OsclBinIStreamBigEndian& stream, uint3
         len = (int32)(len16);
         return true;
     }
+    else if (lengthSize == 3)
+    {
+        stream >> len;
+        len >>= 8;
+        stream.seekFromCurrentPosition(-1);
+        return true;
+    }
     else if (lengthSize == 4)
     {
         stream >> len;
