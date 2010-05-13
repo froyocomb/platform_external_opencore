@@ -1318,6 +1318,8 @@ int AndroidAudioInput::audin_thread_func() {
         const int32 kAutoRampDurationFrames =
             AUTO_RAMP_DURATION_MS * iAudioSamplingRate / 1000;
 
+
+        uint32_t total_frames = 0;
         while (!iExitAudioThread) {
             iOSSRequestQueueLock.Lock();
             if (iOSSRequestQueue.empty()) {
@@ -1391,6 +1393,7 @@ int AndroidAudioInput::audin_thread_func() {
             else if (iAudioFormatType == android::AudioSystem::AAC)
             {
               dataDuration = numFrames * ((1024 *1000)/(float)iAudioSamplingRate); //ms
+              total_frames += numFrames;
             }
 
            if (iFirstFrameReceived == false) {
@@ -1447,7 +1450,21 @@ int AndroidAudioInput::audin_thread_func() {
            iWriteResponseQueue.push_back(micdata);
            iWriteResponseQueueLock.Unlock();
 
-           iTimeStamp += dataDuration;
+           if( iAudioFormatType == android::AudioSystem::AAC ){
+
+             /*
+              * For AAC, the data duration can have a fractional part
+              * depending on the sampling frequency. Ignoring the
+              * fractional part can cause the timestamps to be
+              * set early leading to audio/video sync issues.
+              * This formula ensures that the timestamps are set to within
+              * 1ms of the actual data duration.
+              */
+             iTimeStamp = (uint32_t)( total_frames * (1024.0*1000/(float)iAudioSamplingRate) + .5 );
+           }
+           else {
+             iTimeStamp += dataDuration;
+           }
            // Queue the next data event
            OsclAny* P = NULL;
            iWriteCompleteAO->ReceiveEvent(P);
