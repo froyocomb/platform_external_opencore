@@ -116,6 +116,7 @@ PVA_FF_Mpeg4File::PVA_FF_Mpeg4File(int32 mediaType)
     _pInterLeaveBufferVec = NULL;
     _oInterLeaveEnabled = false;
     _aFs = NULL;
+    _pMfraAtom = NULL;
 }
 
 // Destructor
