@@ -936,7 +936,7 @@ void PlayerDriver::handleSeek(PlayerSeek* command)
     // Seeking in the pause state
     PVPlayerState state;
     if (mPlayer->GetPVPlayerStateSync(state) == PVMFSuccess
-        && (state == PVP_STATE_PAUSED)) {
+        && (state == PVP_STATE_PAUSED || mIsPausing)) {
         mSeekComp = false;
     }
     PVPPlaybackPosition begin, end;
@@ -949,16 +949,6 @@ void PlayerDriver::handleSeek(PlayerSeek* command)
     if(mStatistics) PlayerDriver::SeekPosition(begin);
     OSCL_TRY(error, mPlayer->SetPlaybackRange(begin, end, false, command));
     OSCL_FIRST_CATCH_ANY(error, commandFailed(command));
-
-    // If the seek is issued from the prepare state (this is unique interms of bootup time
-    // Put the source node to pause state (This is to handle TCXO shutdown for hardware decoders).
-    // This state transition should be only handled for audio
-    if ((state == PVP_STATE_PREPARED) && (!mVideoOutputMIO)) {
-        LOGE("Seek is called in the prepared state, hence put the player to Pause state");
-        mPlayer->Pause(NULL);
-
-        mIsPausing = true;
-    }
 
     mEndOfData = false;
 }
@@ -1264,6 +1254,16 @@ void PlayerDriver::CommandCompleted(const PVCmdResponse& aResponse)
             case PlayerCommand::PLAYER_PREPARE:
                 LOGV("PLAYER_PREPARE complete mDownloadContextData=%p, mDataReadyReceived=%d", mDownloadContextData, mDataReadyReceived);
                 mPrepareDone = true;
+
+                // If the seek is issued from the prepare state (this is unique interms of bootup time
+                // Put the source node to pause state (This is to handle TCXO shutdown for hardware decoders).
+                // This state transition should be only handled for audio
+                if (!mVideoOutputMIO) {
+                    LOGV("Player is in prepared state, hence put the player to Pause state");
+                    mPlayer->Pause(NULL);
+                    mIsPausing = true;
+                }
+
                 // If we are streaming from the network, we
                 // have to wait until the first PVMFInfoDataReady
                 // is sent to notify the user that it is okay to
