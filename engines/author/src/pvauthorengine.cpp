@@ -787,10 +787,17 @@ void PVAuthorEngine::Run()
             status = DoStop(cmd);
             break;
         case PVAE_CMD_STOP_MAX_SIZE:
-        case PVAE_CMD_STOP_MAX_DURATION:
-        case PVAE_CMD_STOP_EOS_REACHED:
+            LOG_ERR((0, "PVAuthorEngine::Run MAX_SIZE reached, stopping record" ));
             status = DoStopMaxSizeDuration();
-            break;
+          break;
+        case PVAE_CMD_STOP_MAX_DURATION:
+            LOG_ERR((0, "PVAuthorEngine::Run MAX_DURATION reached, stopping record"));
+            status = DoStopMaxSizeDuration();
+          break;
+        case PVAE_CMD_STOP_EOS_REACHED:
+            LOG_ERR((0, "PVAuthorEngine::Run EOS reached, stopping record"));
+            status = DoStopMaxSizeDuration();
+          break;
         case PVAE_CMD_CAPCONFIG_SET_PARAMETERS:
             status = DoCapConfigSetParameters(cmd, false);
             break;
