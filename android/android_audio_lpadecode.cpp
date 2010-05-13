@@ -437,9 +437,6 @@ PVMFCommandId AndroidAudioLPADecode::Start(const OsclAny* aContext)
                 unsigned short decId;
 
                 LOGV("AndroidAudioLPADecode::Start - Starting driversuspend");
-                ioctl(afd, AUDIO_START,0);
-                bSuspendEventRxed = false;
-
                 if ( !bIsAudioRouted ) {
 
                     if ( ioctl(afd, AUDIO_GET_SESSION_ID, &decId) == -1 ) {
@@ -462,6 +459,9 @@ PVMFCommandId AndroidAudioLPADecode::Start(const OsclAny* aContext)
                         bIsAudioRouted = true;
                     }
                 }
+
+                ioctl(afd, AUDIO_START,0);
+                bSuspendEventRxed = false;
             }
 
             iHwState = STATE_HW_STARTED;
@@ -756,6 +756,9 @@ void AndroidAudioLPADecode::writeAudioLPABuffer(uint8* aData, uint32 aDataLen, P
             if ( iFlushPending ) {
                 LOGV("Flush was pending... This can come here, if DiscardData is called, where there was no buffer to flush");
                 iFlushPending = false;
+                // Ensure to set to 0, since after A2DP switch, flush can be issued.
+                // Then the nBytesConsumed should be set to 0, before h/w resume.
+                nBytesConsumed = 0;
             }
         } else {
             iA2DPThreadSem->Signal();
@@ -877,16 +880,6 @@ int AndroidAudioLPADecode::audout_thread_func()
 
         int nRetVal = 0;
 
-        if ( ioctl(afd, AUDIO_START, 0) < 0 ) {
-            LOGE("Failed to start the driver");
-            close(afd);
-            afd = -1;
-            nRetVal = -1;
-        } else {
-            LOGV("pcm_dec: AUDIO_START Successful");
-            iHwState = STATE_HW_STARTED;
-        }
-
         // Get the session id and register with HAL
         unsigned short decId;
 
@@ -924,6 +917,16 @@ int AndroidAudioLPADecode::audout_thread_func()
                 }
                 continue;
             }
+        }
+
+        if ( ioctl(afd, AUDIO_START, 0) < 0 ) {
+            LOGE("Failed to start the driver");
+            close(afd);
+            afd = -1;
+            nRetVal = -1;
+        } else {
+            LOGV("pcm_dec: AUDIO_START Successful");
+            iHwState = STATE_HW_STARTED;
         }
     }
 
@@ -1179,6 +1182,18 @@ int AndroidAudioLPADecode::audout_thread_func()
 
                 iPmemInfoQueueLock.Unlock();
 
+                // This state can be valid only if:
+                // There is a switch from A2DP to hardware decoder
+                // Ensure that the Bytes consumed is taken care.
+                if ( nBytesConsumed ) {
+                    LOGV("Switch from A2DP to hardware");
+                    data = data + (bytesToWrite - nBytesConsumed);
+                    bytesToWrite = nBytesConsumed;
+                    len = bytesToWrite; // reset the actual length
+                    iDataQueued = iDataQueued +  bytesToWrite;
+                    nBytesConsumed = 0;
+                }
+
                 aio_buf_local.buf_addr = data;
                 aio_buf_local.buf_len = bytesToWrite;
                 aio_buf_local.data_len = bytesToWrite;
@@ -1382,6 +1397,16 @@ int AndroidAudioLPADecode::event_thread_func()
                                             mAudioSink->closeSession();
                                             bIsAudioRouted = false;
 
+                                            // Call AUDIO_STOP on the Driver.
+                                            LOGV("Inside A2DP transition and calling AUDIO_STOP");
+                                            if ( ioctl(afd, AUDIO_STOP, 0) < 0 ) {
+                                                LOGE("AUDIO_STOP failed");
+                                            }
+                                            else {
+                                                iHwState = STATE_HW_STOPPED;
+                                                LOGV("The state of Hardware is set to %d", iHwState);
+                                            }
+
                                             LOGV("Activating the A2DP Thread");
                                             iActiveTiming->setThreadSemaphore(iA2DPThreadSem);
                                             iA2DPThreadSem->Signal();
@@ -1444,6 +1469,7 @@ int AndroidAudioLPADecode::event_thread_func()
                                 if ( (iFlushPending) && (iOSSResponseQueue.size() == 0) ) {
                                     iFlushPending = false;
                                     nBytesWritten = 0;
+                                    nBytesConsumed = 0;
                                     LOGV("Flush completed and nBytesWritten is set to 0");
                                 }
                                 break;
@@ -1697,9 +1723,7 @@ int AndroidAudioLPADecode::a2dp_thread_func()
 
                 if ( (len != 0) && (data != 0) ) {
                     LOGV("Schedule for the Hardware thread to wakeup and read");
-                    iOSSRequestQueue[0].iData = iOSSRequestQueue[0].iData + (iOSSRequestQueue[0].iDataLen - len);
-                    iOSSRequestQueue[0].iDataLen = len;
-                    iDataQueued = iDataQueued + len;
+                    nBytesConsumed = len;
                 }
 
                 data = 0;
