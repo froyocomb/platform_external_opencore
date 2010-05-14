@@ -2335,6 +2335,7 @@ PVMFStatus PVMp4FFComposerNode::ProcessIncomingMsg(PVMFPortInterface* aPort)
                     }
 
                     //report EOS info to engine
+                    LOG_ERR((0, "PVMp4FFComposerNode::ProcessIncomingMsg EOS Reached"));
                     ReportInfoEvent(PVMF_COMPOSER_EOS_REACHED);
                 }
 
@@ -3426,6 +3427,7 @@ PVMFStatus PVMp4FFComposerNode::CheckMaxFileSize(uint32 aFrameSize)
             // flush() on the writer from this very same
             // thread. Instead, we use a marker to report an event to
             // the author node next time a new fragment is processed.
+            LOG_ERR((0, "PVMp4FFComposerNode::CheckMaxFileSize MAX_FILESIZE Reached"));
             iMaxReachedEvent = PVMF_COMPOSER_MAXFILESIZE_REACHED;
 #else
             // Finalized output file
@@ -3464,6 +3466,7 @@ PVMFStatus PVMp4FFComposerNode::CheckMaxDuration(uint32 aTimestamp)
             // flush() on the writer from this very same
             // thread. Instead, we use a marker to report an event to
             // the author node next time a new fragment is processed.
+            LOG_ERR((0, "PVMp4FFComposerNode::CheckMaxDuration MAX_DURATION Reached"));
             iMaxReachedEvent = PVMF_COMPOSER_MAXDURATION_REACHED;
 #else
 
