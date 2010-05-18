@@ -182,6 +182,10 @@ PVMediaOutputNodePort::PVMediaOutputNodePort(PVMediaOutputNode* aNode)
     mStatistics = false;
     property_get("persist.debug.pv.statistics", value, "0");
     if(atoi(value)) mStatistics = true;
+    numTimesAVSyncLoss = 0;
+    maxEarlyDelta = 0;
+    maxLateDelta = 0;
+    maxTimeSyncLoss = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -204,6 +208,8 @@ void PVMediaOutputNodePort::ClearCleanupQueue()
 ////////////////////////////////////////////////////////////////////////////
 PVMediaOutputNodePort::~PVMediaOutputNodePort()
 {
+    if(mStatistics) statsSyncLoss();
+
     Disconnect();
     PvmfPortBaseImpl::ClearMsgQueues();
     //cancel any pending write operations
@@ -1555,6 +1561,9 @@ PVMediaOutputNodePort::CheckMediaTimeStamp(uint32& aDelta)
                                          clock_msec32,
                                          aDelta));
             }
+
+            if(mStatistics) statsCatchup(aTimeStamp, clock_msec32, aDelta);
+
             iConsecutiveFramesDropped = 0;
             return PVMF_MEDIAOUTPUTNODEPORT_MEDIA_EARLY;
         }
@@ -1583,6 +1592,15 @@ PVMediaOutputNodePort::CheckMediaTimeStamp(uint32& aDelta)
                     iNode->ReportInfoEvent(PVMFInfoVideoTrackFallingBehind, (OsclAny*)NULL);
                 }
             }
+
+            if(mStatistics) {
+                if(iConsecutiveFramesDropped == 1) {
+                    statsCatchupTimeStart = clock_msec32;
+                    LOGW("PVMediaOutputNodePort::CheckMediaTimeStamp Video loss sync start");
+                }
+                statsLate(aTimeStamp, clock_msec32, aDelta);
+            }
+
             return PVMF_MEDIAOUTPUTNODEPORT_MEDIA_LATE;
         }
         else
@@ -1593,6 +1611,12 @@ PVMediaOutputNodePort::CheckMediaTimeStamp(uint32& aDelta)
                                      iCurrentMediaMsg->getSeqNum(),
                                      aTimeStamp,
                                      clock_msec32));
+            if(mStatistics) {
+                if(aTimeStamp > clock_msec32) aDelta = aTimeStamp - clock_msec32;
+                else aDelta = clock_msec32 - aTimeStamp;
+                statsOnTime(aTimeStamp,clock_msec32,aDelta);
+            }
+
             iConsecutiveFramesDropped = 0;
             return PVMF_MEDIAOUTPUTNODEPORT_MEDIA_ON_TIME;
         }
@@ -2915,4 +2939,43 @@ void PVMediaOutputNodePort::SeekProfilingEnd()
         LOGE("======================================================");
         iLatencyProfiling = false;
     }
+}
+
+inline
+void PVMediaOutputNodePort::statsCatchup(uint32 ts, uint32 clock, uint32 delta)
+{
+    if(iConsecutiveFramesDropped > 0) {
+        LOGW("PVMediaOutputNodePort: - Frames dropped before catching up = %lu Timestamp = %lu, Clock = %lu, Delta = %lu",iConsecutiveFramesDropped,ts,clock,delta);
+        numTimesAVSyncLoss++;
+        if( maxTimeSyncLoss < (clock - statsCatchupTimeStart)) maxTimeSyncLoss = clock - statsCatchupTimeStart;
+    }
+}
+
+inline
+void PVMediaOutputNodePort::statsLate(uint32 ts, uint32 clock, uint32 delta)
+{
+    if(delta > maxLateDelta) maxLateDelta = delta;
+    if(maxLateDelta > 0x80000000) maxLateDelta = 0;
+    LOGW("PVMediaOutputNodePort: - Video Behind Timestamp = %lu, Clock = %lu, Delta = %lu",ts, clock, delta);
+}
+
+inline
+void PVMediaOutputNodePort::statsOnTime(uint32 ts, uint32 clock, uint32 delta)
+{
+    statsCatchup(ts,clock,delta);
+    if(ts > clock) {
+        if(delta > maxEarlyDelta) maxEarlyDelta = delta;
+        LOGW("PVMediaOutputNodePort: - Video Ahead Timestamp = %lu, Clock = %lu, Delta = %lu", ts, clock, delta);
+    }
+    else statsLate(ts,clock,delta);
+}
+
+void PVMediaOutputNodePort::statsSyncLoss()
+{
+    LOGW("=============================================================");
+    LOGW("PVMediaOutputNodePort: Number of times AV Sync Losses = %lu", numTimesAVSyncLoss);
+    LOGW("PVMediaOutputNodePort: Max Video Ahead time delta = %lu", maxEarlyDelta);
+    LOGW("PVMediaOutputNodePort: Max Video Behind time delta = %lu", maxLateDelta);
+    LOGW("PVMediaOutputNodePort: Max Time sync loss = %lu",maxTimeSyncLoss);
+    LOGW("=============================================================");
 }

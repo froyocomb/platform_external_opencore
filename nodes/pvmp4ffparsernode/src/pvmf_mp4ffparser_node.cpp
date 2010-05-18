@@ -82,7 +82,6 @@
 #define LOG_TAG "PVMFMP4FFParserNode"
 #include <utils/Log.h>
 
-
 #define PVMF_MP4_MIME_FORMAT_AUDIO_UNKNOWN  "x-pvmf/audio/unknown"
 #define PVMF_MP4_MIME_FORMAT_VIDEO_UNKNOWN  "x-pvmf/video/unknown"
 #define PVMF_MP4_MIME_FORMAT_UNKNOWN        "x-pvmf/unknown-media/unknown"
@@ -2846,6 +2845,8 @@ PVMFStatus PVMFMP4FFParserNode::DoStart(PVMFMP4FFParserNodeCommand& /*aCmd*/)
     // If resuming, do not reset the auto-pause variables
     // parser node should send InfoReadyEvent to Engine
     // if in underflow condition.
+
+    if(mStatistics) ExpectedFrames();
 
     return PVMFSuccess;
 }
@@ -9210,4 +9211,27 @@ void PVMFMP4FFParserNode::MediaStatistics(Oscl_Vector<PVMP4FFNodeTrackPortInfo, 
     LOGE("PVMFMP4FFParserNode: Movie Duration = %u", mcc.get_converted_ts(1000));
     LOGE("PVMFMP4FFParserNode: Track Duration = %u", mcc2.get_converted_ts(1000));
     LOGE("=================================================================");
+}
+
+void PVMFMP4FFParserNode::ExpectedFrames()
+{
+    Oscl_Vector<PVMP4FFNodeTrackPortInfo, OsclMemAllocator>::iterator it;
+    if(&iNodeTrackPortList)
+    {
+        it = iNodeTrackPortList.begin();
+        for (it = iNodeTrackPortList.begin(); it != iNodeTrackPortList.end(); it++)
+        {
+            if(iMP4FileHandle->getTrackMediaType(it->iTrackId) == MEDIA_TYPE_VISUAL) {
+                uint32 trk_duration = 0;
+                trk_duration = Oscl_Int64_Utils::get_uint64_lower32(iMP4FileHandle->getTrackMediaDuration(it->iTrackId));
+                MediaClockConverter mcc2(iMP4FileHandle->getTrackMediaTimescale(it->iTrackId));
+                mcc2.update_clock(trk_duration);
+                LOGW("==================================================");
+                LOGW("PVMFMP4FFParserNode: Track Duration = %lu", mcc2.get_converted_ts(1000));
+                LOGW("PVMFMP4FFParserNode: Total number of samples in track= %lu", iMP4FileHandle->getSampleCountInTrack(it->iTrackId));
+                LOGW("PVMFMP4FFParserNode: Expected Frames per second = %.2f", ((float)(iMP4FileHandle->getSampleCountInTrack(it->iTrackId)) * 1000) / (float)(mcc2.get_converted_ts(1000)));
+                LOGW("==================================================");
+            }
+	}
+    }
 }

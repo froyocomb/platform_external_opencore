@@ -1044,6 +1044,8 @@ class PVMFMP4FFParserNode : public OsclTimerObject,
         void MediaStatistics(Oscl_Vector<PVMP4FFNodeTrackPortInfo, OsclMemAllocator>::iterator statsit);
         bool mStatistics;
         int32 iNumCorruptSamples;
+
+        void ExpectedFrames();
 };
 
 
