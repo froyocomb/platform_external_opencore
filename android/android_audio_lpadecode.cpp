@@ -787,6 +787,21 @@ void AndroidAudioLPADecode::writeAudioLPABuffer(uint8* aData, uint32 aDataLen, P
                 // Then the nBytesConsumed should be set to 0, before h/w resume.
                 nBytesConsumed = 0;
             }
+
+            // If EOS has occured - the decoder is put to pause state.
+            // But incase of continuous seek / we see that the EOS is sent
+            // in middle of seek and hence once the user resumes, the playback does not start.
+            // Ensure to reset the h/w state to resume, if write buffer is called after EOS.
+            if ( bEOS && iHwState == STATE_HW_PAUSED && aDataLen ) {
+                LOGV("AndroidAudioLPADecode::writeAudioLPABuffer - Resuming Driver");
+                ioctl(afd, AUDIO_PAUSE, 0);
+
+                iHwState = STATE_HW_STARTED;
+                LOGV("The state of Hardware is set to %d", iHwState);
+
+                LOGV("Cancel the timer that is set for TCXO shutdown");
+                iTimeoutTimer->Cancel(ANDROID_AUDIO_LPADEC_TIMERID);
+            }
         } else {
             iA2DPThreadSem->Signal();
             LOGV("writeAudioLPABuffer::Waking up A2DPThread from sleep");
