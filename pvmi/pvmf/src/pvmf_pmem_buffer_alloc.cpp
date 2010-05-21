@@ -54,11 +54,11 @@ OsclAny* PVMFPMemBufferAlloc::allocate(int32 nSize, int32 *pmem_fd)
 
     LOGE("PVMFPMemBufferAlloc::allocate calling with required size %d", nSize);
 
-    // 1. Open the pmem_adsp
-    pmemfd = open("/dev/pmem_adsp", O_RDWR);
+    // 1. Open the pmem_audio
+    pmemfd = open("/dev/pmem_audio", O_RDWR);
 
     if ( pmemfd < 0 ) {
-        LOGE("PVMFPMemBufferAlloc::allocate failed to open pmem_adsp");
+        LOGE("PVMFPMemBufferAlloc::allocate failed to open pmem_audio");
         *pmem_fd = -1;
         return pmem_buf;
     }
