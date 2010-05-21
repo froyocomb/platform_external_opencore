@@ -300,6 +300,9 @@ class PlayerDriver :
 
     // video display surface
     android::sp<android::ISurface> mSurface;
+
+    // Variable to track pause state during prepare
+    bool                    mIsPausing;
 };
 
 PlayerDriver::PlayerDriver(PVPlayer* pvPlayer) :
@@ -313,7 +316,8 @@ PlayerDriver::PlayerDriver(PVPlayer* pvPlayer) :
         mRecentSeek(0),
         mSeekComp(true),
         mSeekPending(false),
-        mEmulation(false)
+        mEmulation(false),
+        mIsPausing(false)
 {
     LOGV("constructor");
     mSyncSem = new OsclSemaphore();
@@ -836,7 +840,7 @@ void PlayerDriver::handleStart(PlayerStart* command)
     // if we are paused, just resume
     PVPlayerState state;
     if (mPlayer->GetPVPlayerStateSync(state) == PVMFSuccess
-        && (state == PVP_STATE_PAUSED)) {
+        && (state == PVP_STATE_PAUSED) || mIsPausing) {
         if (mEndOfData) {
             // if we are at the end, seek to the beginning first
             mEndOfData = false;
@@ -850,6 +854,7 @@ void PlayerDriver::handleStart(PlayerStart* command)
         }
         OSCL_TRY(error, mPlayer->Resume(command));
         OSCL_FIRST_CATCH_ANY(error, commandFailed(command));
+        mIsPausing = false;
     } else {
         OSCL_TRY(error, mPlayer->Start(command));
         OSCL_FIRST_CATCH_ANY(error, commandFailed(command));
@@ -881,8 +886,9 @@ void PlayerDriver::handleSeek(PlayerSeek* command)
 
     // If the seek is issued from the prepare state (this is unique interms of bootup time
     // Put the source node to pause state (This is to handle TCXO shutdown for hardware decoders).
-    // This state transition should be only handled for audio
-    if ((state == PVP_STATE_PREPARED) && (!mVideoOutputMIO)) {
+    // Ensure that this is handled for Audio only clips
+    if ( (state == PVP_STATE_PREPARED) && (!mVideoOutputMIO) ){
+        mIsPausing = true;
         LOGE("Seek is called in the prepared state, hence put the player to Pause state");
         mPlayer->Pause(NULL);
     }
