@@ -1175,11 +1175,18 @@ PVMFStatus PVMFOMXBaseDecNode::HandleProcessingState()
                 }
             }
 
-                if (!InitDecoder(iDataIn))
+                PVMFStatus initStatus = InitDecoder(iDataIn);
+                if(PVMFSuccess != initStatus)
                 {
-                    // Decoder initialization failed.
-                    PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
-                                    (0, "%s::HandleProcessingState() Decoder initialization failed", iName.Str()));
+                    if(PVMFFailure == initStatus)
+                    {
+                        // Decoder initialization failed. Fatal error
+                        PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
+                                        (0, "%s::HandleProcessingState() Decoder initialization failed", iName.Str()));
+                        ReportErrorEvent(PVMFErrResourceConfiguration);
+                        ChangeNodeState(EPVMFNodeError);
+                    }
+                    // We are out of buffers, wait for buffers to be retuned by the component
                     status = PVMFPending;
                     break;
                 }
@@ -2744,8 +2751,9 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::AppendExtraDataToBuffer(InputBufCtrlStr
     }
 }
 
+
 /////////////////////////////////////////////////////////////////////////////
-OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendConfigBufferToOMXComponent(uint8 *initbuffer, uint32 initbufsize)
+OSCL_EXPORT_REF PVMFStatus PVMFOMXBaseDecNode::SendConfigBufferToOMXComponent(uint8 *initbuffer, uint32 initbufsize)
 
 {
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
@@ -2763,7 +2771,7 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendConfigBufferToOMXComponent(uint8 *i
         PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
                         (0, "%s::SendConfigBufferToOMXComponent() Input buffer mempool problem -unexpected at init", iName.Str()));
 
-        return false;
+        return PVMFErrNoResources;
     }
 
     // Got a buffer OK
@@ -2865,7 +2873,7 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendConfigBufferToOMXComponent(uint8 *i
             PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
                             (0, "%s::SendConfigBufferToOMXComponent() Config buffer too large problem -unexpected at init", iName.Str()));
 
-            return false;
+            return PVMFErrNoResources;
         }
 
     }
@@ -2899,9 +2907,9 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendConfigBufferToOMXComponent(uint8 *i
     if ( OMX_ErrorNone != OMX_EmptyThisBuffer(iOMXDecoder, input_buf->pBufHdr) )
     {
         EmptyBufferDoneProcessing(iOMXDecoder, NULL, input_buf->pBufHdr);
-        return false;
+        return PVMFFailure;
     }
-    return true;
+    return PVMFSuccess;
 
 }
 
