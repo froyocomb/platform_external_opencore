@@ -162,7 +162,7 @@ class PVMFOMXVideoDecNode
         PVMFStatus DoGetNodeMetadataValue(PVMFOMXBaseDecNodeCommand&);
         PVMFStatus HandlePortReEnable();
 
-        bool InitDecoder(PVMFSharedMediaDataPtr&);
+        PVMFStatus InitDecoder(PVMFSharedMediaDataPtr&);
 
         bool NegotiateComponentParameters(OMX_PTR aOutputParameters);
         bool GetSetCodecSpecificInfo();
