@@ -501,7 +501,7 @@ class PVMFOMXBaseDecNode
         PVMFStatus HandleProcessingState();
         virtual PVMFStatus HandlePortReEnable() = 0;
 
-        virtual bool InitDecoder(PVMFSharedMediaDataPtr&) = 0;
+        virtual PVMFStatus InitDecoder(PVMFSharedMediaDataPtr&) = 0;
 
         OSCL_IMPORT_REF OsclAny* AllocateKVPKeyArray(int32& aLeaveCode, PvmiKvpValueType aValueType, int32 aNumElements);
         int32 PushKVPKey(OSCL_HeapString<OsclMemAllocator>& aString, PVMFMetadataList* aKeyList)
@@ -560,7 +560,7 @@ class PVMFOMXBaseDecNode
         bool SendOutputBufferToOMXComponent();
         OSCL_IMPORT_REF bool SendInputBufferToOMXComponent();
 
-        OSCL_IMPORT_REF bool SendConfigBufferToOMXComponent(uint8 *initbuffer, uint32 initbufsize);
+        OSCL_IMPORT_REF PVMFStatus SendConfigBufferToOMXComponent(uint8 *initbuffer, uint32 initbufsize);
         bool SendEOSBufferToOMXComponent();
 
         bool HandleRepositioning(void);

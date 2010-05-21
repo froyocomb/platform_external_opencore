@@ -1923,7 +1923,7 @@ bool PVMFOMXAudioDecNode::GetSetCodecSpecificInfo()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-bool PVMFOMXAudioDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
+PVMFStatus PVMFOMXAudioDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
 {
 
     OsclRefCounterMemFrag DataFrag;
@@ -1948,7 +1948,7 @@ bool PVMFOMXAudioDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
         {
             PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
                             (0, "PVMFOMXAudioDecNode::InitDecoder() Error - LATM config buffer not present"));
-            return false;
+            return PVMFFailure;
         }
     }
     else if (((PVMFOMXDecPort*)iInPort)->iFormat ==  PVMF_MIME_MPEG4_AUDIO ||
@@ -2005,14 +2005,14 @@ bool PVMFOMXAudioDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
         {
             PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
                             (0, "PVMFOMXAudioDecNode::InitDecoder() Error in processing config buffer"));
-            return false;
+            return PVMFFailure;
         }
     }
 
 
 
 
-    return true;
+    return PVMFSuccess;
 }
 
 

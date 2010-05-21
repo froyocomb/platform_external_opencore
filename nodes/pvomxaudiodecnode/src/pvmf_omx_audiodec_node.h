@@ -122,7 +122,7 @@ class PVMFOMXAudioDecNode
         bool ProcessIncomingMsg(PVMFPortInterface* aPort);
         PVMFStatus HandlePortReEnable();
 
-        bool InitDecoder(PVMFSharedMediaDataPtr&);
+        PVMFStatus InitDecoder(PVMFSharedMediaDataPtr&);
 
         bool NegotiateComponentParameters(OMX_PTR aOutputParameters);
         bool GetSetCodecSpecificInfo();
