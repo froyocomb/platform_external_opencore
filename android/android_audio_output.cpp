@@ -29,7 +29,7 @@
 using namespace android;
 
 // TODO: dynamic buffer count based on sample rate and # channels
-static const int kNumOutputBuffers = 4;
+static const int kNumOutputBuffers = 8;
 
 // maximum allowed clock drift before correction
 static const int32 kMaxClockDriftInMsecs = 25;    // should be tight enough for reasonable sync
