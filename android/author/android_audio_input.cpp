@@ -28,7 +28,6 @@
 #include <media/AudioRecord.h>
 #include <media/mediarecorder.h>
 #include <sys/prctl.h>
-#include <cutils/properties.h>
 
 //Change value to 1 to print out
 //timestamps calculated for an audio buffer
@@ -1286,16 +1285,8 @@ int AndroidAudioInput::audin_thread_func() {
     }
 
     status_t res = record->initCheck();
-    char value[PROPERTY_VALUE_MAX];
-    property_get("ro.product.device", value, "0");
     if (res == NO_ERROR)
-    {
-        if (strcmp("qsd8250_surf", value) == 0) {
-        //sleep for 600 msecs to avoid recording the video start beep sound.
-        usleep(600000);
-        }
         res = record->start();
-    }
 
     iAudioThreadStartResult = res;
     iAudioThreadStarted = true;
@@ -1473,6 +1464,16 @@ int AndroidAudioInput::audin_thread_func() {
         }
 
         record->stop();
+
+        // This is to ensure that the last read buffer is written to the file
+        // before the Audio thread is stopped and the MIO is disconnected
+        if ( (iState == STATE_STOPPED) && (numOfBytes > 0) &&
+             (iAudioFormatType != android::AudioSystem::PCM_16_BIT))
+        {
+          iBufferForceWrite = 1;
+          SendMicData();
+          iBufferForceWrite = 0;
+        }
     }
 
     LOGV("delete record %p, this %p", record, this);
