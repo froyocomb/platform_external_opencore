@@ -777,8 +777,6 @@ void AndroidAudioLPADecode::writeAudioLPABuffer(uint8* aData, uint32 aDataLen, P
         iDeviceSwitchLock.Lock();
 
         if ( !bIsA2DPEnabled ) {
-            iAudioThreadSem->Signal();
-            LOGV("writeAudioLPABuffer::Waking up AudioThread from sleep");
 
             if ( iFlushPending ) {
                 LOGV("Flush was pending... This can come here, if DiscardData is called, where there was no buffer to flush");
@@ -802,6 +800,9 @@ void AndroidAudioLPADecode::writeAudioLPABuffer(uint8* aData, uint32 aDataLen, P
                 LOGV("Cancel the timer that is set for TCXO shutdown");
                 iTimeoutTimer->Cancel(ANDROID_AUDIO_LPADEC_TIMERID);
             }
+
+            iAudioThreadSem->Signal();
+            LOGV("writeAudioLPABuffer::Waking up AudioThread from sleep");
         } else {
             iA2DPThreadSem->Signal();
             LOGV("writeAudioLPABuffer::Waking up A2DPThread from sleep");
@@ -818,7 +819,7 @@ void AndroidAudioLPADecode::TimeoutOccurred(int32 timerID, int32 /*timeoutInfo*/
     if ( timerID == ANDROID_AUDIO_LPADEC_TIMERID ) {
         LOGE("AndroidAudioLPADecode::TimeoutOccurred with the ID ANDROID_AUDIO_LPADEC_TIMERID");
 
-        if ( !bEOS && iHwState == STATE_HW_PAUSED ) {
+        if ( iHwState == STATE_HW_PAUSED ) {
 
             LOGE("AndroidAudioLPADecode::TimeoutOccurred :: EOS not occured");
             // Expiration due to Non - EOS state, hence just stop the decoder.
@@ -839,40 +840,20 @@ void AndroidAudioLPADecode::TimeoutOccurred(int32 timerID, int32 /*timeoutInfo*/
                 // Set the Suspension to true
                 bSuspendEventRxed = true;
 
+                iHwState = STATE_HW_STOPPED;
+                LOGV("The state of Hardware is set to %d", iHwState);
+
                 // 3. Call AUDIO_STOP on the Driver.
                 LOGV("AUDIO_STOP");
                 if ( ioctl(afd, AUDIO_STOP, 0) < 0 ) {
                     LOGE("AUDIO_STOP failed");
-                    return;
                 }
-
-                iHwState = STATE_HW_STOPPED;
-                LOGV("The state of Hardware is set to %d", iHwState);
 
                 if ( bIsAudioRouted ) {
                     // 4. Close the session
                     mAudioSink->closeSession();
                     bIsAudioRouted = false;
                 }
-            }
-        }
-        // This is in the EOS state
-        else if ( bEOS && iHwState == STATE_HW_PAUSED ) {
-
-            // 1. Call AUDIO_STOP on the Driver.
-            LOGV("AUDIO_STOP");
-            if ( ioctl(afd, AUDIO_STOP, 0) < 0 ) {
-                LOGE("AUDIO_STOP failed");
-                return;
-            }
-
-            iHwState = STATE_HW_STOPPED;
-            LOGV("The state of Hardware is set to %d", iHwState);
-
-            if ( bIsAudioRouted ) {
-                // 2. Close the session
-                mAudioSink->closeSession();
-                bIsAudioRouted = false;
             }
         }
 
@@ -1056,7 +1037,7 @@ int AndroidAudioLPADecode::audout_thread_func()
                         iOSSRequestQueueLock.Lock();
                         // There are instances where the EOS arrives twice. This will ensure that the
                         // 2nd EOS is also service to goto End of Data (PV).
-                        if ( bEOS && !iOSSRequestQueue.empty() ) {
+                        if ( !iOSSRequestQueue[0].iDataLen && !iOSSRequestQueue.empty() ) {
                             LOGV("There is some data that needs to be de-queued");
                             iOSSRequestQueueLock.Unlock();
                             break;
@@ -1166,7 +1147,10 @@ int AndroidAudioLPADecode::audout_thread_func()
                 timestamp = iOSSRequestQueue[0].iTimestamp;
                 pmem_fd = iOSSRequestQueue[0].pmemfd;
                 iDataQueued -= len;
-                iOSSRequestQueue.erase(&iOSSRequestQueue[0]);
+                if ( len ) {
+                    iOSSRequestQueue.erase(&iOSSRequestQueue[0]);
+                }
+
                 LOGV("Dequed buffer buffer command id (%d), timestamp = %u data queued = %u, len is %u and pmemfd is %d", cmdid, timestamp,iDataQueued, len, pmem_fd);
 
                 if ( bEOS && len ) {
@@ -1188,9 +1172,27 @@ int AndroidAudioLPADecode::audout_thread_func()
                 bEOS = true;
                 if ( iHwState != STATE_HW_PAUSED ) {
                     LOGV("Calling fsync");
-                    fsync(afd);
-                    LOGV("Out Of Fsycn and sending response to cmdid %d", cmdid);
-                    sendResponse(cmdid, context, timestamp);
+                    if ( (fsync(afd) < 0) && iHwState == STATE_HW_STOPPED )
+                    {
+                        LOGV("Fsync failed because the h/w is stopped in Fsync");
+                        bEOS = false;
+                        continue;
+                    }
+                    else {
+
+                        iOSSRequestQueueLock.Lock();
+                        bool empty = iOSSRequestQueue.empty();
+
+                        // This is to ensure that the flush does not remove this from Queue and new buffer
+                        // is not getting flushed.
+                        if ( !empty && iOSSRequestQueue[0].iCmdId == cmdid ) {
+                            iOSSRequestQueue.erase(&iOSSRequestQueue[0]);
+
+                            LOGV("Out Of Fsycn and sending response to cmdid %d", cmdid);
+                            sendResponse(cmdid, context, timestamp);
+                        }
+                        iOSSRequestQueueLock.Unlock();
+                    }
                 }
                 state = STOPPED;
 
@@ -1227,8 +1229,19 @@ int AndroidAudioLPADecode::audout_thread_func()
             }
             // EOS received twice use case (Super fast forward)
             else if ( bEOS && len == 0 ) {
-                LOGV("Sending response for the 2nd EOS");
-                sendResponse(cmdid, context, timestamp);
+
+                iOSSRequestQueueLock.Lock();
+                bool empty = iOSSRequestQueue.empty();
+
+                // This is to ensure that the flush does not remove this from Queue and new buffer
+                // is not getting flushed.
+                if ( !empty && iOSSRequestQueue[0].iCmdId == cmdid ) {
+                    iOSSRequestQueue.erase(&iOSSRequestQueue[0]);
+
+                    LOGV("Sending response for the 2nd EOS");
+                    sendResponse(cmdid, context, timestamp);
+                }
+                iOSSRequestQueueLock.Unlock();
             }
         }
 
@@ -1449,6 +1462,7 @@ int AndroidAudioLPADecode::event_thread_func()
                                         if ( iOSSRequestQueue.size() ) {
                                             LOGV("Have to back up the data and migrate the new data to request queue");
                                             while ( iOSSRequestQueue.size() ) {
+                                                LOGV("Data to backup is %d", iOSSRequestQueue[0].iCmdId);
                                                 OSSRequest reqBSQ(iOSSRequestQueue[0].iData,
                                                                   iOSSRequestQueue[0].iDataLen,
                                                                   iOSSRequestQueue[0].iCmdId,
@@ -1536,14 +1550,14 @@ int AndroidAudioLPADecode::event_thread_func()
                                         LOGV("The size of the backup queue is set to %d", iOSSBufferSwapQueue.size());
 
                                         if ( !iOSSBufferSwapQueue.empty() ) {
-                                            LOGV("Not empty and start the backup.");
+                                            LOGV("Not empty and start the backup with cmd id %d", iOSSBufferSwapQueue[0].iCmdId );
                                             while ( iOSSBufferSwapQueue.size() ) {
-                                                OSSRequest reqBSQ(iOSSRequestQueue[0].iData,
-                                                                  iOSSRequestQueue[0].iDataLen,
-                                                                  iOSSRequestQueue[0].iCmdId,
-                                                                  iOSSRequestQueue[0].iContext,
-                                                                  iOSSRequestQueue[0].iTimestamp,
-                                                                  iOSSRequestQueue[0].pmemfd);
+                                                OSSRequest reqBSQ(iOSSBufferSwapQueue[0].iData,
+                                                                  iOSSBufferSwapQueue[0].iDataLen,
+                                                                  iOSSBufferSwapQueue[0].iCmdId,
+                                                                  iOSSBufferSwapQueue[0].iContext,
+                                                                  iOSSBufferSwapQueue[0].iTimestamp,
+                                                                  iOSSBufferSwapQueue[0].pmemfd);
 
                                                 iOSSRequestQueueLock.Lock();
                                                 iOSSRequestQueue.push_back(reqBSQ);
@@ -1613,20 +1627,19 @@ int AndroidAudioLPADecode::event_thread_func()
                         // Set the Suspension to true
                         bSuspendEventRxed = true;
 
+                        iHwState = STATE_HW_STOPPED;
+                        LOGV("The state of Hardware is set to %d", iHwState);
+
                         // 3. Call AUDIO_STOP on the Driver.
                         LOGV("Inside AUDIO_EVENT_SUSPEND and calling AUDIO_STOP");
                         if ( ioctl(afd, AUDIO_STOP, 0) < 0 ) {
                             LOGE("AUDIO_STOP failed");
-                            break;
                         }
 
                         if ( bIsA2DPEnabled ) {
                             LOGV("A2DP already enabled. Clear the Bytes written count");
                             nBytesWritten = 0;
                         }
-
-                        iHwState = STATE_HW_STOPPED;
-                        LOGV("The state of Hardware is set to %d", iHwState);
 
                         if ( bIsAudioRouted ) {
                             // 4. Close the session
