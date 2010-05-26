@@ -29,9 +29,15 @@
 #include <binder/IServiceManager.h>
 #include <utils/List.h>
 
+#ifndef OSCL_TIMER_H_INCLUDED
+#include "oscl_timer.h"
+#endif
+
 using namespace android;
 
-class AndroidAudioLPADecode : public AndroidAudioMIO {
+class AndroidAudioLPADecode : public AndroidAudioMIO,
+    public OsclTimerObserver
+{
 public:
     OSCL_IMPORT_REF AndroidAudioLPADecode();
     OSCL_IMPORT_REF ~AndroidAudioLPADecode();
@@ -96,6 +102,12 @@ private:
     void RequestAndWaitForA2DPThreadExit(); // A2DP
 
     void HandleA2DPswitch();
+
+    // From OsclTimerObserver
+    void TimeoutOccurred(int32 timerID, int32 timeoutInfo);
+
+    // OsclTimer for timeouts
+    OsclTimer<OsclMemAllocator>* iTimeoutTimer;
 
     static int start_audout_thread_func(TOsclThreadFuncArg arg);
     int audout_thread_func();
