@@ -318,7 +318,6 @@ void AndroidAudioLPADecode::AudioFlingerLPAdecodeClient::ioConfigChanged(int eve
 
                 if ( -1 == ioHandle ) {
                     if ( pBaseClass->bIsA2DPEnabled ) {
-                        pBaseClass->iDeviceSwitchLock.Lock();
                         pBaseClass->bIsA2DPEnabled = false;
                         // This is used by both A2DP and Hardware flush tracking mechanism
                         pBaseClass->iFlushPending = false;
@@ -361,12 +360,14 @@ void AndroidAudioLPADecode::HandleA2DPswitch()
                 }
             }
 
-            // 1.2 Get the Byte count that is consumed
-            if ( ioctl(afd, AUDIO_GET_STATS, &stats) < 0 ) {
-                LOGE("AUDIO_GET_STATUS failed");
-            } else {
-                LOGV("Number of bytes consumed by DSP is %u", stats.byte_count);
-                nBytesConsumed = stats.byte_count;
+            if ( iHwState != STATE_HW_STOPPED ) {
+                // 1.2 Get the Byte count that is consumed
+                if ( ioctl(afd, AUDIO_GET_STATS, &stats) < 0 ) {
+                    LOGE("AUDIO_GET_STATUS failed");
+                } else {
+                    LOGV("Number of bytes consumed by DSP is %u", stats.byte_count);
+                    nBytesConsumed = stats.byte_count;
+                }
             }
 
             // 1.4 Check for Bytes Consumed
@@ -1613,7 +1614,7 @@ int AndroidAudioLPADecode::event_thread_func()
                     struct msm_audio_stats stats;
 
                     // If H/W is used for rendering
-                    if ( ( iState == STATE_MIO_PAUSED ) ||
+                    if ( ( iState == STATE_MIO_PAUSED && iHwState != STATE_HW_STOPPED ) ||
                          ( iHwState == STATE_HW_PAUSED && bIsA2DPEnabled ) ) {
 
                         // 1. Get the Byte count that is consumed
@@ -1858,8 +1859,6 @@ int AndroidAudioLPADecode::a2dp_thread_func()
                 iAudioThreadSem->Signal();
 
                 LOGV("Activating hardware");
-                iDeviceSwitchLock.Unlock();
-
                 bIsHWActivated = true;
             }
 
