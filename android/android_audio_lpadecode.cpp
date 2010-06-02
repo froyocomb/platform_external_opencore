@@ -1758,7 +1758,12 @@ int AndroidAudioLPADecode::a2dp_thread_func()
     PVMFCommandId cmdid = 0;
     const OsclAny* context = 0;
     PVMFTimestamp timestamp = 0;
+
+    // Buffer management to communicate to Hardware thread - incase of context switch
     bool bIsHWActivated = false;
+    uint8* dataRendered = 0;
+    uint32  nActualBytes = 0; // this is used for switch from A2DP to h/w rendering
+    int32 pmem_fd = -1; // pmem info.
 
     while ( 1 ) {
         // if paused, stop the output track
@@ -1847,13 +1852,20 @@ int AndroidAudioLPADecode::a2dp_thread_func()
 
             if ( !bIsHWActivated ) {
 
-                if ( (len != 0) && (data != 0) ) {
-                    LOGV("Schedule for the Hardware thread to wakeup and read");
+                if ( (len != 0) && (data != 0) && (nActualBytes != 0) ) {
+                    LOGV("Schedule for the Hardware thread to wakeup and read with requeued cmd id %d", cmdid);
+
+                    OSSRequest req(dataRendered, nActualBytes, cmdid, context, timestamp, pmem_fd);
+                    iOSSRequestQueueLock.Lock();
+                    iOSSRequestQueue.push_front(req);
+                    iOSSRequestQueueLock.Unlock();
+
                     nBytesConsumed = len;
                 }
 
                 data = 0;
                 len = 0;
+                nActualBytes = len;
                 // Activate hardware thread
                 iActiveTiming->setThreadSemaphore(iAudioThreadSem);
                 iAudioThreadSem->Signal();
@@ -1873,12 +1885,14 @@ int AndroidAudioLPADecode::a2dp_thread_func()
             iOSSRequestQueueLock.Lock();
             bool empty = iOSSRequestQueue.empty();
             if ( !empty ) {
-                data = iOSSRequestQueue[0].iData;
-                len = iOSSRequestQueue[0].iDataLen;
+                data = dataRendered = iOSSRequestQueue[0].iData;
+                len = nActualBytes = iOSSRequestQueue[0].iDataLen;
                 cmdid = iOSSRequestQueue[0].iCmdId;
                 context = iOSSRequestQueue[0].iContext;
                 timestamp = iOSSRequestQueue[0].iTimestamp;
+                pmem_fd = iOSSRequestQueue[0].pmemfd;
                 iDataQueued -= len;
+                iOSSRequestQueue.erase(&iOSSRequestQueue[0]);
                 LOGV("receive buffer with cmdid (%d), timestamp = %u data queued = %u", cmdid, timestamp,iDataQueued);
             }
             iOSSRequestQueueLock.Unlock();
@@ -1923,15 +1937,19 @@ int AndroidAudioLPADecode::a2dp_thread_func()
 
         if ( iReturnBuffers ) {
             LOGV("Return buffers from the audio thread");
+            if (len) sendResponse(cmdid, context, timestamp);
             iReturnBuffers=false;
             data = 0;
             len = 0;
+            nActualBytes = 0;
             iA2DPThreadReturnSem->Signal();
         }
 
         // check for exit signal
         if ( iExitA2DPThread ) {
             LOGV("exit received");
+            if (len) sendResponse(cmdid, context, timestamp);
+            nActualBytes = 0;
             break;
         }
 
@@ -1963,9 +1981,9 @@ int AndroidAudioLPADecode::a2dp_thread_func()
             // if done with buffer - send response to MIO
             if ( data && !len ) {
                 LOGV("done with the data cmdid %d, context %p, timestamp %d ",cmdid, context, timestamp);
-                iOSSRequestQueue.erase(&iOSSRequestQueue[0]);
                 sendResponse(cmdid, context, timestamp);
                 data = 0;
+                nActualBytes = 0;
             }
         }
     } // while loop
