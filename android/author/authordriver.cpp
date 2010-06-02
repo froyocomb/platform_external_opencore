@@ -1221,7 +1221,7 @@ static int setVideoBitrateHeuristically(int videoWidth)
 {
     int bitrate_setting = 192000;
     if (videoWidth >= 480) {
-        bitrate_setting = 420000;
+        bitrate_setting = 6000000;
     } else if (videoWidth >= 352) {
         bitrate_setting = 360000;
     } else if (videoWidth >= 320) {
