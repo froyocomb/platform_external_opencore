@@ -2303,6 +2303,21 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendInputBufferToOMXComponent()
             input_buf = iInputBufferUnderConstruction;
         }
 
+        if((iDataIn->getNumFragments()) == 0)
+        {
+            //No frags in media data.Unbinding  media data and releasing input buffer to pool
+            InputBufCtrlStruct *pContext = (InputBufCtrlStruct *)(input_buf->pBufHdr->pAppPrivate);
+            (pContext->pMediaData).Unbind();
+            iInBufMemoryPool->deallocate((OsclAny *) pContext);
+            iDataIn.Unbind();
+            //Resetting values
+            iObtainNewInputBuffer = true;
+            iCurrFragNum = 0;
+            PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                            (0, "%s::SendInputBufferToOMXComponent() - Released input buffer to memory pool as number of fragments in media data is zero", iName.Str()));
+            break;
+        }
+
         // When copying content, a special case is when the input fragment is larger than the buffer and has to
         //  be fragmented here and broken over 2 or more buffers. Potential problem with available buffers etc.
 
