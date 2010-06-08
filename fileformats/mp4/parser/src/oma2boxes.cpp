@@ -153,7 +153,7 @@ ProtectionSchemeInformationBox:: ProtectionSchemeInformationBox(MP4_FF_FILE *fp,
         }
         return;
     }
-    uint32 count = (_size - DEFAULT_ATOM_SIZE);
+    int32 count = (_size - DEFAULT_ATOM_SIZE);
 
     while (count > 0)
     {
@@ -213,8 +213,28 @@ ProtectionSchemeInformationBox:: ProtectionSchemeInformationBox(MP4_FF_FILE *fp,
             //skip over
             AtomUtils::seekFromCurrPos(fp, (atomSize - DEFAULT_ATOM_SIZE));
         }
-        count -= atomSize;
+
+        if (atomSize >= DEFAULT_ATOM_SIZE)
+        {
+            //Decrement count
+            count -= atomSize;
+        }
+        else
+        {
+            // Invalid atomSize
+            _success = false;
+            _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
+            break;
+        }
     }
+
+    if (count < 0)
+    {
+        //count can't be negative. Something went wrong during the read.
+        _success = false;
+        _mp4ErrorCode = READ_SCHEME_INFORMATION_BOX_FAILED;
+    }
+
     return;
 }
 
@@ -252,7 +272,7 @@ EcnaBox::EcnaBox(MP4_FF_FILE *fp, uint32 size, uint32 type)
     _pAMRWBSpecificAtom = NULL;
     _pAMRWBDecSpecInfoArray = NULL;
 
-    uint32 count = (_size - DEFAULT_ATOM_SIZE);
+    int32 count = (_size - DEFAULT_ATOM_SIZE);
 
     if (_success)
     {
@@ -381,6 +401,12 @@ EcnaBox::EcnaBox(MP4_FF_FILE *fp, uint32 size, uint32 type)
             if (count > 0)
             {
                 AtomUtils::seekFromCurrPos(fp, (count));
+            }
+            else if (count < 0)
+            {
+                //count can't be negative. Something went wrong during the read.
+                _success = false;
+                _mp4ErrorCode = READ_AUDIO_SAMPLE_ENTRY_FAILED;
             }
         }
         else
@@ -567,7 +593,7 @@ EcnvBox::EcnvBox(MP4_FF_FILE *fp, uint32 size, uint32 type)
     _pMPEG4BitRateBox     = NULL;
     _decoderSpecificInfo  = NULL;
 
-    uint32 count = (_size - DEFAULT_ATOM_SIZE);
+    int32 count = (_size - DEFAULT_ATOM_SIZE);
 
     if (_success)
     {
@@ -738,6 +764,12 @@ EcnvBox::EcnvBox(MP4_FF_FILE *fp, uint32 size, uint32 type)
             if (count > 0)
             {
                 AtomUtils::seekFromCurrPos(fp, (count));
+            }
+            else if (count < 0)
+            {
+                //count can't be negative. Something went wrong during the read.
+                _success = false;
+                _mp4ErrorCode = READ_VISUAL_SAMPLE_ENTRY_FAILED;
             }
 
         }
@@ -1009,7 +1041,7 @@ OSCL_EXPORT_REF EnctBox:: EnctBox(MP4_FF_FILE *fp, uint32 size, uint32 type)
     _pFontTableAtom  = NULL;
     _pProtectionSchemeInformationBox = NULL;
 
-    uint32 count = (_size - DEFAULT_ATOM_SIZE);
+    int32 count = (_size - DEFAULT_ATOM_SIZE);
 
     if (_success)
     {
@@ -1105,7 +1137,12 @@ OSCL_EXPORT_REF EnctBox:: EnctBox(MP4_FF_FILE *fp, uint32 size, uint32 type)
         {
             AtomUtils::seekFromCurrPos(fp, (count));
         }
-
+        else if (count < 0)
+        {
+            //count can't be negative. Something went wrong during the read.
+            _success = false;
+            _mp4ErrorCode = READ_AUDIO_SAMPLE_ENTRY_FAILED;
+        }
     }
 }
 

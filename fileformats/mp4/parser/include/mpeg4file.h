@@ -94,6 +94,7 @@
 #endif
 
 #define ID3V1_STR_MAX_SIZE 64
+#define MOVIE_FRAG_IDX_SIZE 256
 
 class AVCSampleEntry;
 
@@ -1350,12 +1351,12 @@ class Mpeg4File : public IMpeg4File, public Parentable
         MfraOffsetAtom *_pMfraOffsetAtom;
         uint32 _ptrMoofEnds;
         uint32 _parsing_mode;
-        uint32 _movieFragmentIdx[256];
-        uint32 _peekMovieFragmentIdx[256];
+        uint32 _movieFragmentIdx[MOVIE_FRAG_IDX_SIZE];
+        uint32 _peekMovieFragmentIdx[MOVIE_FRAG_IDX_SIZE];
         TrackDurationContainer *_pTrackDurationContainer;
         Oscl_Vector<TrackExtendsAtom*, OsclMemAllocator> *_pTrackExtendsAtomVec;
         Oscl_Vector<uint32, OsclMemAllocator> *_pMoofOffsetVec;
-        void populateTrackDurationVec();
+        MP4_ERROR_CODE populateTrackDurationVec();
         MP4_FF_FILE tempfptr;
 
         PVLogger *iLogger, *iStateVarLogger, *iParsedDataLogger;
@@ -1368,8 +1369,8 @@ class Mpeg4File : public IMpeg4File, public Parentable
         uint32 moofPtrPos;
         uint32 currMoofNum;
         bool _oVideoTrackPresent;
-        uint32 _movieFragmentSeqIdx[256];
-        uint32 _peekMovieFragmentSeqIdx[256];
+        uint32 _movieFragmentSeqIdx[MOVIE_FRAG_IDX_SIZE];
+        uint32 _peekMovieFragmentSeqIdx[MOVIE_FRAG_IDX_SIZE];
         bool isResetPlayBackCalled;
         uint32 countOfTrunsParsed;
 

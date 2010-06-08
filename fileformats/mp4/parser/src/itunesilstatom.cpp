@@ -1782,7 +1782,7 @@ ITunesILSTAtom::ITunesILSTAtom(MP4_FF_FILE *fp, uint32 size, uint32 type): Atom(
     _pITunesLyricsAtom = NULL;
     _pITunesCoverImageAtom = NULL;
 
-    uint32 count = _size - DEFAULT_ATOM_SIZE;
+    int32 count = _size - DEFAULT_ATOM_SIZE;
 
     iLogger = PVLogger::GetLoggerObject("mp4ffparser");
     while (count > 0)
