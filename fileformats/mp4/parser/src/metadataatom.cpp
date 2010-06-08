@@ -26,7 +26,7 @@ MetaDataAtom::MetaDataAtom(MP4_FF_FILE *fp, uint32 size, uint32 type): Atom(fp, 
     // User ilst Data
     _pITunesILSTAtom = NULL;
     _pHdlrAtom = NULL;
-    uint32 _count = _size - getDefaultSize();
+    int32 _count = _size - getDefaultSize();
 
     uint32 data_32_hdlr = 0;
     iLogger = PVLogger::GetLoggerObject("mp4ffparser");
@@ -49,15 +49,17 @@ MetaDataAtom::MetaDataAtom(MP4_FF_FILE *fp, uint32 size, uint32 type): Atom(fp, 
         uint32 currPtr = AtomUtils::getCurrentFilePosition(fp);
         AtomUtils::getNextAtomType(fp, atomSize, atomType);
 
+        // Validate atomSize
+        if (atomSize < DEFAULT_ATOM_SIZE)
+        {
+            _success = false;
+            _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
+            break;
+        }
+
         if ((atomType == FREE_SPACE_ATOM) || (atomType == UNKNOWN_ATOM))
         {
             //skip the atom
-            if (atomSize < DEFAULT_ATOM_SIZE)
-            {
-                _success = false;
-                _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
-                break;
-            }
             if (_count < atomSize)
             {
                 AtomUtils::seekFromStart(fp, currPtr);
@@ -109,6 +111,13 @@ MetaDataAtom::MetaDataAtom(MP4_FF_FILE *fp, uint32 size, uint32 type): Atom(fp, 
             }
             else
                 _count -= _pITunesILSTAtom->getSize();
+        }
+        else
+        {
+            //Unexpected atomType. Flag an error.
+            _success = false;
+            _mp4ErrorCode = READ_META_DATA_FAILED;
+            break;
         }
     }
 }

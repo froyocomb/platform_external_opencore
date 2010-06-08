@@ -196,6 +196,7 @@ typedef enum {  READ_FAILED = -1,
                 READ_PIXELASPECTRATIO_BOX_FAILED = 151,
                 READ_QCELP_SAMPLE_ENTRY_FAILED = 152,
                 READ_EVRC_SAMPLE_ENTRY_FAILED = 153,
+                INVALID_TRACK_ID = 154,
 
                 EXCEED_MAX_LIMIT_SUPPORTED_FOR_TOTAL_TRACKS
 
