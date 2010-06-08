@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,6 +94,14 @@ OSCL_EXPORT_REF MovieAtom::MovieAtom(MP4_FF_FILE *fp,
             {
                 if (_pUserDataAtom == NULL)
                 {
+                    //Check for valid atom size
+                    if (atomSize < DEFAULT_ATOM_SIZE)
+                    {
+                        _success = false;
+                        _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
+                        break;
+                    }
+
                     PV_MP4_FF_NEW(fp->auditCB, UserDataAtom, (fp, atomSize, atomType), _pUserDataAtom);
 
                     if (!_pUserDataAtom->MP4Success())

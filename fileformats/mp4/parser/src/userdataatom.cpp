@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +85,7 @@ UserDataAtom::UserDataAtom(MP4_FF_FILE *fp, uint32 size, uint32 type)
     PV_MP4_FF_NEW(fp->auditCB, assetInfoAlbumAtomVecType, (), _pAssetInfoAlbumAtomArray);
     PV_MP4_FF_NEW(fp->auditCB, assetInfoRecordingYearAtomVecType, (), _pAssetInfoRecordingYearArray);
 
-    uint32 count = _size - DEFAULT_ATOM_SIZE;
+    int32 count = _size - DEFAULT_ATOM_SIZE;
 
     if (_success)
     {
@@ -97,7 +98,8 @@ UserDataAtom::UserDataAtom(MP4_FF_FILE *fp, uint32 size, uint32 type)
             currPtr = AtomUtils::getCurrentFilePosition(fp);
             AtomUtils::getNextAtomType(fp, atomSize, atomType);
 
-            if (atomSize > count)
+            //Validate atomSize
+            if ((atomSize > count) || (atomSize < DEFAULT_ATOM_SIZE))
             {
                 AtomUtils::seekFromStart(fp, currPtr);
                 AtomUtils::seekFromCurrPos(fp, count);
@@ -402,19 +404,19 @@ UserDataAtom::UserDataAtom(MP4_FF_FILE *fp, uint32 size, uint32 type)
             else
             {
                 // skip unknown atom
-                if (atomSize < DEFAULT_ATOM_SIZE)
-                {
-                    //lost sync
-                    AtomUtils::seekFromStart(fp, currPtr);
-                    AtomUtils::seekFromCurrPos(fp, count);
-                    count = 0;
-                    return;
-                }
                 count -= atomSize;
                 atomSize -= DEFAULT_ATOM_SIZE;
                 AtomUtils::seekFromCurrPos(fp, atomSize);
             }
         }
+
+        if (count < 0)
+        {
+            //count can't be negative. Something went wrong during the read.
+            _success = false;
+            _mp4ErrorCode = READ_USER_DATA_ATOM_FAILED;
+        }
+
     }
     else
     {

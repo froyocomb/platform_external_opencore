@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +50,7 @@ MovieFragmentRandomAccessAtom::MovieFragmentRandomAccessAtom(MP4_FF_FILE *fp,
     iStateVarLogger = PVLogger::GetLoggerObject("mp4ffparser_mediasamplestats");
     iParsedDataLogger = PVLogger::GetLoggerObject("mp4ffparser_parseddata");
 
-    uint32 count = size - DEFAULT_ATOM_SIZE;
+    int32 count = size - DEFAULT_ATOM_SIZE;
     if (_success)
     {
         PV_MP4_FF_NEW(fp->auditCB, trackFragmentRandomAccessAtomVecType, (), _pTrackFragmentRandomAccessAtomVec);
@@ -75,6 +76,18 @@ MovieFragmentRandomAccessAtom::MovieFragmentRandomAccessAtom(MP4_FF_FILE *fp,
                 else
                 {
                     //duplicate atom
+                    if (atomSize < DEFAULT_ATOM_SIZE)
+                    {
+                        _success = false;
+                        _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
+                        break;
+                    }
+                    if (count < (int32)atomSize)
+                    {
+                        _success = false;
+                        _mp4ErrorCode = READ_MOVIE_FRAGMENT_RANDOM_ACCESS_ATOM_FAILED;
+                        break;
+                    }
                     count -= atomSize;
                     atomSize -= DEFAULT_ATOM_SIZE;
                     AtomUtils::seekFromCurrPos(fp, atomSize);
@@ -95,7 +108,20 @@ MovieFragmentRandomAccessAtom::MovieFragmentRandomAccessAtom(MP4_FF_FILE *fp,
                 count -= pTrackFragmentRandomAccessAtom->getSize();
                 _pTrackFragmentRandomAccessAtomVec->push_back(pTrackFragmentRandomAccessAtom);
             }
+            else
+            {
+                //invalid atom type
+                _success = false;
+                _mp4ErrorCode = READ_MOVIE_FRAGMENT_RANDOM_ACCESS_ATOM_FAILED;
+                break;
+            }
+        }
 
+        if (count < 0)
+        {
+            //count can't be negative. Something went wrong during the read.
+            _success = false;
+            _mp4ErrorCode = READ_MOVIE_FRAGMENT_RANDOM_ACCESS_ATOM_FAILED;
         }
     }
     else

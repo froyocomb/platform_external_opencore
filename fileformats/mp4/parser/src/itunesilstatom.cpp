@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1782,7 +1783,7 @@ ITunesILSTAtom::ITunesILSTAtom(MP4_FF_FILE *fp, uint32 size, uint32 type): Atom(
     _pITunesLyricsAtom = NULL;
     _pITunesCoverImageAtom = NULL;
 
-    uint32 count = _size - DEFAULT_ATOM_SIZE;
+    int32 count = _size - DEFAULT_ATOM_SIZE;
 
     iLogger = PVLogger::GetLoggerObject("mp4ffparser");
     while (count > 0)

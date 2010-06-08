@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +64,7 @@ MovieFragmentAtom::MovieFragmentAtom(MP4_FF_FILE *fp,
     iStateVarLogger = PVLogger::GetLoggerObject("mp4ffparser_mediasamplestats");
     iParsedDataLogger = PVLogger::GetLoggerObject("mp4ffparser_parseddata");
 
-    uint32 count = size - DEFAULT_ATOM_SIZE;
+    int32 count = size - DEFAULT_ATOM_SIZE;
 
     if (_success)
     {
@@ -156,6 +157,13 @@ MovieFragmentAtom::MovieFragmentAtom(MP4_FF_FILE *fp,
             }
             else
             {
+                //Validate atomSize
+                if (atomSize < DEFAULT_ATOM_SIZE)
+                {
+                    _success = false;
+                    _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
+                    break;
+                }
                 count -= atomSize;
                 atomSize -= DEFAULT_ATOM_SIZE;
                 AtomUtils::seekFromCurrPos(fp, atomSize);
@@ -167,6 +175,13 @@ MovieFragmentAtom::MovieFragmentAtom(MP4_FF_FILE *fp,
         {
             moofParsingCompleted = true;
         }
+        else if (count < 0)
+        {
+            //count can't be negative. Something went wrong during the read.
+            _success = false;
+            _mp4ErrorCode = READ_MOVIE_FRAGMENT_ATOM_FAILED;
+        }
+
     }
     else
     {

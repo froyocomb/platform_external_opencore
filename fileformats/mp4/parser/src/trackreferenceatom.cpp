@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +40,7 @@ TrackReferenceAtom::TrackReferenceAtom(MP4_FF_FILE *fp, uint32 size, uint32 type
     {
         _pparent = NULL;
 
-        uint32 count = _size - DEFAULT_ATOM_SIZE;
+        int32 count = _size - DEFAULT_ATOM_SIZE;
 
         while (count > 0)
         {
@@ -77,11 +78,27 @@ TrackReferenceAtom::TrackReferenceAtom(MP4_FF_FILE *fp, uint32 size, uint32 type
             }
             else
             {
+                //Validate atomSize
+                if (atomSize < DEFAULT_ATOM_SIZE)
+                {
+                    _success = false;
+                    _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
+                    break;
+                }
+
                 count -= atomSize;
                 atomSize -= DEFAULT_ATOM_SIZE;
                 AtomUtils::seekFromCurrPos(fp, atomSize);
             }
         }
+
+        if (count < 0)
+        {
+            //count can't be negative. Something went wrong during the read.
+            _success = false;
+            _mp4ErrorCode = READ_TRACK_REFERENCE_ATOM_FAILED;
+        }
+
     }
     else
     {

@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
- * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ Mpeg4File::Mpeg4File(MP4_FF_FILE *fp,
     _commonFilePtr = NULL;
     _fileSize = fsize;
 
-    uint32 count = fileSize - filePointer;// -DEFAULT_ATOM_SIZE;
+    int32 count = fileSize - filePointer;// -DEFAULT_ATOM_SIZE;
 
     //top level moov, mdat, udat
     while (count > 0)
@@ -141,10 +141,20 @@ Mpeg4File::Mpeg4File(MP4_FF_FILE *fp,
                 AtomUtils::read64(fp, largeSize);
                 uint32 size =
                     Oscl_Int64_Utils::get_uint64_lower32(largeSize);
-                count -= size;
-                size -= 8; //for large size
-                size -= DEFAULT_ATOM_SIZE;
-                AtomUtils::seekFromCurrPos(fp, size);
+                if (size)
+                {
+                    count -= size;
+                    size -= 8; //for large size
+                    size -= DEFAULT_ATOM_SIZE;
+                    AtomUtils::seekFromCurrPos(fp, size);
+                }
+                else
+                {
+                    // size is 0 - invalid!
+                    _success = false;
+                    _mp4ErrorCode = READ_FAILED;
+                    break;
+                }
             }
             else
             {
@@ -325,6 +335,18 @@ Mpeg4File::Mpeg4File(MP4_FF_FILE *fp,
             else
             {
                 //multiple "ftyp" atom not allowed.skipping
+                if (atomSize < DEFAULT_ATOM_SIZE)
+                {
+                    _success = false;
+                    _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
+                    break;
+                }
+                if (count < (int32)atomSize)
+                {
+                    _success = false;
+                    _mp4ErrorCode = READ_FAILED;
+                    break;
+                }
                 count -= atomSize;
                 atomSize -= DEFAULT_ATOM_SIZE;
                 AtomUtils::seekFromCurrPos(fp, atomSize);
@@ -332,7 +354,6 @@ Mpeg4File::Mpeg4File(MP4_FF_FILE *fp,
         }
         else if (atomType == MOVIE_ATOM)
         {
-
 
             //"moov"
             if (_pmovieAtom == NULL)
@@ -356,11 +377,16 @@ Mpeg4File::Mpeg4File(MP4_FF_FILE *fp,
                     break;
                 }
                 _isMovieFragmentsPresent = _pmovieAtom->IsMovieFragmentPresent();
-
+ 
                 PV_MP4_FF_NEW(fp->auditCB, TrackIndexVecType, (), _moofFragmentIdx);
 
-
-                populateTrackDurationVec();
+                MP4_ERROR_CODE status = populateTrackDurationVec();
+                if (status != EVERYTHING_FINE)
+                {
+                    _success = false;
+                    _mp4ErrorCode = status;
+                    break;
+                }
                 _pTrackExtendsAtomVec = _pmovieAtom->getTrackExtendsAtomVec();
 
                 if (_isMovieFragmentsPresent)
@@ -453,6 +479,14 @@ Mpeg4File::Mpeg4File(MP4_FF_FILE *fp,
             break;
         }
     }
+
+    if (count < 0)
+    {
+        //count can't be negative. Something went wrong during the read.
+        _success = false;
+        _mp4ErrorCode = READ_FAILED;
+    }
+
 
     if (_success)
     {
@@ -1739,6 +1773,13 @@ uint64 Mpeg4File::getMovieDuration() const
         else if (_parsing_mode == 0)
         {
             uint numTracks = _pmovieAtom->getNumTracks();
+            if (numTracks)
+            {
+                // Verify the pointers that will be used in the loop below
+                if ((! _pTrackDurationContainer) || (! _pTrackDurationContainer->_pTrackdurationInfoVec))
+                    return 0;
+            }
+
             uint32 *trackList  = (uint32 *) oscl_malloc(sizeof(uint32) * numTracks);
             if (! trackList)
                 return 0;   // malloc failure
@@ -1747,6 +1788,12 @@ uint64 Mpeg4File::getMovieDuration() const
             for (uint32 i = 0; i < numTracks; i++)
             {
                 TrackDurationInfo* pTrackDurationInfo = (*_pTrackDurationContainer->_pTrackdurationInfoVec)[i];
+                if (! pTrackDurationInfo)
+                {
+                    oscl_free(trackList);
+                    return 0;
+                }
+
                 trackduration = pTrackDurationInfo->trackDuration;
                 if (prevtrackDuration > trackduration)
                 {
@@ -1789,6 +1836,13 @@ uint64 Mpeg4File::getMovieDuration() const
     else if (_pmovieAtom != NULL)
     {
         uint numTracks = _pmovieAtom->getNumTracks();
+        if (numTracks)
+        {
+            // Verify the pointers that will be used in the loop below
+            if ((! _pTrackDurationContainer) || (! _pTrackDurationContainer->_pTrackdurationInfoVec))
+                return 0;
+        }
+
         uint32 *trackList  = (uint32 *) oscl_malloc(sizeof(uint32) * numTracks);
         if (! trackList)
             return 0;   // malloc failure
@@ -1797,6 +1851,12 @@ uint64 Mpeg4File::getMovieDuration() const
         for (uint32 i = 0; i < numTracks; i++)
         {
             TrackDurationInfo* pTrackDurationInfo = (*_pTrackDurationContainer->_pTrackdurationInfoVec)[i];
+            if (! pTrackDurationInfo)
+            {
+                oscl_free(trackList);
+                return 0;
+            }
+
             trackDuration = pTrackDurationInfo->trackDuration;
             if (prevTrackDuration > trackDuration)
             {
@@ -3061,9 +3121,10 @@ MovieFragmentAtom * Mpeg4File::getMovieFragmentForTrackId(uint32 id)
     return NULL;
 }
 
-void Mpeg4File::populateTrackDurationVec()
+MP4_ERROR_CODE Mpeg4File::populateTrackDurationVec()
 {
     uint32 trackDuration = 0;
+    MP4_ERROR_CODE status = EVERYTHING_FINE;
     if (_pmovieAtom != NULL)
     {
         uint32 ids[256];
@@ -3076,24 +3137,27 @@ void Mpeg4File::populateTrackDurationVec()
         {
             uint32 trackID = ids[i];
             TrackDurationInfo *trackinfo = NULL;
+
             trackDuration = Oscl_Int64_Utils::get_uint64_lower32(_pmovieAtom->getTrackMediaDuration(trackID));
             PV_MP4_FF_NEW(fp->auditCB, TrackDurationInfo, (trackDuration, trackID), trackinfo);
             (*_pTrackDurationContainer->_pTrackdurationInfoVec).push_back(trackinfo);
 
-            TrackIndex *trackindx;
-            PV_MP4_FF_NEW(fp->auditCB, TrackIndex , (), trackindx);
-            trackindx->_trackID = trackID;
-            trackindx->_Index = i;
-            _moofFragmentIdx->push_back(trackindx);
-
-            uint32 moofIdx = getIndexForTrackID(trackID);
-
-            _movieFragmentIdx[moofIdx] = 0;
-            _peekMovieFragmentIdx[moofIdx] = 0;
-            _movieFragmentSeqIdx[moofIdx] = 1;
-            _peekMovieFragmentSeqIdx[moofIdx] = 1;
+             TrackIndex *trackindx;
+             PV_MP4_FF_NEW(fp->auditCB, TrackIndex , (), trackindx);
+             trackindx->_trackID = trackID;
+             trackindx->_Index = i;
+             _moofFragmentIdx->push_back(trackindx);
+ 
+             uint32 moofIdx = getIndexForTrackID(trackID);
+ 
+             _movieFragmentIdx[moofIdx] = 0;
+             _peekMovieFragmentIdx[moofIdx] = 0;
+             _movieFragmentSeqIdx[moofIdx] = 1;
+             _peekMovieFragmentSeqIdx[moofIdx] = 1;
         }
     }
+
+    return status;
 }
 
 uint32 Mpeg4File::GetByteOffsetToStartOfAudioFrames()

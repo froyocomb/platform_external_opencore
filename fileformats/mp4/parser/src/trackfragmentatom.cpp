@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +94,7 @@ TrackFragmentAtom::TrackFragmentAtom(MP4_FF_FILE *fp,
     _pinput->_pvfile.Copy(fp->_pvfile);
 
     uint32 trun_start = 0;
-    uint32 count = size - DEFAULT_ATOM_SIZE;
+    int32 count = size - DEFAULT_ATOM_SIZE;
 
     uint32 _movieFragmentBaseOffset = movieFragmentBaseOffset - DEFAULT_ATOM_SIZE;
     bool bdo_present = false;
@@ -243,10 +244,26 @@ TrackFragmentAtom::TrackFragmentAtom(MP4_FF_FILE *fp,
                     break;
                 }
             }
+            else
+            {
+                //Invalid atomType. Break out of the loop.
+                _success = false;
+                _mp4ErrorCode = READ_MOVIE_EXTENDS_ATOM_FAILED;
+                break;
+            }
+
             uint32 track_duration = Oscl_Int64_Utils::get_uint64_lower32(_trackEndDuration);
             trackDurationContainer->updateTrackDurationForTrackId(trackId, track_duration);
             trafParsingCompleted = true;
         }
+
+        if (count < 0)
+        {
+            //count can't be negative. Something went wrong during the read.
+            _success = false;
+            _mp4ErrorCode = READ_MOVIE_EXTENDS_ATOM_FAILED;
+        }
+
     }
     else
     {
