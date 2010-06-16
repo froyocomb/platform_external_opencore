@@ -511,11 +511,7 @@ void AuthorDriver::handleSetAudioEncoder(set_audio_encoder_command *ac)
         if (mNumberOfChannels == 0)
         {
             // Number of channels not set, use the default
-#ifdef SURF8K
-            mNumberOfChannels = 1;
-#else
             mNumberOfChannels = 2;
-#endif
         }
         // Is file container type AAC-ADIF?
         if(mOutputFormat == OUTPUT_FORMAT_AAC_ADIF)
