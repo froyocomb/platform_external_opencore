@@ -1151,7 +1151,7 @@ bool PVMFOMXVideoDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
 }
 
 /////////////////////////////////////////////////////////////////////////////
-bool PVMFOMXVideoDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
+PVMFStatus PVMFOMXVideoDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
 {
     OSCL_UNUSED_ARG(DataIn);
 
@@ -1198,14 +1198,20 @@ bool PVMFOMXVideoDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
                 }
                 tmp_ptr += 2;
 
-                if (!SendConfigBufferToOMXComponent(tmp_ptr, length))
+                PVMFStatus configStatus =  SendConfigBufferToOMXComponent(tmp_ptr, length);
+                if(PVMFSuccess != configStatus)
                 {
+                    if(PVMFFailure == configStatus)
+                    {
                     PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
                                     (0, "PVMFOMXVideoDecNode::InitDecoder() Error in processing config buffer"));
+                    return PVMFFailure;
+                    }
+                    // We are out of input buffers, wait for component to return buffers
                     iConfigInProgress = true;
                     tmp_ptr -= 2;
                     iH264FragSize -= (length + 2);
-                    return false;
+                    return PVMFErrNoResources;
                 }
 
                 tmp_ptr += length;
@@ -1227,11 +1233,11 @@ bool PVMFOMXVideoDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
         if (initbufsize > 0)
         {
 
-            if (!SendConfigBufferToOMXComponent(initbuffer, initbufsize))
+            if (PVMFSuccess != SendConfigBufferToOMXComponent(initbuffer, initbufsize))
             {
                 PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
                                 (0, "PVMFOMXVideoDecNode::InitDecoder() Error in processing config buffer"));
-                return false;
+                return PVMFFailure;
             }
         }
     }
@@ -1245,11 +1251,11 @@ bool PVMFOMXVideoDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
         if (initbufsize > 0)
         {
 
-            if (!SendConfigBufferToOMXComponent(initbuffer, initbufsize))
+            if (PVMFSuccess != SendConfigBufferToOMXComponent(initbuffer, initbufsize))
             {
                 PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
                                 (0, "PVMFOMXVideoDecNode::InitDecoder() Error in processing config buffer"));
-                return false;
+                return PVMFFailure;
             }
         }
     }
@@ -1258,13 +1264,13 @@ bool PVMFOMXVideoDecNode::InitDecoder(PVMFSharedMediaDataPtr& DataIn)
         // Unknown codec type
         PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
                         (0, "PVMFOMXVideoDecNode::InitDecoder() Unknown codec type"));
-        return false;
+        return PVMFFailure;
     }
 
     //Varibles initialization
     //sendFsi = true;
 
-    return true;
+    return PVMFSuccess;
 }
 
 
