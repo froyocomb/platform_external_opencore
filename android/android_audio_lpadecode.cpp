@@ -1181,7 +1181,7 @@ int AndroidAudioLPADecode::audout_thread_func()
                 bEOS = true;
                 if ( iHwState != STATE_HW_PAUSED ) {
                     LOGV("Calling fsync");
-                    if ( (fsync(afd) < 0) && iHwState == STATE_HW_STOPPED )
+                    if ( !iExitAudioThread && (fsync(afd) < 0) && iHwState == STATE_HW_STOPPED )
                     {
                         LOGV("Fsync failed because the h/w is stopped in Fsync");
                         bEOS = false;
