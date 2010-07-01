@@ -8686,7 +8686,10 @@ PVMFStatus PVPlayerEngine::DoResume(PVPlayerEngineCommand& aCmd)
         if (PVMFSuccess == retval)
         {
             UpdateCurrentEndPosition(iCurrentEndPosition);
-            StartPlaybackClock();
+            if (iNumPVMFInfoStartOfDataPending == 0)
+            {
+                StartPlaybackClock();
+            }
         }
     }
 
