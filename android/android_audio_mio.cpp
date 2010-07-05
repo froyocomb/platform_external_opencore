@@ -626,6 +626,8 @@ OSCL_EXPORT_REF PVMFStatus AndroidAudioMIOActiveTimingSupport::SetClock(PVMFMedi
 {
     LOGV("ATS :: SetClock in");
     iClock=clockVal;
+    checkForDelayedStart = false;
+    startTimeDelayed = false;
     
     return PVMFSuccess;
 }
@@ -680,6 +682,14 @@ void AndroidAudioMIOActiveTimingSupport::ClockStateUpdated()
                     iFrameCount = 0;
                     iUpdateClock = false;
                     LOGV("update iStartTime: %d", iStartTime);
+                    if(!checkForDelayedStart) {
+                        if(iStartTime > 100){
+                            LOGV("START TIME DELAYED:: Setting startTimeDelayed = 1 ");
+                            startTimeDelayed = true ;
+                        }
+                        checkForDelayedStart = true;
+                        LOGV("Start TimeDelay Checked ");
+                    }
                 }
                 LOGV("signal thread to start");
                 if (iAudioThreadSem) iAudioThreadSem->Signal();
@@ -720,9 +730,15 @@ void AndroidAudioMIOActiveTimingSupport::UpdateClock()
 
         // normal play mode - check delta between PV engine clock and sample clock
         else {
+            if(iStartTime < 100 || startTimeDelayed == false) {
             correction = (updateClock32 - iDriverLatency) - (clockTime32 - iStartTime);
             LOGV("clock drift (correction = (updateClock32(%d)-iDriverLatency(%d))-(clockTime32(%d)-iStartTime(%d))= %d)",updateClock32,iDriverLatency,clockTime32,iStartTime,correction);
-        }
+            }
+	    else {
+            correction = (updateClock32 - iDriverLatency) - (clockTime32);
+            LOGV("clock drift (correction = (updateClock32(%d)-iDriverLatency(%d))-(clockTime32(%d))= %d)",updateClock32,iDriverLatency,clockTime32,correction);
+            }
+       }
 
         // do clock correction if drift exceeds threshold
         if (OSCL_ABS(correction) > iMinCorrection) {
