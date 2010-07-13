@@ -7787,7 +7787,7 @@ PVMFStatus PVPlayerEngine::DoSinkDecCleanupSourcePrepare(PVCommandId aCmdId, Osc
     // Clear the Track selection List
     iTrackSelectionList.clear();
 
-    PVMFStatus cmdstatus = PVMFFailure;
+    PVMFStatus cmdstatus = PVMFSuccess;
 
     // Notify the TargetNPT to the source node before calling Prepare.
     if (iSourceNodePBCtrlIF)
