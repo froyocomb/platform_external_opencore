@@ -1970,7 +1970,6 @@ status_t PVPlayer::suspend()
     } else {
         status = mPlayerDriver->enqueueCommand(new PlayerRemoveDataSource(0,0));
     }
-    mSurface.clear();
     mIsDataSourceSet = false;
 
     return status;
