@@ -2126,6 +2126,29 @@ int32 Mpeg4File::getTrackNumSampleEntries(uint32 id)
     }
 }
 
+uint8 Mpeg4File::getObjectTypeIndication(uint32 id)
+{
+    TrackAtom *trackAtom;
+
+    if (_pmovieAtom != NULL)
+    {
+        trackAtom = _pmovieAtom->getTrackForID(id);
+    }
+    else
+    {
+        return 0;
+    }
+
+    if (trackAtom != NULL)
+    {
+        return trackAtom->getObjectTypeIndication();
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 // From DecoderConfigDescriptor
 DecoderSpecificInfo *Mpeg4File::getTrackDecoderSpecificInfo(uint32 id)
 {
@@ -2712,7 +2735,7 @@ int32 Mpeg4File::getNextBundledAccessUnits(const uint32 trackID,
                                     else
                                     {
                                         // We have run out of MOOF atoms so report insufficient data.
-                                        return  INSUFFICIENT_DATA;
+                                        return  MP4_INSUFFICIENT_DATA;
                                     }
                                 }
 
@@ -2784,7 +2807,7 @@ int32 Mpeg4File::getNextBundledAccessUnits(const uint32 trackID,
                                         if (count < (int32)atomSize)
                                         {
                                             _success = false;
-                                            _mp4ErrorCode = INSUFFICIENT_DATA;
+                                            _mp4ErrorCode = MP4_INSUFFICIENT_DATA;
                                             ret = _mp4ErrorCode;
                                             oAllMoofExhausted = true;
                                             AtomUtils::seekFromStart(_movieFragmentFilePtr, currPos);
@@ -4540,7 +4563,7 @@ int32 Mpeg4File::peekNextBundledAccessUnits(const uint32 trackID,
                             if ((currPos + atomSize) > fileSize)
                             {
                                 AtomUtils::seekFromStart(_movieFragmentFilePtr, currPos);
-                                return  INSUFFICIENT_DATA;
+                                return  MP4_INSUFFICIENT_DATA;
                             }
                             if (atomType == MOVIE_FRAGMENT_ATOM)
                             {
@@ -4600,7 +4623,7 @@ int32 Mpeg4File::peekNextBundledAccessUnits(const uint32 trackID,
                                     {
                                         _success = false;
                                         oAllMoofExhausted = true;
-                                        _mp4ErrorCode = INSUFFICIENT_DATA;
+                                        _mp4ErrorCode = MP4_INSUFFICIENT_DATA;
                                         AtomUtils::seekFromStart(_movieFragmentFilePtr, currPos);
                                         ret = _mp4ErrorCode;
                                         break;
