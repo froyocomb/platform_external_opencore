@@ -146,8 +146,6 @@ private:
     bool iUpdateClock;
     int32 iMinCorrection;
     int32 iMaxCorrection;
-    bool checkForDelayedStart;
-    bool startTimeDelayed;
 };
 
 // Audio MIO component
