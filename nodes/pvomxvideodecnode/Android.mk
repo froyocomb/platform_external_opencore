@@ -14,7 +14,7 @@ LOCAL_CFLAGS :=  $(PV_CFLAGS)
 
 LOCAL_STATIC_LIBRARIES := 
 
-LOCAL_SHARED_LIBRARIES := 
+LOCAL_SHARED_LIBRARIES := libOmxCore
 
 LOCAL_C_INCLUDES := \
 	$(PV_TOP)/nodes/pvomxvideodecnode/src \
@@ -25,6 +25,8 @@ LOCAL_C_INCLUDES := \
  	$(PV_TOP)/nodes/pvomxbasedecnode/include \
  	$(PV_TOP)/nodes/pvomxbasedecnode/src \
  	$(PV_INCLUDES)
+
+LOCAL_C_INCLUDES += $(TARGET_OUT_HEADERS)/mm-core/omxcore
 
 LOCAL_COPY_HEADERS_TO := $(PV_COPY_HEADERS_TO)
 
