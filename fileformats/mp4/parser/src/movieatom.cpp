@@ -131,14 +131,41 @@ OSCL_EXPORT_REF MovieAtom::MovieAtom(MP4_FF_FILE *fp,
                 }
             }
             else if ((atomType == FREE_SPACE_ATOM) ||
-                     (atomType == UUID_ATOM) ||
-                     (atomType == UNKNOWN_ATOM))
+                     (atomType == UUID_ATOM))
             {
                 if (atomSize < DEFAULT_ATOM_SIZE)
                 {
                     _success = false;
                     _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
                     break;
+                }
+                if (count < (int32)atomSize)
+                {
+                    _success = false;
+                    _mp4ErrorCode = READ_FAILED;
+                    break;
+                }
+                count -= atomSize;
+                atomSize -= DEFAULT_ATOM_SIZE;
+                AtomUtils::seekFromCurrPos(fp, atomSize);
+            }
+            else if (atomType == UNKNOWN_ATOM)
+            {
+                if (atomSize < DEFAULT_ATOM_SIZE)
+                {
+                    if(atomSize >=4)
+                    {
+                        count -= atomSize;
+                        int32 bytestoSkip = atomSize - DEFAULT_ATOM_SIZE;
+                        AtomUtils::seekFromCurrPos(fp, bytestoSkip);
+                        break;
+                    }
+                    else
+                    {
+                        _success = false;
+                        _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
+                        break;
+                    }
                 }
                 if (count < (int32)atomSize)
                 {
