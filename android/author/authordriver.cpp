@@ -309,21 +309,37 @@ void AuthorDriver::handleInit(author_command *ac)
 void AuthorDriver::handleSetAudioSource(set_audio_source_command *ac)
 {
     int error = 0;
-
-    mAudioInputMIO = new AndroidAudioInput(ac->as);
-    if (mAudioInputMIO != NULL) {
-        LOGV("create mio input audio");
-        mAudioNode = PvmfMediaInputNodeFactory::Create(static_cast<PvmiMIOControl *>(mAudioInputMIO.get()));
-        if (mAudioNode == NULL) {
-            commandFailed(ac);
-            return;
+    if (ac->as == AUDIO_SOURCE_FM_RX_A2DP) {
+        mAudioInputMIOA2DP = new AndroidAudioInputA2DP(ac->as);
+        if (mAudioInputMIOA2DP != NULL) {
+            LOGV("create mio input audio");
+            mAudioNode = PvmfMediaInputNodeFactory::Create(static_cast<PvmiMIOControl *>(mAudioInputMIOA2DP.get()));
+            if (mAudioNode == NULL) {
+                commandFailed(ac);
+                return;
+            }
         }
-        // force audio source to camcorder when recording video
-        if (mVideoInputMIO != NULL) {
-            mAudioInputMIO->setAudioSource(AUDIO_SOURCE_CAMCORDER);
+        else {
+                commandFailed(ac);
+                return;
         }
     }
-
+    else {
+        LOGE("Legacy MIO");
+        mAudioInputMIO = new AndroidAudioInput(ac->as);
+        if (mAudioInputMIO != NULL) {
+            LOGV("create mio input audio");
+            mAudioNode = PvmfMediaInputNodeFactory::Create(static_cast<PvmiMIOControl *>(mAudioInputMIO.get()));
+            if (mAudioNode == NULL) {
+                commandFailed(ac);
+                return;
+            }
+            // force audio source to camcorder when recording video
+            if (mVideoInputMIO != NULL) {
+                mAudioInputMIO->setAudioSource(AUDIO_SOURCE_CAMCORDER);
+            }
+        }
+    }
     OSCL_TRY(error, mAuthor->AddDataSource(*mAudioNode, ac));
     OSCL_FIRST_CATCH_ANY(error, commandFailed(ac));
 }
@@ -615,28 +631,53 @@ void AuthorDriver::handleSetAudioEncoder(set_audio_encoder_command *ac)
 
     LOGV("AuthorDriver::handleSetAudioEncoder() set %d %d \"%s\"", mSamplingRate, mNumberOfChannels, iAudioEncoderMimeType.get_cstr());
 
-    if (!mAudioInputMIO->setAudioNumChannels(mNumberOfChannels))
-    {
-        LOGE("Failed to set the number of channels %d", mNumberOfChannels);
-        commandFailed(ac);
-        return;
-    }
+   if(mAudioInputMIOA2DP != NULL)
+   {
+        // Set the sampling rate and number of channels
+        if (!mAudioInputMIOA2DP->setAudioSamplingRate(mSamplingRate))
+        {
+            LOGE("Failed to set the sampling rate %d", mSamplingRate);
+            commandFailed(ac);
+            return;
+        }
+        if (!mAudioInputMIOA2DP->setAudioNumChannels(mNumberOfChannels))
+        {
+            LOGE("Failed to set the number of channels %d", mNumberOfChannels);
+            commandFailed(ac);
+            return;
+        }
 
-    if (!mAudioInputMIO->setAudioFormatType(iAudioFormat))
-    {
-        LOGE("Compressed Audio Input not supported %s", iAudioFormat);
-        commandFailed(ac);
-        return;
-    }
+        if (!mAudioInputMIOA2DP->setAudioFormatType(iAudioFormat))
+        {
+            LOGE("Compressed Audio Input not supported %s", iAudioFormat);
+            commandFailed(ac);
+            return;
+        }
 
-    // Set the sampling rate moved to end to check for format type in MIO.
-    if (!mAudioInputMIO->setAudioSamplingRate(mSamplingRate))
-    {
-        LOGE("Failed to set the sampling rate %d", mSamplingRate);
-        commandFailed(ac);
-        return;
-    }
 
+   }else{
+
+        // Set the sampling rate and number of channels
+        if (!mAudioInputMIO->setAudioSamplingRate(mSamplingRate))
+        {
+            LOGE("Failed to set the sampling rate %d", mSamplingRate);
+            commandFailed(ac);
+            return;
+        }
+        if (!mAudioInputMIO->setAudioNumChannels(mNumberOfChannels))
+        {
+            LOGE("Failed to set the number of channels %d", mNumberOfChannels);
+            commandFailed(ac);
+            return;
+        }
+
+        if (!mAudioInputMIO->setAudioFormatType(iAudioFormat))
+        {
+            LOGE("Compressed Audio Input not supported %s", iAudioFormat);
+            commandFailed(ac);
+            return;
+        }
+    }
     mAudioEncoder = ac->ae;
 
     OSCL_TRY(error, mAuthor->AddMediaTrack(*mAudioNode, iAudioEncoderMimeType, mSelectedComposer, mAudioEncoderConfig, ac));
@@ -1172,7 +1213,10 @@ void AuthorDriver::doCleanUp()
     if (mAudioNode) {
         PvmfMediaInputNodeFactory::Delete(mAudioNode);
         mAudioNode = NULL;
-        mAudioInputMIO.clear();
+        if (mAudioInputMIOA2DP != NULL)
+            mAudioInputMIOA2DP.clear();
+        if (mAudioInputMIO != NULL)
+            mAudioInputMIO.clear();
     }
 }
 

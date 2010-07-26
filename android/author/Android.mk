@@ -16,7 +16,8 @@ LOCAL_SRC_FILES := \
     android_audio_input.cpp \
     android_audio_input_threadsafe_callbacks.cpp \
     ../thread_init.cpp \
-    android_camera_input_threadsafe_callbacks.cpp
+    android_camera_input_threadsafe_callbacks.cpp \
+    android_audio_inputFMA2DP.cpp \
 
 LOCAL_CFLAGS := $(PV_CFLAGS)
 
