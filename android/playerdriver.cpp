@@ -1271,7 +1271,11 @@ int PlayerDriver::playerThread()
     delete mVideoSink;
     if (mVideoNode) {
         PVMediaOutputNodeFactory::DeleteMediaOutputNode(mVideoNode);
-        delete mVideoOutputMIO;
+        mVideoNode =  NULL;
+        if (mVideoOutputMIO != NULL) {
+            delete mVideoOutputMIO;
+            mVideoOutputMIO = NULL;
+        }
     }
 
     mSyncStatus = OK;
@@ -1415,7 +1419,14 @@ void PlayerDriver::CommandCompleted(const PVCmdResponse& aResponse)
 
             case PlayerCommand::PLAYER_REMOVE_DATA_SOURCE:
                 LOGV("remove datasource complete");
-                mVideoOutputMIO = NULL;
+                if (mVideoNode) {
+                    PVMediaOutputNodeFactory::DeleteMediaOutputNode(mVideoNode);
+                    mVideoNode =  NULL;
+                    if (mVideoOutputMIO != NULL) {
+                        delete mVideoOutputMIO;
+                        mVideoOutputMIO = NULL;
+                    }
+                }
                 break;
 
             default: /* shut up gcc */
@@ -2023,9 +2034,6 @@ status_t PVPlayer::resume()
     // Seek to position when suspended
     status = seekTo(mPositionWhenSuspend);
 
-    // Start playback if playing when suspended
-    if(mIsPlaying)
-    status = start();
     return status;
 }
 
