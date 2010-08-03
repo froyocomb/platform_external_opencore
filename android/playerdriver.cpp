@@ -2014,6 +2014,8 @@ status_t PVPlayer::resume()
 //      -Using opencore LPA implementation for mp3 and aac streams
 //      -Playing qcelp files
 //      -Playing evrc files
+//      -Playing raw .aac files
+//      -Playing files with major brand 3g2
 // Static
 status_t PVPlayer::usePVPlayer(const char *filename)
 {
@@ -2022,82 +2024,100 @@ status_t PVPlayer::usePVPlayer(const char *filename)
     if(strcmp("msm7630_surf",value) != 0) return OK;
 
     LOGV("usePVPlayer: In usePVPlayer function, filename: %s",filename);
+    status_t status = UNKNOWN_ERROR;
 
     oscl_wchar output[MAX_BUFF_SIZE];
     oscl_UTF8ToUnicode((const char *)filename, oscl_strlen((const char *) filename), (oscl_wchar *)output, MAX_BUFF_SIZE);
     OSCL_wHeapString<OsclMemAllocator> wFilename(output);
 
     //Check for QCelp (no SF support)
-    QCPErrorType    qcpErr;
+    QCPErrorType qcpErr;
     IQcpFile qcpFile(wFilename, qcpErr);
     if (qcpErr == QCP_SUCCESS) {
         qcpErr = qcpFile.ParseQcpFile();
         if (qcpErr == QCP_SUCCESS) {
             LOGV("usePVPlayer: recognized qcelp or evrc file");
-            return OK;
+            status = OK;
         }
     }
 
     //Check for clips with LPA implementation in PVPlayer
-    //First check if MP4 containing an aac audio stream
-    if (InitializeForThread()) {
-        Oscl_FileServer iFs;
-        if (iFs.Connect() ==0) {
-            IMpeg4File *mp4Input = IMpeg4File::readMP4File(wFilename, NULL, NULL, 1, &iFs);
-            if (mp4Input)
-            {
-                LOGV("usePVPlayer: recognized mp4 container");
-                // check to see if the file contains video
-                uint64 duration;
-                uint32 timeScale;
-                int32 count = mp4Input->getNumTracks();
-                uint32* tracks = new uint32[count];
-                uint8 objectType;
+    //First check if MP4, 3gpp, or 3g2 container
+    if (status != OK) {
+        if (InitializeForThread()) {
+            Oscl_FileServer iFs;
+            if (iFs.Connect() ==0) {
+                IMpeg4File *mp4Input = IMpeg4File::readMP4File(wFilename, NULL, NULL, 1, &iFs);
+                if (mp4Input)
+                {
+                    LOGV("usePVPlayer: recognized mp4 container");
+                    uint64 duration;
+                    uint32 timeScale;
+                    uint32 brand;
+                    int32 count = mp4Input->getNumTracks();
+                    uint32* tracks = new uint32[count];
+                    uint8 objectType;
 
-                if (tracks) {
-                    mp4Input->getTrackIDList(tracks, count);
-                    for (int i = 0; i < count; ++i) {
-                        OSCL_HeapString<OsclMemAllocator> streamtype;
-
-                        mp4Input->getTrackMIMEType(tracks[i], streamtype);
-                        if (streamtype.get_size()) {
-                            LOGV("usePVPlayer: got streamtype %s",streamtype.get_cstr());
-
-                            //MIME type X-MPEG4_AUDIO indicates AAC in MP4
-                            if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO) {
-                                LOGV("usePVPlayer: recognized file as AAC in MP4");
-
-                                duration = mp4Input->getMovieDuration();
-                                timeScale =  mp4Input->getMovieTimescale();
-
-                                // adjust duration to milliseconds if necessary
-                                duration = (duration * 1000) / timeScale;
-                                LOGV("usePVPlayer: got duration of %llu milliseconds",duration);
-                                if (duration >= MIN_LPA_DURATION) {
-                                    LPAInstanceExists = true;
-                                    return OK;
-                                }
-                                else {
-                                    LOGV("usePVPlayer: duration of aac too short to use LPA");
-                                    return UNKNOWN_ERROR;
-                                }
-                            }
-                            else if (streamtype==PVMF_MIME_QCELP || streamtype==PVMF_MIME_EVRC) {
-                                LOGV("usePVPlayer: recognized qcelp or evrc file");
-                                return OK;
-                            }
+                    brand = mp4Input->getCompatibiltyMajorBrand();
+                    if (brand != 0) {  // check for 3g2 (not supported by SF, see SniffMPEG4())
+                        char mime[5];
+                        mime[0] = ((brand >> 24) & 0x00FF);
+                        mime[1] = ((brand >> 16) & 0x00FF);
+                        mime[2] = ((brand >>  8) & 0x00FF);
+                        mime[3] = ((brand >>  0) & 0x00FF);
+                        mime[4] = '\0';
+                        LOGV("usePVPlayer: got brand %s",mime);
+                        if (mime[0] == '3' && mime[1] == 'g' && mime[2] == '2') {
+                            LOGV("usePVPlayer: recognized file as 3g2");
+                            status = OK;
                         }
                     }
-                delete[] tracks;
+
+                    if (status != OK && tracks) {
+                        mp4Input->getTrackIDList(tracks, count);
+                        for (int i = 0; i < count; ++i) {
+                            OSCL_HeapString<OsclMemAllocator> streamtype;
+
+                            mp4Input->getTrackMIMEType(tracks[i], streamtype);
+                            if (streamtype.get_size()) {
+                                LOGV("usePVPlayer: got streamtype %s",streamtype.get_cstr());
+
+                                //MIME type X-MPEG4_AUDIO indicates AAC in MP4
+                                if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO) {
+                                    LOGV("usePVPlayer: recognized file as AAC in MP4 or 3gpp");
+                                    duration = mp4Input->getMovieDuration();
+                                    timeScale =  mp4Input->getMovieTimescale();
+
+                                    // adjust duration to milliseconds if necessary
+                                    duration = (duration * 1000) / timeScale;
+                                    LOGV("usePVPlayer: got duration of %llu milliseconds",duration);
+                                    if (duration >= MIN_LPA_DURATION) {
+                                        LPAInstanceExists = true;
+                                        status = OK;
+                                    }
+                                    else {
+                                        LOGV("usePVPlayer: duration of aac too short to use LPA");
+                                        goto return_status;
+                                    }
+                                }
+                                else if (streamtype==PVMF_MIME_QCELP || streamtype==PVMF_MIME_EVRC) {
+                                    LOGV("usePVPlayer: recognized qcelp or evrc file");
+                                    status = OK;
+                                }
+                            }
+                        }
+                    delete[] tracks;
+                    }
                 }
+                iFs.Close();
+                IMpeg4File::DestroyMP4FileObject(mp4Input);
             }
-            iFs.Close();
-            IMpeg4File::DestroyMP4FileObject(mp4Input);
+            UninitializeForThread();
         }
-        UninitializeForThread();
     }
-    //Then check if MP3 of sufficient length
-    if (!LPAInstanceExists) {
+
+    //Then check if MP3 of sufficient length for LPA
+    if (status != OK && !LPAInstanceExists) {
         MP3ErrorType mp3Err;
 
         IMpeg3File mp3File(wFilename, mp3Err);
@@ -2111,30 +2131,31 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                 LOGV("usePVPlayer: duration of mp3 %s is %d", filename, duration);
                 if (duration >= MIN_LPA_DURATION) {
                     LPAInstanceExists = true;
-                    return OK;
+                    status = OK;
                 }
                 else {
                     LOGV("usePVPlayer: mp3 duration too short to use LPA");
-                    return UNKNOWN_ERROR;
+                    goto return_status;
                 }
             }
         }
     }
 
-    //Then check if .aac of sufficient length
-    CAACFileParser aacParser;
+    //Then check if raw .aac of sufficient length for LPA
+    if (status != OK) {
+        CAACFileParser aacParser;
 
-    if (aacParser.InitAACFile(wFilename)) {
-        TPVAacFileInfo aacInfo;
-        if (aacParser.RetrieveFileInfo(aacInfo)) {
-            LOGV("usePVPlayer: recognized .aac file");
-            return OK;
+        if (aacParser.InitAACFile(wFilename)) {
+            TPVAacFileInfo aacInfo;
+            if (aacParser.RetrieveFileInfo(aacInfo)) {
+                LOGV("usePVPlayer: recognized .aac file");
+                status = OK;
+            }
         }
     }
 
-    LOGV("usePVPlayer: unable to parse as aac, mp3, qcelp, or evrc; should ask for instance of stagefright player");
-    return UNKNOWN_ERROR;
-
+    return_status:
+    return status;
 }
 
 // Wrapper for usePVPlayer(const char *filename) to enable opening the file with an fd
