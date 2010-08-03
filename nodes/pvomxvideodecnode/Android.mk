@@ -14,7 +14,7 @@ LOCAL_CFLAGS :=  $(PV_CFLAGS)
 
 LOCAL_STATIC_LIBRARIES := 
 
-LOCAL_SHARED_LIBRARIES := libOmxCore
+LOCAL_SHARED_LIBRARIES := 
 
 LOCAL_C_INCLUDES := \
 	$(PV_TOP)/nodes/pvomxvideodecnode/src \
