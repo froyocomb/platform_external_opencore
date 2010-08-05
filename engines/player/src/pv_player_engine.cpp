@@ -16466,7 +16466,7 @@ void PVPlayerEngine::HandleSinkNodeInfoEvent(const PVMFAsyncEvent& aEvent, int32
                 //check engine internal state here prior to starting the clock
                 //this is to make sure that we do not start the clock in case engine is still
                 //auto-paused (think usecase: auto-pause, setplaybackrange, auto-resume)
-                if (iState == PVP_ENGINE_STATE_STARTED)
+                if (iState == PVP_ENGINE_STATE_STARTED || iState == PVP_ENGINE_STATE_RESUMING)
                 {
                     // start the clock only if engine is in started state
                     StartPlaybackClock();
