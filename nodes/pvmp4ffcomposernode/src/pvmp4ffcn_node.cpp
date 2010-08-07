@@ -26,6 +26,7 @@
 #include <utils/Log.h>
 #include <utils/Errors.h>
 #include <utils/threads.h>
+#include <utils/List.h>
 #endif // ANDROID
 
 #ifndef PVMP4FFCN_NODE_H_INCLUDED
@@ -64,13 +65,18 @@ namespace android
 // mLast points to the next available cell for a new fragment.
 // When the array is empty or full mFirst == mLast.
 
+#define NUM_RESERVED 3
+
 class FragmentWriter: public Thread
 {
     public:
         FragmentWriter(PVMp4FFComposerNode *composer) :
                 Thread(kThreadCallJava), mSize(0), mEnd(mBuffer + kCapacity),
                 mFirst(mBuffer), mLast(mBuffer), mComposer(composer),
-                mPrevWriteStatus(PVMFSuccess), mTid(NULL), mDropped(0), mExitRequested(false) {}
+                mPrevWriteStatus(PVMFSuccess), mTid(NULL), mDropped(0),
+                mExitRequested(false), buffers_used( 0 ), rinited(false) {
+          //buffers will be initialized in init_ring() call
+        }
 
         virtual ~FragmentWriter()
         {
@@ -82,6 +88,55 @@ class FragmentWriter: public Thread
             {
                 decrPendingRequests();
             }
+
+            free_ring( );
+        }
+
+        bool init_ring( unsigned int w, unsigned int h ) {
+
+              bool res = true;
+              LOGV("FragmentWriter::init_ring w(%u) h(%u)", w, h );
+              /* buffer size for each buffer is calculated here */
+              buffer_size = w*h*3/2;
+              /*
+               * The first element in android linked list is not used
+               * to hold valid data. But we want to use that element too.
+               * hence have to manually initialize that element.
+               */
+              use_ring = false;
+              rinited = false;
+
+              it = rbuffer.end( );
+              it->inuse = false;
+              it->num = 1;
+              it->buffer = (uint8 *)OSCL_MALLOC( buffer_size );
+
+              if( it->buffer == NULL ){
+                LOGW("Buffer allocation failed, turn off ring optimization");
+                use_ring = false;
+                rinited = false;
+                return false;
+              }
+              buffers_used++;
+              rinited = true; //as atleast one buffer has been allocated
+
+              for( int i = 1; i < NUM_RESERVED; i++ ){
+                write_buffer * b = init_buffer( i + 1 );
+                if( b == NULL ){
+                  LOGW("Buffer Allocation failed, turn off ring optimization");
+                  free_ring( );
+                  rinited = false;
+                  res = false;
+                  break;
+                }
+                rbuffer.push_back( *b );
+                buffers_used++;
+              }
+
+              it = rbuffer.end( );
+              free_it = rbuffer.end( );
+              use_ring = res;
+              return res;
         }
 
         // Mark the thread as exiting and kick it so it can see the
@@ -125,6 +180,7 @@ class FragmentWriter: public Thread
             if (mExitRequested) return PVMFErrCancelled;
             Mutex::Autolock lock(mRequestMutex);
 
+
             // When the queue is full, we drop the request. This frees the
             // memory fragment and keeps the system running. Decoders are
             // unhappy when there is no buffer available to write the
@@ -141,9 +197,46 @@ class FragmentWriter: public Thread
                 return mPrevWriteStatus;
             }
 
-            mLast->set(aFrame, aMemFrag, aFormat, aTimestamp, aTrackId, aPort);
-            incrPendingRequests();
+            if( use_ring ) {
 
+              LOGV("using ring buffer optimization");
+
+              if(aFormat.isAudio( ) ){
+                mLast->set(aFrame, aMemFrag, aFormat, aTimestamp, aTrackId, aPort);
+              }
+              else {
+                Oscl_Vector<OsclMemoryFragment, OsclMemAllocator> lFrame;
+                bool res = makecopy( aFrame, lFrame );
+                if( res == true ){
+
+                  OsclRefCounterMemFrag lmemFrag( lFrame[ lFrame.size( ) - 1 ],
+                                                  NULL, aMemFrag.getCapacity( ) );
+                  /**
+                     release back to mempool here itself. we have
+                     copied the data we need
+                  */
+                  aFrame.clear( );
+                  aMemFrag = kEmptyFrag;
+
+                  mLast->set(lFrame, lmemFrag, aFormat, aTimestamp, aTrackId, aPort);
+                }
+                else {
+                  //this case is highly unlikely, but can happen
+                  LOGW("Copy Failed. Use pmem as is. turn off ring");
+
+                  lFrame.clear( );
+                  use_ring = false; // no more ring from now on.
+
+                  //we use the aFrame and aMemFrag directly here too
+                  mLast->set(aFrame, aMemFrag, aFormat, aTimestamp, aTrackId, aPort);
+                }
+              }
+            }
+            else {
+              /* not using optimization */
+              mLast->set(aFrame, aMemFrag, aFormat, aTimestamp, aTrackId, aPort);
+            }
+            incrPendingRequests( );
             mRequestCv.signal();
             return mPrevWriteStatus;
         }
@@ -158,6 +251,145 @@ class FragmentWriter: public Thread
         // Flush blocks for 2 seconds max.
         static const size_t kMaxFlushAttempts = 10;
         static const int kFlushSleepMicros = 200 * 1000;
+
+        int write_index;
+        int free_index;
+
+        typedef struct {
+          bool inuse;
+          uint8 * buffer;
+          int num;
+        } write_buffer;
+
+        List< write_buffer > rbuffer;
+        List< write_buffer >::iterator it, free_it;
+
+        int buffers_used;
+        unsigned  int buffer_size;
+        bool use_ring;
+        bool rinited;
+
+        write_buffer * init_buffer(  int id  ){
+
+          write_buffer * new_b = new write_buffer;
+          new_b->inuse = false;
+          new_b->num = id;
+          new_b->buffer = (uint8 *)OSCL_MALLOC( buffer_size );
+
+          if( new_b->buffer == NULL ){
+            LOGE("Buffer Allocation on heap failed, use buffer as is");
+            OSCL_FREE( new_b );
+            return NULL;
+          }
+          return new_b;
+        }
+
+        bool  makecopy( const Oscl_Vector<OsclMemoryFragment, OsclMemAllocator>& aFrame,
+                        Oscl_Vector<OsclMemoryFragment, OsclMemAllocator>& lFrame ){
+          LOGV("makecopy");
+
+          int size ;
+          uint8 * data = NULL ;
+          bool ret = true;
+          for( unsigned int i = 0; i < aFrame.size( ); i++ ){
+
+            size = aFrame[i].len;
+            data = OSCL_REINTERPRET_CAST(uint8*, aFrame[i].ptr);
+
+            if( it->inuse ){
+
+              if( buffers_used >= NUMBER_OUTPUT_BUFFER ){
+                LOGE("Out of buffers! , dropping !!!");
+                //this case should never arise as the check at the
+                //beginning of enqueyeMemFragToTrack should drop
+                //frames before it reaches here, if it does,
+                //some else is really wrong.
+#if 0
+                for( unsigned int j = 0; j < lFrame.size( ); j++ ){
+                  (--it)->inuse = false; //write all fragments or write none
+                  buffers_used--;
+                }
+
+#endif
+                return false;
+              }
+              else {
+                LOGW("Adding another buffer");
+                write_buffer * new_b = init_buffer( buffers_used + 1 );
+
+                if( new_b == NULL ){
+                  LOGE("Allocating new buffer failed");
+
+                  for( unsigned int j = 0; j < lFrame.size( ); j++ ) {
+                    (--it)->inuse = false; //write all fragments or write none
+                    --buffers_used;
+                  }
+                  return false; //we turn off ring too
+                }
+
+                it = rbuffer.insert( it, *new_b );
+                buffers_used++;
+              }
+            }
+
+            oscl_memcpy( it->buffer, data, size );
+
+            OsclMemoryFragment m;
+            m.len = size;
+            m.ptr = it->buffer;
+            it->inuse = true;
+            lFrame.push_back(m);
+
+            LOGV("Using buffer %d", it->num );
+            /* move iterator to next buffer */
+            it++;
+          }
+
+          return ret;
+        }
+
+        void free_ring(  ){
+
+          //as with intialization, have to manually
+          //free first element
+
+          if( !rinited  ){
+            LOGW("Ring buffer has not been initialized");
+            return;
+          }
+
+          it = rbuffer.end( );
+          free_it = rbuffer.end( );
+
+          LOGV("Freeing buffer %d", free_it->num );
+
+          if( free_it->inuse ) {
+            LOGW("Buffer %d should be free by now...", free_it->num);
+          }
+
+          if( free_it->buffer != NULL ){
+            LOGV("Freeing heap buffer %d", free_it->num );
+            OSCL_FREE( free_it->buffer );
+          }
+
+          free_it++;
+
+          while( free_it != it ){
+            LOGV("Freeing buffer %d", free_it->num );
+
+            if( free_it->inuse ) {
+              LOGW("Buffer %d should be free by now...", free_it->num );
+            }
+
+            if( free_it->buffer != NULL ) {
+              LOGV("Freeing heap buffer %d", free_it->num );
+              OSCL_FREE( free_it->buffer );
+            }
+
+            free_it++;
+          }
+          rbuffer.clear( );
+        }
 
         struct Request
         {
@@ -190,14 +422,37 @@ class FragmentWriter: public Thread
 
         void decrPendingRequests()
         {
-            mFirst->mFrame.clear();
-            // Release the memory fragment tracked using a refcount
-            // class. Need to assign an empty frag to release the memory
-            // fragment. We cannot wait for the array to wrap around.
+          bool Audio = mFirst->mFormat.isAudio( );
+
+          if( use_ring && !Audio ) {
+            //writes happen in order.
+            //free_it points to the next buffer
+            //to be freed.
+            for( unsigned int i = 0; i < mFirst->mFrame.size( ); i++){
+              LOGV("Freeing %d", free_it->num );
+              free_it->inuse = false;
+              free_it++; //this will be freed at the end in free_ring
+            }
+          }
+
+          mFirst->mFrame.clear();
+
+          // Release the memory fragment tracked using a refcount
+          // class. Need to assign an empty frag to release the memory
+          // fragment. We cannot wait for the array to wrap around.
+
+          if( Audio || !use_ring )
             mFirst->mFrag = kEmptyFrag;  // FIXME: This assignement to decr the ref count is ugly.
-            ++mFirst;
-            if (mEnd == mFirst) mFirst = mBuffer;
-            --mSize;
+
+          /* *
+             manually delete heap content
+             because data is not reference counted anymore
+          */
+          //OSCL_DELETE( (uint8 *)mFirst->mFrag.getMemFragPtr( ));
+
+          ++mFirst;
+          if (mEnd == mFirst) mFirst = mBuffer;
+          --mSize;
         }
 
         // Called by the base class Thread.
@@ -1678,6 +1933,17 @@ void PVMp4FFComposerNode::DoStart(PVMp4FFCNCmd& aCmd)
                     return;
                 }
             }
+#ifdef ANDROID
+            for (i = 0; i < iInPorts.size(); i++) {
+              PVMp4FFComposerPort *aPort = iInPorts[i];
+              if ( !aPort->GetFormat( ).isAudio( ) ) {
+                PVMP4FFCNFormatSpecificConfig* config = aPort->GetFormatSpecificConfig();
+                if( !iFragmentWriter->init_ring( config->iWidth, config->iHeight ) ){
+                  LOGW("Ring buffer init failed, ring buffer optimization turned off");
+                }
+              }
+            }
+#endif
 
             // Check for and set reference tracks after track IDs are assigned
             PVMp4FFComposerPort* refPort = NULL;
@@ -3098,7 +3364,7 @@ PVMFStatus PVMp4FFComposerNode::AddMemFragToTrack(Oscl_Vector<OsclMemoryFragment
 
         for (i = 0; i < aFrame.size(); i++)
         {
-            size = aFrame[i].len;
+          size = aFrame[i].len;
             status = CheckMaxFileSize(size);
             if (status == PVMFFailure)
             {
