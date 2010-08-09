@@ -910,6 +910,7 @@ void PlayerDriver::handleSetAudioSink(PlayerSetAudioSink* command)
                                 {
                                     LOGE("LPA decode mode success");
                                     mIsAudioLPADecode = true;
+                                    LPAInstanceExists = true;
                                 }
                             }
 
@@ -1178,6 +1179,11 @@ void PlayerDriver::handleReset(PlayerReset* command)
     mEndOfData = false;
     mContentLengthKnown = false;
 
+    if (mIsAudioLPADecode) {
+        LOGE("Resetting the LPA Global variable");
+        LPAInstanceExists = false;
+    }
+
     OSCL_TRY(error, mPlayer->Reset(command));
     OSCL_FIRST_CATCH_ANY(error, commandFailed(command));
 }
@@ -1254,9 +1260,6 @@ int PlayerDriver::playerThread()
     delete mAudioSink;
     PVMediaOutputNodeFactory::DeleteMediaOutputNode(mAudioNode);
     delete mAudioOutputMIO;
-    if (mIsAudioLPADecode) {
-        LPAInstanceExists = false;
-    }
     delete mVideoSink;
     if (mVideoNode) {
         PVMediaOutputNodeFactory::DeleteMediaOutputNode(mVideoNode);
@@ -2083,7 +2086,7 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                                 LOGV("usePVPlayer: got streamtype %s",streamtype.get_cstr());
 
                                 //MIME type X-MPEG4_AUDIO indicates AAC in MP4
-                                if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO) {
+                                if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO && count == 1) {
                                     LOGV("usePVPlayer: recognized file as AAC in MP4 or 3gpp");
                                     duration = mp4Input->getMovieDuration();
                                     timeScale =  mp4Input->getMovieTimescale();
@@ -2092,7 +2095,6 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                                     duration = (duration * 1000) / timeScale;
                                     LOGV("usePVPlayer: got duration of %llu milliseconds",duration);
                                     if (duration >= MIN_LPA_DURATION) {
-                                        LPAInstanceExists = true;
                                         status = OK;
                                     }
                                     else {
@@ -2130,7 +2132,6 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                 duration = mp3File.GetDuration();
                 LOGV("usePVPlayer: duration of mp3 %s is %d", filename, duration);
                 if (duration >= MIN_LPA_DURATION) {
-                    LPAInstanceExists = true;
                     status = OK;
                 }
                 else {
