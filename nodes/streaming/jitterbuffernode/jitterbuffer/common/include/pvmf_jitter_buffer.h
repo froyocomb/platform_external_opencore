@@ -1281,6 +1281,10 @@ class PVMFJitterBufferImpl : public PVMFJitterBuffer
         bool&   irDelayEstablished;
         int&    irJitterDelayPercent;
         PVMFJitterBufferDataState&  irDataState;
+        PVMFTimestamp& irMaxAdjustedRTPTSofAllPorts; //Maximum Adjusted RTP TS of all jitter buffers, unit is MSC
+        bool& irBufferingDuetoDataOutage; //Flag indicating that re-buffering is due to data outage
+        bool& irClientClockNeedAdjustment; //Flag indicating that client clock needs to be synced to TS of first audio packet when going out of re-buffering
+        bool& irNeedSendBOSDownstream; //Flag indicating that BOS needs to be sent downstream when going out of re-buffering
         bool iInProcessingMode;
         bool iHeaderPreParsed;
 
@@ -1318,10 +1322,13 @@ class PVMFJitterBufferImpl : public PVMFJitterBuffer
         bool   iMonitorReBufferingCallBkPending;
         bool   iWaitForOOOPacketCallBkPending;
         bool   iJitterBufferDurationCallBkPending;
+        bool   iJitterBufferDataOutageCallBkPending;
 
         uint32 iWaitForOOOPacketCallBkId;
         uint32 iMonitorReBufferingCallBkId;
         uint32 iJitterBufferDurationCallBkId;
+        uint32 iJitterBufferDataOutageCallBkId;
+
 
         PVLogger* ipLogger;
         PVLogger* ipClockLoggerSessionDuration;
@@ -1346,6 +1353,7 @@ class PVMFJitterBufferImpl : public PVMFJitterBuffer
         void HandleEvent_MonitorReBuffering(const OsclAny* aContext);
         void HandleEvent_NotifyWaitForOOOPacketComplete(const OsclAny* aContext);
         void HandleEvent_JitterBufferBufferingDurationComplete();
+        void HandleEvent_JitterBufferDataOutage(const OsclAny* aContext);
 };
 
 #endif
