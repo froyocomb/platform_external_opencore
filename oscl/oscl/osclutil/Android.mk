@@ -9,7 +9,7 @@ LOCAL_SRC_FILES := \
         src/oscl_string_utf8.cpp \
         src/oscl_tickcount.cpp \
         src/oscl_utf8conv.cpp \
-        src/oscl_snprintf.cpp \
+        src/oscl_snprintf_defs.cpp \
         src/oscl_math.cpp \
         src/oscl_rand.cpp \
         src/oscl_string_uri.cpp \
