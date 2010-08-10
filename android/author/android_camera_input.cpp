@@ -25,6 +25,7 @@
 #include <ui/ISurface.h>
 #include <ui/ICamera.h>
 #include <ui/Camera.h>
+#include <cutils/properties.h>
 
 #include "pv_mime_string_utils.h"
 #include "oscl_dll.h"
@@ -77,6 +78,27 @@ AndroidCameraInput::AndroidCameraInput()
 
     // setup callback listener
     mListener = new AndroidCameraInputListener(this);
+
+    //set this value based on the target and how much audio is ahead
+    //for eclair we can set this value based on property as did for surface output
+    char value[128];
+    property_get("ro.product.device",value,"0");
+    if(strcmp("msm7627_surf",value) == 0 || strcmp("msm7627_ffa",value) == 0)
+    {
+        iVideoDurationToPull = VIDEO_PULL_DURATION_7x27;
+        LOGV("product device name %s", value);
+    }
+    else if(strcmp("qsd8250_surf",value) == 0 || strcmp("qsd8250_ffa",value) == 0)
+    {
+        iVideoDurationToPull = VIDEO_PULL_DURATION_8x50;
+        LOGV("product device name %s", value);
+    }
+    else
+    {
+        LOGV("product device name %s", value);
+        iVideoDurationToPull = 0;
+    }
+    iVideoFrameSkipCnt = 0;
 }
 
 void AndroidCameraInput::ReleaseQueuedFrames()
@@ -1264,6 +1286,17 @@ PVMFStatus AndroidCameraInput::postWriteAsync(nsecs_t timestamp, const sp<IMemor
     } else {
          // calculate timestamp as offset from start time
          ts -= iAudioFirstFrameTs;
+    }
+
+    //Adjust the timestamp for the number of frames where the ts is less than
+    //set value
+    if ( iVideoDurationToPull > 0 ) {
+        if ( ts < (iVideoDurationToPull + (iVideoFrameSkipCnt * 2)) ) {
+            ts = iVideoFrameSkipCnt * 2;
+            iVideoFrameSkipCnt++;
+        } else {
+            ts -= iVideoDurationToPull;
+        }
     }
 
     // Make sure that no two samples have the same timestamp
