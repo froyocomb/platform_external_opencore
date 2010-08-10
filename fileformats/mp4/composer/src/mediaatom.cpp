@@ -145,7 +145,7 @@ PVA_FF_MediaAtom::updateLastTSEntry(uint32 ts)
 void
 PVA_FF_MediaAtom::recomputeSize()
 {
-    int32 size = getDefaultSize(); // Get size of base class members
+    uint32 size = getDefaultSize(); // Get size of base class members
 
     // Include sizes of all members
     size += _pmediaHeader->getSize();

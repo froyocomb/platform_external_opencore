@@ -119,7 +119,7 @@ class PVA_FF_AtomUtils
         static void   seekFromStart(MP4_AUTHOR_FF_FILE_IO_WRAP *fp, uint32 n);
         static void   seekToEnd(MP4_AUTHOR_FF_FILE_IO_WRAP *fp);
         static void   rewindFilePointerByN(MP4_AUTHOR_FF_FILE_IO_WRAP *fp, uint32 n);
-        static int32  getCurrentFilePosition(MP4_AUTHOR_FF_FILE_IO_WRAP *fp);
+        static uint32  getCurrentFilePosition(MP4_AUTHOR_FF_FILE_IO_WRAP *fp);
 
         static bool openFile(MP4_AUTHOR_FF_FILE_IO_WRAP *fp, PVA_FF_UNICODE_STRING_PARAM fileName, int32 mode, uint32 aCacheSize = 0);
         static void closeFile(MP4_AUTHOR_FF_FILE_IO_WRAP *fp);

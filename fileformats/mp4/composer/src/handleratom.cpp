@@ -68,7 +68,7 @@ PVA_FF_HandlerAtom::init(int32 handlerType)
 void
 PVA_FF_HandlerAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
     size += 4; // For 4 bytes of missed 0
     size += 4; // For handlerType
     size += 12; // For (8)[12] reserved

@@ -81,7 +81,7 @@ bool PVA_FF_FontRecord::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 
 void PVA_FF_FontRecord::recomputeSize()
 {
-    int32 size = 0;
+    uint32 size = 0;
 
     size += 2;
     size += 1;

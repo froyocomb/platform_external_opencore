@@ -74,7 +74,7 @@ PVA_FF_EVRCSpecificAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_EVRCSpecificAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += EVRC_DECODER_SPECIFIC_SIZE; // FOR DECODER SPECIFIC STRUCT
 

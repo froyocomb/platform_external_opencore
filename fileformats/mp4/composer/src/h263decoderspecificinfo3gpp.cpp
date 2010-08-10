@@ -89,7 +89,7 @@ PVA_FF_H263SpecficAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_H263SpecficAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 7; // FOR DECODER SPECIFIC STRUCT
     size += _ph263_decbitrateatom->getSize();
@@ -141,7 +141,7 @@ PVA_FF_H263DecBitrateAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_H263DecBitrateAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 8;
 

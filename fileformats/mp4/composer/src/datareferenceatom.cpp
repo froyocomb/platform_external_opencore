@@ -110,7 +110,7 @@ PVA_FF_DataReferenceAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_DataReferenceAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 4; // For entry count
 

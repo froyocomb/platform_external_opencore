@@ -334,7 +334,7 @@ PVA_FF_TrackAtom::createEditAtom()
 void
 PVA_FF_TrackAtom::recomputeSize()
 {
-    int32 size = getDefaultSize(); // From base class
+    uint32 size = getDefaultSize(); // From base class
 
     if (_pUserDataAtom != NULL)
     {

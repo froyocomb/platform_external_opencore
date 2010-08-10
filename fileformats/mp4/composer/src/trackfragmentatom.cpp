@@ -163,7 +163,7 @@ PVA_FF_TrackFragmentAtom::setTrackFragmentBaseDataOffset(uint64 offset)
 void
 PVA_FF_TrackFragmentAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     // add size of tfhd atom
     size += _pTfhdAtom->getSize();

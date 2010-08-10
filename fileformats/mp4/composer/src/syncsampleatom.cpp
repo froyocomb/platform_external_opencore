@@ -121,7 +121,7 @@ PVA_FF_SyncSampleAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_SyncSampleAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 4; // For entryCount
     size += 4 * _entryCount;

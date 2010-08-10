@@ -97,7 +97,7 @@ bool PVA_FF_FontTableAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void PVA_FF_FontTableAtom::recomputeSize()
 {
     uint32 length;
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 2;
     for (uint32 i = 0; i < _pFontRecordArray->size(); i++)

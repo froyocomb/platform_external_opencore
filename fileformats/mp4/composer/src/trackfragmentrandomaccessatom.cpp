@@ -96,7 +96,7 @@ PVA_FF_TfraAtom::updateMoofOffset(uint32 offset)
 void
 PVA_FF_TfraAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 4;  // track id
     size += 4;  // reserved

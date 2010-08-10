@@ -114,7 +114,7 @@ PVA_FF_TrackFragmentRunAtom::addSample(uint32 size, uint32 ts, uint8 flags)
 void
 PVA_FF_TrackFragmentRunAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 4;  // sample count;
     size += 4;  // data offset

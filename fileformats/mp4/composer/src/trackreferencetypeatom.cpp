@@ -67,7 +67,7 @@ PVA_FF_TrackReferenceTypeAtom::getTrackReferenceAt(int32 index) const
 void
 PVA_FF_TrackReferenceTypeAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
     size += 4 * _trackIDs->size();
 
     _size = size;
