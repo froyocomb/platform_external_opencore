@@ -120,7 +120,7 @@ PVA_FF_MovieExtendsAtom::getTrexAtom(uint32 trackId)
 void
 PVA_FF_MovieExtendsAtom::recomputeSize()
 {
-    int32 size = getDefaultSize(); // From base class
+    uint32 size = getDefaultSize(); // From base class
 
     // add size of mehd atom
     size += _pMehdAtom->getSize();

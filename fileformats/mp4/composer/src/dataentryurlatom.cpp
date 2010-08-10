@@ -70,7 +70,7 @@ PVA_FF_DataEntryUrlAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_DataEntryUrlAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     if (getFlags() != 1)  // media NOT self contained
     {

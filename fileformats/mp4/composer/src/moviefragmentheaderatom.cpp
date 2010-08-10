@@ -48,7 +48,7 @@ PVA_FF_MovieFragmentHeaderAtom::getSequenceNumber()
 void
 PVA_FF_MovieFragmentHeaderAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 4; // For sequence number
 

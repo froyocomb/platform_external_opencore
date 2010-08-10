@@ -71,7 +71,7 @@ PVA_FF_DataInformationAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_DataInformationAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += getDataReferenceAtom().getSize();
 

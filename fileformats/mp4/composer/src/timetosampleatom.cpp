@@ -197,7 +197,7 @@ void
 PVA_FF_TimeToSampleAtom::recomputeSize()
 {
     // Include size of all base atom members
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 4; // For entryCount
 

@@ -49,7 +49,7 @@ PVA_FF_MfroAtom::setSize(uint32 size)
 void
 PVA_FF_MfroAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 4;  // atom size
 
