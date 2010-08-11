@@ -88,7 +88,6 @@
 
 //
 
-
 #define PVPLAYERENGINE_NUM_COMMANDS 10
 
 #define PVPLAYERENGINE_TIMERID_ENDTIMECHECK 1
@@ -6813,7 +6812,9 @@ PVMFStatus PVPlayerEngine::DoSinkNodeTrackSelection(PVCommandId aCmdId, OsclAny*
                     // If the Source Format Type is MP3 only, check for LPA
                     // support
                     if ( (iSourceFormatType == PVMF_MIME_MP3FF) ||
-                         (iSourceFormatType == PVMF_MIME_MP3) )
+                         (iSourceFormatType == PVMF_MIME_MP3) ||
+                         (iSourceFormatType == PVMF_MIME_AACFF) ||
+                         (iSourceFormatType == PVMF_MIME_MPEG4_AUDIO))
                     {
 
                         // Check if the MIO supports the LPA decode mode

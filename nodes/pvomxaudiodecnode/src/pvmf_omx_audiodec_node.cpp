@@ -713,7 +713,9 @@ PVMFStatus PVMFOMXAudioDecNode::HandlePortReEnable()
             }
 
             if ( (Format == PVMF_MIME_MP3) ||
-                 (Format == PVMF_MIME_MP3FF))
+                 (Format == PVMF_MIME_MP3FF) ||
+                 (Format == PVMF_MIME_ADIF) ||
+                 (Format == PVMF_MIME_MPEG4_AUDIO) )
             {
                 iNumOutputBuffers = 4; // This is using software lpa decode - 4 o/p of 512 KB each
                 iOMXComponentOutputBufferSize =  (512 * 1024); // 512 KB
@@ -950,7 +952,9 @@ PVMFStatus PVMFOMXAudioDecNode::HandlePortReEnable()
             }
 
             if ( (Format == PVMF_MIME_MP3) ||
-                 (Format == PVMF_MIME_MP3FF))
+                 (Format == PVMF_MIME_MP3FF) ||
+                 (Format == PVMF_MIME_ADIF) ||
+                 (Format == PVMF_MIME_MPEG4_AUDIO))
             {
                 iNumInputBuffers = 4; // This is using software lpa decode - 4 i/p of 32KB
             }
@@ -1215,7 +1219,9 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
             }
 
             if ( (Format == PVMF_MIME_MP3) ||
-                 (Format == PVMF_MIME_MP3FF))
+                 (Format == PVMF_MIME_MP3FF) ||
+                 (Format == PVMF_MIME_ADIF) ||
+                 (Format == PVMF_MIME_MPEG4_AUDIO) )
             {
                 iNumInputBuffers = 4; // This is using software lpa decode - 4 i/p of 32KB
             }
@@ -1460,7 +1466,9 @@ bool PVMFOMXAudioDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
         }
 
         if ( (Format == PVMF_MIME_MP3) ||
-             (Format == PVMF_MIME_MP3FF))
+             (Format == PVMF_MIME_MP3FF) ||
+             (Format == PVMF_MIME_ADIF) ||
+             (Format == PVMF_MIME_MPEG4_AUDIO) )
         {
             iNumOutputBuffers = 4; // This is using software lpa decode - 4 o/p of 512 KB each
             iOMXComponentOutputBufferSize = (512 * 1024); // 512 KB

@@ -52,7 +52,11 @@
 #define M4V_NUMSAMPLES          1
 #define H263_NUMSAMPLES         1
 #define H264_MP4_NUMSAMPLES     1
+#ifdef SURF7x30
+#define MPEG4_AUDIO_NUMSAMPLES	4
+#else
 #define MPEG4_AUDIO_NUMSAMPLES	1
+#endif
 #define AMR_IETF_NUMFRAMES		15
 #define AMRWB_IETF_NUMFRAMES    10
 #define TIMEDTEXT_NUMSAMPLES    1

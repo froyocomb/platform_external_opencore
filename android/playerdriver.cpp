@@ -15,7 +15,7 @@
 ** limitations under the License.
 */
 
-#define LOG_NDEBUG 0
+//#define LOG_NDEBUG 0
 #define LOG_TAG "PlayerDriver"
 #include <utils/Log.h>
 #include <cutils/properties.h>
@@ -893,7 +893,9 @@ void PlayerDriver::handleSetAudioSink(PlayerSetAudioSink* command)
                 if (iFormatType != NULL)
                 {
                     if ( (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_MP3FF) >= 0) ||
-                         (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_MP3) >= 0) )
+                         (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_MP3) >= 0) ||
+                         (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_AACFF) >= 0) ||
+                         (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_MPEG4_AUDIO) >= 0) )
                     {
                         LOGE("Creating LPA decode mode playback - format %s", iFormatType.getMIMEStrPtr());
                         mAudioOutputMIO = new AndroidAudioLPADecode(); // Need to create custom MIO
@@ -905,8 +907,8 @@ void PlayerDriver::handleSetAudioSink(PlayerSetAudioSink* command)
                             if (mPlayer->GetSourceDurationSync(nDuration) == PVMFSuccess)
                             {
                                 LOGE("Duration that is retuned is %d sec", (nDuration / 1000));
-                                // Only if the duration is greater than 1 second enable lpa decode.
-                                if (nDuration > 60000)
+                                // Only if the duration is greater than 1 minute enable lpa decode.
+                                if (nDuration >= MIN_LPA_DURATION)
                                 {
                                     LOGE("LPA decode mode success");
                                     mIsAudioLPADecode = true;

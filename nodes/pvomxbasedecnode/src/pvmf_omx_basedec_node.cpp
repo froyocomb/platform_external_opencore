@@ -4415,12 +4415,14 @@ void PVMFOMXBaseDecNode::DoPrepare(PVMFOMXBaseDecNodeCommand& aCmd)
                 iOMXComponentUsesFullAVCFrames = (OMX_TRUE == Cap_flags.iOMXComponentUsesFullAVCFrames) ? true : false;
 
                 // 1. If the target is 7x30 &
-                // 2. If the format is MP3 &
+                // 2. If the format is MP3 / MPEG4_AUDIO or AAC ADIF &
                 // 3. If by default bHWAccelerated is set to false (use software decoder)
                 // 4. Then it should be definitely LPA decode -> Use PMemBufferAlloc interface.
 #ifdef SURF7x30
                 if ( (format == PVMF_MIME_MP3) ||
-                     (format == PVMF_MIME_MP3FF))
+                     (format == PVMF_MIME_MP3FF) ||
+                     (format == PVMF_MIME_ADIF) ||
+                     (format == PVMF_MIME_MPEG4_AUDIO))
                 {
                     if (!bHWAccelerated)
                     {
