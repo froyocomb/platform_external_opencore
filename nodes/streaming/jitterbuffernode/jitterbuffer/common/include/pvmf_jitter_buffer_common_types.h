@@ -117,7 +117,8 @@ enum JB_NOTIFY_CALLBACK
     JB_BUFFERING_DURATION_COMPLETE,
     JB_MONITOR_REBUFFERING,
     JB_NOTIFY_SEND_FIREWALL_PACKET,
-    JB_NOTIFY_WAIT_FOR_OOO_PACKET_COMPLETE  //OOO->Out Of Order
+    JB_NOTIFY_WAIT_FOR_OOO_PACKET_COMPLETE,  //OOO->Out Of Order
+    JB_MONITOR_DATA_OUTAGE
 };
 
 class PVMFJitterBufferObserver;
@@ -134,6 +135,10 @@ class PVMFJitterBufferConstructParams
                                         , bool& aDelayEstablished
                                         , int& aJitterDelayPercent
                                         , PVMFJitterBufferDataState& aJitterBufferDataState
+                                        , PVMFTimestamp& aMaxAdjustedRTPTSofAllPorts
+                                        , bool& aBufferingDuetoDataOutage
+                                        , bool& aClientClockNeedAdjustment
+                                        , bool& aNeedSendBOSDownstream
                                         , PVMFJitterBufferObserver* const aObserver
                                         , OsclAny* const aContext)
                 : irEstimatedServerClock(aEstimatedServerClock)
@@ -143,6 +148,10 @@ class PVMFJitterBufferConstructParams
                 , irDelayEstablished(aDelayEstablished)
                 , irJitterDelayPercent(aJitterDelayPercent)
                 , irJitterBufferState(aJitterBufferDataState)
+                , irMaxAdjustedRTPTSofAllPorts(aMaxAdjustedRTPTSofAllPorts)
+                , irBufferingDuetoDataOutage(aBufferingDuetoDataOutage)
+                , irClientClockNeedAdjustment(aClientClockNeedAdjustment)
+                , irNeedSendBOSDownstream(aNeedSendBOSDownstream)
                 , ipObserver(aObserver)
                 , ipContextData(aContext)
         {}
@@ -192,6 +201,26 @@ class PVMFJitterBufferConstructParams
             return irJitterBufferState;
         }
 
+        PVMFTimestamp& GetMaxAdjustedRTPTSofAllPorts() const
+        {
+            return irMaxAdjustedRTPTSofAllPorts;
+        }
+
+        bool& GetBufferingDuetoDataOutage() const
+        {
+            return irBufferingDuetoDataOutage;
+        }
+
+        bool& GetClientClockNeedAdjustment() const
+        {
+            return irClientClockNeedAdjustment;
+        }
+
+        bool& GetNeedSendBOSDownstream() const
+        {
+            return irNeedSendBOSDownstream;
+        }
+
     private:
         PVMFMediaClock& irEstimatedServerClock;
         PVMFMediaClock& irClientPlaybackClock;
@@ -200,6 +229,10 @@ class PVMFJitterBufferConstructParams
         bool& irDelayEstablished;
         int& irJitterDelayPercent;
         PVMFJitterBufferDataState&  irJitterBufferState;
+        PVMFTimestamp& irMaxAdjustedRTPTSofAllPorts;
+        bool& irBufferingDuetoDataOutage;
+        bool& irClientClockNeedAdjustment;
+        bool& irNeedSendBOSDownstream;
         PVMFJitterBufferObserver *const ipObserver;
         OsclAny* const  ipContextData;
 };

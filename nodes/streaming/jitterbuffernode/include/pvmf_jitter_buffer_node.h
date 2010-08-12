@@ -487,6 +487,12 @@ class PVMFJitterBufferNode : public PVInterface,
         bool    iDelayEstablished;
         int     iJitterDelayPercent;
         PVMFJitterBufferDataState iJitterBufferState;
+        PVMFTimestamp iMaxAdjustedRTPTSofAllPorts; //Maximum Adjusted RTP TS of all jitter buffers, unit is MSC
+        bool iBufferingDuetoDataOutage; //Flag indicating that re-buffering is due to data outage
+        bool iClientClockNeedAdjustment; //Flag indicating that client clock needs to be synced to TS of first audio packet
+        bool iNeedSendBOSDownstream; //Flag indicating that BOS needs to be sent downstream when going out of re-buffering
+
+        uint32 iLatestStreamID;
 
         /////////////////////////////////////////////////////////////////////////////
         //Extention interface
