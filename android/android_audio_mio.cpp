@@ -713,6 +713,7 @@ void AndroidAudioMIOActiveTimingSupport::ClockStateUpdated()
             switch (iClockState) {
             case PVMFMediaClock::STOPPED:
                 LOGV("A/V clock stopped");
+                iUpdateClock = true;
                 break;
             case PVMFMediaClock::RUNNING:
                 LOGV("A/V clock running");

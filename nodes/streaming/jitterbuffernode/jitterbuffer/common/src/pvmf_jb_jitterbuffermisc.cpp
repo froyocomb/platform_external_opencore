@@ -127,7 +127,8 @@ void PVMFJitterBufferMisc::ResetParams(bool aReleaseMemory)
     iPlayStartTimeInMS = 0;
     iPlayStopTimeInMS = 0;
     iPlayStopTimeAvailable = false;
-
+    iBufferingDuetoDataOutage = false;
+    iClientClockAtBufferingStart = 0;
 
     iFireWallPacketsExchangeEnabled = true;
     iEstimatedServerClockUpdateCallbackId = 0;
@@ -241,18 +242,95 @@ OSCL_EXPORT_REF void PVMFJitterBufferMisc::StreamingSessionPaused()
     }
 }
 
-OSCL_EXPORT_REF void PVMFJitterBufferMisc::StreamingSessionBufferingStart()
+OSCL_EXPORT_REF void PVMFJitterBufferMisc::StreamingSessionBufferingStart(bool aBufferingDuetoDataOutage)
 {
+    iBufferingDuetoDataOutage = aBufferingDuetoDataOutage;
     if (ipSessionDurationTimer)
+    {
         ipSessionDurationTimer->Cancel();
+        //Restart session duration timer when we go into buffering due to data outage
+        //in order to detect the timing when playback session expires
+        if (iBufferingDuetoDataOutage)
+        {
+            ComputeCurrentSessionDurationMonitoringInterval();
+            ipSessionDurationTimer->Start();
+            //Record current playback clock position
+            uint32 timebase32 = 0;
+            bool overflowFlag = false;
+            irClientPlaybackClock.GetCurrentTime32(iClientClockAtBufferingStart, overflowFlag, PVMF_MEDIA_CLOCK_MSEC, timebase32);
+            PVMF_JB_LOGCLOCK_SESSION_DURATION((0, "PVMFJitterBufferMisc::StreamingSessionBufferingStart - Client Clock value = %d", iClientClockAtBufferingStart));
+        }
+    }
 }
 
 OSCL_EXPORT_REF void PVMFJitterBufferMisc::StreamingSessionBufferingEnd()
 {
     if (ipSessionDurationTimer)
     {
-        ComputeCurrentSessionDurationMonitoringInterval();
-        ipSessionDurationTimer->Start();
+        if (iBufferingDuetoDataOutage && !iStreamingSessionExpired)
+        {
+            ipSessionDurationTimer->Cancel();
+
+            //Update session duration timer by deducting network breakdown interval
+            uint32 currclk, timebase32 = 0;
+            bool overflowFlag = false;
+            irClientPlaybackClock.GetCurrentTime32(currclk, overflowFlag, PVMF_MEDIA_CLOCK_MSEC, timebase32);
+            uint32 elapsedTime32 = currclk - iClientClockAtBufferingStart;
+            PVMF_JB_LOGCLOCK_SESSION_DURATION((0, "PVMFJitterBufferMisc::StreamingSessionBufferingEnd - Client Clock value = %d, elapsedTime32=%d", currclk, elapsedTime32));
+            ipSessionDurationTimer->UpdateElapsedSessionDuration(elapsedTime32);
+            uint32 totalSessionDuration = ipSessionDurationTimer->getSessionDurationInMS();
+            uint32 elapsedSessionDurationInMS = ipSessionDurationTimer->GetElapsedSessionDurationInMS();
+            PVMF_JB_LOGCLOCK_SESSION_DURATION((0, "PVMFJitterBufferMisc::StreamingSessionBufferingEnd - totalSessionDuration = %d, elapsedSessionDurationInMS=%d", totalSessionDuration, elapsedSessionDurationInMS));
+            if (elapsedSessionDurationInMS < totalSessionDuration)
+            {
+                uint32 interval = (totalSessionDuration - elapsedSessionDurationInMS);
+                if (interval > PVMF_JITTER_BUFFER_NODE_SESSION_DURATION_MONITORING_INTERVAL_MAX_IN_MS)
+                {
+                    interval = PVMF_JITTER_BUFFER_NODE_SESSION_DURATION_MONITORING_INTERVAL_MAX_IN_MS;
+                }
+                ipSessionDurationTimer->setCurrentMonitoringIntervalInMS(interval);
+                PVMF_JB_LOGCLOCK_SESSION_DURATION((0, "PVMFJitterBufferMisc::StreamingSessionBufferingEnd - TotalDuration=%d, ElapsedDuration=%d, CurrMonitoringInterval=%d", totalSessionDuration, elapsedSessionDurationInMS, interval));
+                ipSessionDurationTimer->Start();
+            }
+            else
+            {
+                uint32 estServClock = 0, timebase32 = 0;
+                bool overflowFlag = false;
+                ipEstimatedServerClock->GetCurrentTime32(estServClock, overflowFlag, PVMF_MEDIA_CLOCK_MSEC, timebase32);
+                uint32 expectedEstServClockVal = ipSessionDurationTimer->GetExpectedEstimatedServClockValAtSessionEnd();
+                PVMF_JB_LOGCLOCK_SESSION_DURATION((0, "PVMFJitterBufferMisc::StreamingSessionBufferingEnd() time elapsed exceeds session duration!"
+                                                   "estServClock=%d, expectedEstServClockVal=%d", estServClock, expectedEstServClockVal));
+                if (estServClock >= expectedEstServClockVal)
+                {
+                    PVMFJBSessionDurationTimerEvent();
+                }
+                else
+                {
+                    uint64 diff = (expectedEstServClockVal - estServClock);
+                    uint32 diff32 = Oscl_Int64_Utils::get_uint64_lower32(diff);
+
+                    PVMFJBEventNotificationRequestInfo requestInfo(CLOCK_NOTIFICATION_INTF_TYPE_ESTIMATEDSERVER, this, NULL);
+                    if (iEstimatedServerClockUpdateCallbackPending)
+                    {
+                        ipEventNotifier->CancelCallBack(requestInfo, iEstimatedServerClockUpdateCallbackId);
+                        iEstimatedServerClockUpdateCallbackPending = false;
+                    }
+
+                    ipEventNotifier->RequestAbsoluteTimeCallBack(requestInfo, expectedEstServClockVal, iEstimatedServerClockUpdateCallbackId);
+                    iEstimatedServerClockUpdateCallbackPending = true;
+
+                    ipSessionDurationTimer->setSessionDurationInMS(diff32);
+                    ipSessionDurationTimer->setCurrentMonitoringIntervalInMS(diff32);
+                    ipSessionDurationTimer->ResetEstimatedServClockValAtLastCancel();
+                    ipSessionDurationTimer->Start();
+                }
+            }
+        }
+        else if (!iStreamingSessionExpired)
+        {
+            ComputeCurrentSessionDurationMonitoringInterval();
+            ipSessionDurationTimer->Start();
+        }
     }
 }
 

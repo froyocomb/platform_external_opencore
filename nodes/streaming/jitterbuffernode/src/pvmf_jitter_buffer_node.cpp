@@ -146,6 +146,11 @@ void PVMFJitterBufferNode::ResetNodeParams(bool aReleaseMemory)
     iDelayEstablished = false;
     iJitterBufferState = PVMF_JITTER_BUFFER_READY;
     iJitterDelayPercent = 0;
+    iMaxAdjustedRTPTSofAllPorts = 0;
+    iBufferingDuetoDataOutage = false;
+    iClientClockNeedAdjustment = false;
+    iNeedSendBOSDownstream = false;
+    iLatestStreamID = 0;
 
     //Extension interface initializations
     if (ipExtensionInterface && aReleaseMemory)
@@ -1212,6 +1217,7 @@ PVMFStatus PVMFJitterBufferNode::SendBOSMessage(uint32 aStreamID)
             }
         }
     }
+    iLatestStreamID = aStreamID;
     PVMF_JBNODE_LOGDATATRAFFIC((0, "PVMFJitterBufferNode::SendBOSMessage - BOS Recvd"));
     return PVMFSuccess;
 }
@@ -2504,7 +2510,8 @@ void PVMFJitterBufferNode::DoRequestPort(PVMFJitterBufferNodeCommand& aCmd)
     // create jitter buffer if input port
     if (pPortParams->iTag == PVMF_JITTER_BUFFER_PORT_TYPE_INPUT)
     {
-        PVMFJitterBufferConstructParams jbConstructParams(ipJitterBufferMisc->GetEstimatedServerClock(), *ipClientPlayBackClock, pPortParams->iMimeType, *ipJitterBufferMisc->GetEventNotifier(), iDelayEstablished, iJitterDelayPercent, iJitterBufferState, this, port);
+        PVMFJitterBufferConstructParams jbConstructParams(ipJitterBufferMisc->GetEstimatedServerClock(), *ipClientPlayBackClock, pPortParams->iMimeType, *ipJitterBufferMisc->GetEventNotifier(),
+                iDelayEstablished, iJitterDelayPercent, iJitterBufferState, iMaxAdjustedRTPTSofAllPorts, iBufferingDuetoDataOutage, iClientClockNeedAdjustment, iNeedSendBOSDownstream, this, port);
         jbPtr = ipJitterBufferFactory->Create(jbConstructParams);
         if (jbPtr)
             jbPtr->SetDurationInMilliSeconds(iJitterBufferDurationInMilliSeconds);
@@ -2968,7 +2975,10 @@ void PVMFJitterBufferNode::DoStop(PVMFJitterBufferNodeCommand& aCmd)
                 oStartPending = false;
                 iJitterBufferState = PVMF_JITTER_BUFFER_READY;
                 iJitterDelayPercent = 0;
-
+                iMaxAdjustedRTPTSofAllPorts = 0;
+                iBufferingDuetoDataOutage = false;
+                iClientClockNeedAdjustment = false;
+                iNeedSendBOSDownstream = false;
                 /* transition to Prepared state */
                 SetState(EPVMFNodePrepared);
             }
@@ -3212,7 +3222,7 @@ void PVMFJitterBufferNode::ProcessJBInfoEvent(PVMFAsyncEvent& aEvent)
             if (oStartPending == false)
             {
                 UpdateRebufferingStats(PVMFInfoUnderflow);
-                ipJitterBufferMisc->StreamingSessionBufferingStart();
+                ipJitterBufferMisc->StreamingSessionBufferingStart(iBufferingDuetoDataOutage);
                 ReportInfoEvent(PVMFInfoUnderflow);
                 ReportInfoEvent(PVMFInfoBufferingStart);
                 ReportInfoEvent(PVMFInfoBufferingStatus);
@@ -3310,6 +3320,10 @@ void PVMFJitterBufferNode::PacketReadyToBeRetrieved(OsclAny* aContext)
         {
             PVMF_JBNODE_LOGDATATRAFFIC_OUT((0, "PVMFJitterBufferNode::PacketReadyToBeRetrieved for mime type %s", portparams->iMimeType.get_cstr()));
             portparams->iCanReceivePktFromJB = true;
+            //Need to reschedule in case network is lost at this timing
+            if (IsAdded()){
+                RunIfNotReady();
+            }
         }
     }
 }
@@ -3349,7 +3363,45 @@ void PVMFJitterBufferNode::UpdateRebufferingStats(PVMFEventType aEventType)
 
         PVMF_JBNODE_LOGDATATRAFFIC_FLOWCTRL_E((0, "PVMFJitterBufferNode::UpdateRebufferingStats: Sending Auto Resume"));
     }
-
+    else if (aEventType == PVMFInfoDataReady)
+    {
+        if (iNeedSendBOSDownstream)
+        {
+            //Need to send BOS downstream to avoid unnecessary silence insertion at audio codec
+            SendBOSMessage(iLatestStreamID);
+            iNeedSendBOSDownstream = false;
+            PVMF_JBNODE_LOGDATATRAFFIC_FLOWCTRL_E((0, "PVMFJitterBufferNode::UpdateRebufferingStats: Queue BOS when going out of buffering, stream ID = %d", iLatestStreamID));
+        }
+        if (iClientClockNeedAdjustment)
+        {
+            //Need to adjust CC to be the same as TS of first audio packet if possible
+            Oscl_Vector<PVMFJitterBufferPortParams*, OsclMemAllocator>::iterator it;
+            for (it = iPortParamsQueue.begin(); it != iPortParamsQueue.end(); it++)
+            {
+                PVMFJitterBufferPortParams* pPortParams = *it;
+                if (pPortParams->iTag == PVMF_JITTER_BUFFER_PORT_TYPE_INPUT)
+                {
+                    if (pPortParams->ipJitterBuffer && oscl_strstr(pPortParams->iMimeType.get_cstr(), "audio"))
+                    {
+                        PVMFJitterBufferStats stats = pPortParams->ipJitterBuffer->getJitterBufferStats();
+                        if (stats.currentOccupancy > 0)
+                        {
+                            uint32 in_wrap_count = 0;
+                            PVMFTimestamp ts = pPortParams->ipJitterBuffer->peekNextElementTimeStamp();
+                            pPortParams->iMediaClockConverter.set_clock(ts, in_wrap_count);
+                            PVMFTimestamp converted_ts =
+                                pPortParams->iMediaClockConverter.get_converted_ts(1000);
+                            bool overflowFlag = false;
+                            ipClientPlayBackClock->Stop();
+                            ipClientPlayBackClock->SetStartTime32(converted_ts, PVMF_MEDIA_CLOCK_MSEC, overflowFlag);
+                            PVMF_JBNODE_LOGDATATRAFFIC_FLOWCTRL_E((0, "PVMFJitterBufferNode::UpdateRebufferingStats - adjust playback clock to %u", converted_ts));
+                        }
+                    }
+                }
+            }
+            iClientClockNeedAdjustment = false;
+        }
+    }
 }
 ///////////////////////////////////////////////////////////////////////////////
 //PVMFJitterBufferMiscObserver

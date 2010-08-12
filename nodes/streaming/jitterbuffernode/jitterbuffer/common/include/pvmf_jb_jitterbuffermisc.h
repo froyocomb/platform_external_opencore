@@ -71,7 +71,7 @@ class PVMFJitterBufferMisc: public PVRTCPProtoImplementorObserver
         OSCL_IMPORT_REF void StreamingSessionStarted();
         OSCL_IMPORT_REF void StreamingSessionStopped();
         OSCL_IMPORT_REF void StreamingSessionPaused();
-        OSCL_IMPORT_REF void StreamingSessionBufferingStart();
+        OSCL_IMPORT_REF void StreamingSessionBufferingStart(bool aBufferingDuetoDataOutage = false);
         OSCL_IMPORT_REF void StreamingSessionBufferingEnd();
 
         OSCL_IMPORT_REF void SetBroadcastSession();
@@ -209,6 +209,8 @@ class PVMFJitterBufferMisc: public PVRTCPProtoImplementorObserver
         uint32  iPlayStartTimeInMS;
         uint32  iPlayStopTimeInMS;
         bool    iPlayStopTimeAvailable;
+        bool    iBufferingDuetoDataOutage;
+        uint32  iClientClockAtBufferingStart;
 
         bool    iFireWallPacketsExchangeEnabled;
 
