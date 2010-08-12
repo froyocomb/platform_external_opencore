@@ -253,6 +253,8 @@ class PlayerDriver :
     void handleGetStatus(PlayerGetStatus* command);
     void handleCheckLiveStreaming(PlayerCheckLiveStreaming* cmd);
 
+    void setUriHeaders(const KeyedVector<String8, String8> *headers);
+
     //void endOfData();
     PVMFFormatType getFormatType();
     void CommandCompleted(const PVCmdResponse& aResponse);
@@ -298,6 +300,9 @@ class PlayerDriver :
     OSCL_HeapString<OsclMemAllocator> mDownloadProxy;
     OSCL_wHeapString<OsclMemAllocator> mDownloadConfigFilename;
     PVMFSourceContextData   *mDownloadContextData;
+
+    KeyedVector<String8, String8> mUriHeaders;
+    bool                          mUriHeadersPresent;
 
     PVPMetadataList mMetaKeyList;
     Oscl_Vector<PvmiKvp,OsclMemAllocator> mMetaValueList;
@@ -376,6 +381,7 @@ PlayerDriver::PlayerDriver(PVPlayer* pvPlayer) :
 
     mPlayerCapConfig = NULL;
     mDownloadContextData = NULL;
+    mUriHeadersPresent = false;
 
     // running in emulation?
     mLibHandle = NULL;
@@ -714,7 +720,32 @@ int PlayerDriver::setupHttpStreamPost()
     OSCL_TRY(error, mPlayerCapConfig->setParametersSync(NULL, &iKVPSetAsync, 1, iErrorKVP));
     OSCL_FIRST_CATCH_ANY(error, return -1);
 
+     if( mUriHeadersPresent )
+     {
+        iKeyStringSetAsync = _STRLIT_CHAR("x-pvmf/net/protocol-extension-header;valtype=char*");
+        for(int i = 0; i < mUriHeaders.size(); i++)
+        {
+            iKVPSetAsync.key = iKeyStringSetAsync.get_str();
+            OSCL_HeapString<OsclMemAllocator> headerValue = _STRLIT_CHAR("key=");
+            headerValue += mUriHeaders.keyAt(i);
+            headerValue += _STRLIT_CHAR(";value=");
+            headerValue += mUriHeaders.valueAt(i);
+            headerValue += _STRLIT_CHAR(";method=GET");
+            iKVPSetAsync.value.pChar_value = headerValue.get_str();
+            iErrorKVP=NULL;
+            OSCL_TRY(error, mPlayerCapConfig->setParametersSync(NULL, &iKVPSetAsync, 1, iErrorKVP));
+            OSCL_FIRST_CATCH_ANY(error, return -1);
+        }
+     }
+
     return 0;
+}
+
+void PlayerDriver::setUriHeaders(const KeyedVector<String8, String8> *headers)
+{
+   LOGV("setUriHeaders");
+   mUriHeadersPresent = true;
+   mUriHeaders = *headers;
 }
 
 void PlayerDriver::handleSetDataSource(PlayerSetDataSource* command)
@@ -1663,7 +1694,7 @@ PVPlayer::~PVPlayer()
 }
 
 status_t PVPlayer::setDataSource(
-        const char *url, const KeyedVector<String8, String8> *)
+        const char *url, const KeyedVector<String8, String8> *headers)
 {
     LOGV("setDataSource(%s)", url);
     if (mSharedFd >= 0) {
@@ -1677,6 +1708,13 @@ status_t PVPlayer::setDataSource(
     if (strncmp("sharedfd://", url, 11) == 0)
         return android::UNKNOWN_ERROR;
     mDataSourcePath = strdup(url);
+
+    if( headers )
+    {
+        // Set the URI headers in playerdriver
+        mPlayerDriver->setUriHeaders( headers );
+    }
+
     return OK;
 }
 
