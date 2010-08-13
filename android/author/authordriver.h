@@ -51,6 +51,7 @@
 #include "oscl_string_utils.h"
 #include "android_camera_input.h"
 #include "android_audio_input.h"
+#include "android_audio_inputFMA2DP.h"
 #include "pvmf_media_input_node_factory.h"
 #include "pvmf_fileoutput_factory.h"
 #include "pvmf_node_interface.h"
@@ -364,6 +365,7 @@ private:
 
     PvmiMIOControl           *mVideoInputMIO;
     PVMFNodeInterface        *mVideoNode;
+    sp<AndroidAudioInputA2DP>    mAudioInputMIOA2DP;
     sp<AndroidAudioInput>    mAudioInputMIO;
     PVMFNodeInterface        *mAudioNode;
 
