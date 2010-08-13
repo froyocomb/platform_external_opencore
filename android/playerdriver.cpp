@@ -2024,10 +2024,6 @@ status_t PVPlayer::resume()
 // Static
 status_t PVPlayer::usePVPlayer(const char *filename)
 {
-    char value[PROPERTY_VALUE_MAX];
-    property_get("ro.product.device",value,"0");
-    if(strcmp("msm7630_surf",value) != 0) return OK;
-
     LOGV("usePVPlayer: In usePVPlayer function, filename: %s",filename);
     status_t status = UNKNOWN_ERROR;
 
@@ -2088,6 +2084,7 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                                 LOGV("usePVPlayer: got streamtype %s",streamtype.get_cstr());
 
                                 //MIME type X-MPEG4_AUDIO indicates AAC in MP4
+#ifdef SURF7x30 //LPA
                                 if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO && count == 1) {
                                     LOGV("usePVPlayer: recognized file as AAC in MP4 or 3gpp");
                                     duration = mp4Input->getMovieDuration();
@@ -2098,13 +2095,15 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                                     LOGV("usePVPlayer: got duration of %llu milliseconds",duration);
                                     if (duration >= MIN_LPA_DURATION) {
                                         status = OK;
+                                        goto return_status;
                                     }
                                     else {
                                         LOGV("usePVPlayer: duration of aac too short to use LPA");
                                         goto return_status;
                                     }
                                 }
-                                else if (streamtype==PVMF_MIME_QCELP || streamtype==PVMF_MIME_EVRC) {
+#endif
+                                if (streamtype==PVMF_MIME_QCELP || streamtype==PVMF_MIME_EVRC) {
                                     LOGV("usePVPlayer: recognized qcelp or evrc file");
                                     status = OK;
                                 }
@@ -2119,7 +2118,7 @@ status_t PVPlayer::usePVPlayer(const char *filename)
             UninitializeForThread();
         }
     }
-
+#ifdef SURF7x30 //LPA
     //Then check if MP3 of sufficient length for LPA
     if (status != OK && !LPAInstanceExists) {
         MP3ErrorType mp3Err;
@@ -2143,7 +2142,7 @@ status_t PVPlayer::usePVPlayer(const char *filename)
             }
         }
     }
-
+#endif
     //Then check if raw .aac of sufficient length for LPA
     if (status != OK) {
         CAACFileParser aacParser;
