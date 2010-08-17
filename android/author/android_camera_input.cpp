@@ -100,7 +100,6 @@ void AndroidCameraInput::ReleaseQueuedFrames()
 AndroidCameraInput::~AndroidCameraInput()
 {
     LOGV("destructor");
-
     if(iPostCameraFrameAO)
     {
         OSCL_DELETE(iPostCameraFrameAO);
@@ -595,14 +594,13 @@ PVMFStatus AndroidCameraInput::getParametersSync(PvmiMIOSession session,
             return PVMFErrNoMemory;
         }
         params [0].value.key_specific_value = (PVInterface*)&mbufferAlloc;
-        status = PVMFSuccess;
 
         sp<IMemory> Frame = NULL;
         size_t alignedSize;
         if( mCamera != NULL) {
             mCamera->getBufferInfo(Frame, &alignedSize);
         } else {
-            LOGE(" getParametersSync : mCamera Handle is NULL ");
+            LOGE("getParametersSync : mCamera Handle is NULL ");
         }
         if( Frame != NULL ) {
             ssize_t offset = 0;
@@ -614,13 +612,16 @@ PVMFStatus AndroidCameraInput::getParametersSync(PvmiMIOSession session,
 
             mbufferAlloc.setNumBuffers((heap->getSize()/alignedSize));
             mbufferAlloc.setBufferSize(size);
-        } else {
-            LOGE("getParametersSync : Received NULL info ");
+
+            status = PVMFSuccess;
+        } 
+        else {
+          LOGE("getParametersSync : Received NULL info ");
         }
     }
     else if (!pv_mime_strcmp(identifier, PVMF_PMEM_BUFFER_INFO_KEY)) {
         num_params = PVMF_NUM_PMEM_BUFFER_INFO_PARAMS;
-        status = AllocateKvp(params, (PvmiKeyType)PVMF_PMEM_BUFFER_INFO_KEY, num_params);
+        PVMFStatus temp_status = AllocateKvp(params, (PvmiKeyType)PVMF_PMEM_BUFFER_INFO_KEY, num_params);
         if (!params )
         {
             OSCL_LEAVE(OsclErrNoMemory);
@@ -632,7 +633,7 @@ PVMFStatus AndroidCameraInput::getParametersSync(PvmiMIOSession session,
         if( mCamera != NULL) {
             mCamera->getBufferInfo(Frame, &alignedSize);
         } else {
-            LOGE(" getParametersSync : mCamera Handle is NULL ");
+          LOGE("getParametersSync : mCamera Handle is NULL ");
         }
         if( Frame != NULL ) {
             ssize_t offset = 0;
@@ -651,7 +652,6 @@ PVMFStatus AndroidCameraInput::getParametersSync(PvmiMIOSession session,
             LOGE("getParametersSync : Received NULL info ");
         }
     }
-
     return status;
 }
 
@@ -956,7 +956,7 @@ PVMFStatus AndroidCameraInput::DoInit()
 
     // create a camera if the app didn't supply one
     if (mCamera == 0) {
-        mCamera = Camera::connect();
+      mCamera = Camera::connect(); //TODO: Check for mCamera->status here too?
     }
 
     // always call setPreviewDisplay() regardless whether mCamera is just created or not
@@ -1210,9 +1210,15 @@ PVMFStatus AndroidCameraInput::SetCamera(const sp<android::ICamera>& camera)
 
     // Connect our client to the camera remote
     mCamera = Camera::create(camera);
+
     if (mCamera == NULL) {
-        LOGE("Unable to connect to camera");
-        return PVMFErrNoResources;
+      LOGE("Unable to create camera");
+      return PVMFErrNoResources;
+    }
+
+    if( mCamera->getStatus( ) != NO_ERROR ){
+      LOGE("camera connect failed");
+      return PVMFFailure;
     }
 
     LOGV("Connected to camera");
