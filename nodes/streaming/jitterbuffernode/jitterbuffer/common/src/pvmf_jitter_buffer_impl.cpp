@@ -100,10 +100,12 @@ void PVMFJitterBufferImpl::ResetParams(bool aReleaseMemory)
     iWaitForOOOPacketCallBkId = 0;
     iMonitorReBufferingCallBkId = 0;
     iJitterBufferDurationCallBkId = 0;
+    iJitterBufferDataOutageCallBkId = 0;
 
     iMonitorReBufferingCallBkPending = false;
     iWaitForOOOPacketCallBkPending = false;
     iJitterBufferDurationCallBkPending = false;
+    iJitterBufferDataOutageCallBkPending = false;
 
     ipMediaClockConverter = NULL;
     iTimeScale  = 0;
@@ -142,6 +144,7 @@ OSCL_EXPORT_REF void PVMFJitterBufferImpl::StreamingSessionPaused()
     CancelEventCallBack(JB_NOTIFY_WAIT_FOR_OOO_PACKET_COMPLETE);
     CancelEventCallBack(JB_MONITOR_REBUFFERING);
     CancelEventCallBack(JB_BUFFERING_DURATION_COMPLETE);
+    CancelEventCallBack(JB_MONITOR_DATA_OUTAGE);
 }
 
 OSCL_EXPORT_REF void PVMFJitterBufferImpl::StreamingSessionStopped()
@@ -150,6 +153,7 @@ OSCL_EXPORT_REF void PVMFJitterBufferImpl::StreamingSessionStopped()
     CancelEventCallBack(JB_NOTIFY_WAIT_FOR_OOO_PACKET_COMPLETE);
     CancelEventCallBack(JB_MONITOR_REBUFFERING);
     CancelEventCallBack(JB_BUFFERING_DURATION_COMPLETE);
+    CancelEventCallBack(JB_MONITOR_DATA_OUTAGE);
     FlushJitterBuffer();
 }
 
@@ -169,6 +173,14 @@ OSCL_EXPORT_REF void PVMFJitterBufferImpl::PrepareForRepositioning()
     iEOSSignalled = false;
     iEOSSent = false;
     irDelayEstablished = false;
+    //Reset flags related to data exhaustion detection
+    irBufferingDuetoDataOutage = false;
+    irClientClockNeedAdjustment = false;
+    irNeedSendBOSDownstream = false;
+    if (IsCallbackPending(JB_MONITOR_DATA_OUTAGE, NULL))
+    {
+        CancelEventCallBack(JB_MONITOR_DATA_OUTAGE);
+    }
 }
 
 OSCL_EXPORT_REF PVMFJitterBufferDataState PVMFJitterBufferImpl::GetState() const
@@ -206,6 +218,10 @@ OSCL_EXPORT_REF PVMFJitterBufferImpl::PVMFJitterBufferImpl(const PVMFJitterBuffe
         , irDelayEstablished(aJBConstructParams.GetDelayEstablishStatus())
         , irJitterDelayPercent(aJBConstructParams.GetJBDelayPercent())
         , irDataState(aJBConstructParams.GetJitterBufferState())
+        , irMaxAdjustedRTPTSofAllPorts(aJBConstructParams.GetMaxAdjustedRTPTSofAllPorts())
+        , irBufferingDuetoDataOutage(aJBConstructParams.GetBufferingDuetoDataOutage())
+        , irClientClockNeedAdjustment(aJBConstructParams.GetClientClockNeedAdjustment())
+        , irNeedSendBOSDownstream(aJBConstructParams.GetNeedSendBOSDownstream())
         , iObserver(aJBConstructParams.GetJBObserver())
         , iObserverContext(aJBConstructParams.GetContextData())
 {
@@ -567,6 +583,11 @@ PVMFJitterBufferRegisterMediaMsgStatus PVMFJitterBufferImpl::RegisterDataPacket(
     if (retval == PVMF_JB_REGISTER_MEDIA_MSG_SUCCESS)
     {
         PerformFlowControl(true);
+        /* Cancel data outage monitoring timer whenever we receive a new data packet */
+        if (IsCallbackPending(JB_MONITOR_DATA_OUTAGE, NULL))
+        {
+            CancelEventCallBack(JB_MONITOR_DATA_OUTAGE);
+        }
     }
     uint32 aClockDiff = 0;
     bool delayEstablished = IsDelayEstablished(aClockDiff);//To update delay percent
@@ -901,6 +922,17 @@ OSCL_EXPORT_REF bool PVMFJitterBufferImpl::RequestEventCallBack(JB_NOTIFY_CALLBA
             }
         }
         break;
+        case JB_MONITOR_DATA_OUTAGE:
+        {
+            PVMFJBEventNotificationRequestInfo eventRequestInfo(CLOCK_NOTIFICATION_INTF_TYPE_CLIENTPLAYBACK, this, NULL);
+            retval = irJBEventNotifier.RequestCallBack(eventRequestInfo, aDelay, iJitterBufferDataOutageCallBkId);
+            if (retval)
+            {
+                PVMF_JB_LOG_EVENTS_CLOCK((0, "PVMFJitterBufferNode::RequestEventCallBack In Data Outage CallBackId [%d] Mime %s", iJitterBufferDataOutageCallBkId, irMimeType.get_cstr()));
+                iJitterBufferDataOutageCallBkPending = true;
+            }
+        }
+        break;
         default:
         {
             //Log it
@@ -936,7 +968,13 @@ OSCL_EXPORT_REF void PVMFJitterBufferImpl::CancelEventCallBack(JB_NOTIFY_CALLBAC
             iJitterBufferDurationCallBkPending = false;
         }
         break;
-
+        case JB_MONITOR_DATA_OUTAGE:
+        {
+            PVMFJBEventNotificationRequestInfo eventRequestInfo(CLOCK_NOTIFICATION_INTF_TYPE_CLIENTPLAYBACK, this, NULL);
+            irJBEventNotifier.CancelCallBack(eventRequestInfo, iJitterBufferDataOutageCallBkId);
+            iJitterBufferDataOutageCallBkPending = false;
+        }
+        break;
         default:
         {
             //Log it
@@ -957,8 +995,7 @@ OSCL_EXPORT_REF void PVMFJitterBufferImpl::ProcessCallback(CLOCK_NOTIFICATION_IN
             iWaitForOOOPacketCallBkPending = false;
             HandleEvent_NotifyWaitForOOOPacketComplete(aContext);
         }
-
-        if (aCallBkId == iMonitorReBufferingCallBkId)
+        else if (aCallBkId == iMonitorReBufferingCallBkId)
         {
             iMonitorReBufferingCallBkPending = false;
             HandleEvent_MonitorReBuffering(aContext);
@@ -967,6 +1004,11 @@ OSCL_EXPORT_REF void PVMFJitterBufferImpl::ProcessCallback(CLOCK_NOTIFICATION_IN
         {
             iJitterBufferDurationCallBkPending = false;
             HandleEvent_JitterBufferBufferingDurationComplete();
+        }
+        else if (aCallBkId == iJitterBufferDataOutageCallBkId)
+        {
+            iJitterBufferDataOutageCallBkPending = false;
+            HandleEvent_JitterBufferDataOutage(aContext);
         }
     }
     else
@@ -991,6 +1033,25 @@ void PVMFJitterBufferImpl::HandleEvent_MonitorReBuffering(const OsclAny* aContex
     PVMF_JB_LOG_EVENTS_CLOCK((0, "PVMFJitterBufferNode::IsJitterBufferReady - Time Delay Check - ClientClock=%d", clientClock));
 
     uint32 clockDiff;
+    IsDelayEstablished(clockDiff); //just to evaluate the rebuiffering condition.
+}
+
+/* Trigger used to check whether playback clk has exceeded MaxAdjustedRTPTS */
+void PVMFJitterBufferImpl::HandleEvent_JitterBufferDataOutage(const OsclAny* aContext)
+{
+    OSCL_UNUSED_ARG(aContext);
+    uint32 timebase32 = 0;
+    uint32 estServerClock = 0;
+    uint32 clientClock = 0;
+    bool overflowFlag = false;
+    irEstimatedServerClock.GetCurrentTime32(estServerClock, overflowFlag, PVMF_MEDIA_CLOCK_MSEC, timebase32);
+    irClientPlayBackClock.GetCurrentTime32(clientClock, overflowFlag, PVMF_MEDIA_CLOCK_MSEC, timebase32);
+
+
+    PVMF_JB_LOG_EVENTS_CLOCK((0, "PVMFJitterBufferNode::HandleEvent_JitterBufferDataOutage - Time Delay Check - EstServClock=%d", estServerClock));
+    PVMF_JB_LOG_EVENTS_CLOCK((0, "PVMFJitterBufferNode::HandleEvent_JitterBufferDataOutage - Time Delay Check - ClientClock=%d", clientClock));
+
+    uint32 clockDiff = 0;
     IsDelayEstablished(clockDiff); //just to evaluate the rebuiffering condition.
 }
 
@@ -1021,6 +1082,11 @@ OSCL_EXPORT_REF bool PVMFJitterBufferImpl::IsCallbackPending(JB_NOTIFY_CALLBACK 
         case JB_BUFFERING_DURATION_COMPLETE:
         {
             callBackPending = &iJitterBufferDurationCallBkPending;
+        }
+        break;
+        case JB_MONITOR_DATA_OUTAGE:
+        {
+            callBackPending = &iJitterBufferDataOutageCallBkPending;
         }
         break;
         default:
@@ -1353,6 +1419,11 @@ OSCL_EXPORT_REF void PVMFJitterBufferImpl::SetEOS(bool aVal)
         LOGCLIENTANDESTIMATEDSERVCLK_DATAPATH_OUT;
         iEOSSignalled = aVal;
         iObserver->EndOfStreamSignalled(iObserverContext);
+        /* Cancel data outage monitoring timer whenever we receive EOS */
+        if (aVal && IsCallbackPending(JB_MONITOR_DATA_OUTAGE, NULL))
+        {
+            CancelEventCallBack(JB_MONITOR_DATA_OUTAGE);
+        }
     }
 
     if (iReportCanRetrievePacket)
