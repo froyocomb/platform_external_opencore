@@ -55,6 +55,13 @@ static const int32 AUTO_RAMP_DURATION_MS = 300;
 #define AAC_MONO_SILENCE_FRAME_SIZE 12   // this includes the length of silence frame
 #define AAC_STEREO_SILENCE_FRAME_SIZE 13 // this includes the length of silence frame
 #define SILENCE_INSERTION_TIME_PERIOD 600
+
+//AMR-NB silence frame size
+#define AMR_NB_SILENCE_FRAME_SIZE 6
+
+//AMR-NB silence frame data
+static const uint8  AMR_NB_SILENCE_FRAME[]   = {0x44, 0x00, 0x00, 0x00, 0x00, 0x00};
+
 //AAC silence frame data
 // First two bytes indicate the length of silence frame
 static const uint8  AAC_MONO_SILENCE_FRAME_WITH_SIZE[]   = {0x0A, 0x00, 0x01, 0x40, 0x20, 0x06, 0x4F, 0xDE, 0x02, 0x70, 0x0C, 0x1C};
@@ -1466,26 +1473,39 @@ int AndroidAudioInput::audin_thread_func() {
                 iSysTimeStamp - iTimeStamp, iSysTimeStamp - prevTimeStamp);
 #endif
 
-           //Insert silence in first 600 ms of aac data to mask beep sound of
+           //Insert silence in first 600 ms of aac/amr-nb data to mask beep sound of
            //camcorder recording
-           if( iAudioFormatType == android::AudioSystem::AAC && iTimeStamp <= SILENCE_INSERTION_TIME_PERIOD ){
-               int frameCount = numFrames,silenceFrameSize = 0;
-               uint8* dataPtr = data + 6; // Point to size of first frame
-               const uint8* silenceFrameData = NULL;
-               numOfBytes = 0;
-               if(iAudioNumChannels > 1) {
-                   silenceFrameData = AAC_STEREO_SILENCE_FRAME_WITH_SIZE;
-                   silenceFrameSize = AAC_STEREO_SILENCE_FRAME_SIZE;
+           if( iTimeStamp <= SILENCE_INSERTION_TIME_PERIOD ){
+               if(iAudioFormatType == android::AudioSystem::AAC) {
+                   int frameCount = numFrames,silenceFrameSize = 0;
+                   uint8* dataPtr = data + 6; // dataPtr points to size of first frame
+                   const uint8* silenceFrameData = NULL;
+                   numOfBytes = 0;
+                   if(iAudioNumChannels > 1) {
+                       silenceFrameData = AAC_STEREO_SILENCE_FRAME_WITH_SIZE;
+                       silenceFrameSize = AAC_STEREO_SILENCE_FRAME_SIZE;
+                   }
+                   else {
+                       silenceFrameData = AAC_MONO_SILENCE_FRAME_WITH_SIZE;
+                       silenceFrameSize = AAC_MONO_SILENCE_FRAME_SIZE;
+                   }
+                   while(frameCount > 0) {
+                       memcpy(dataPtr,silenceFrameData,silenceFrameSize);
+                       dataPtr+=silenceFrameSize;
+                       numOfBytes+=silenceFrameSize - 2;
+                       frameCount--;
+                   }
                }
-               else {
-                   silenceFrameData = AAC_MONO_SILENCE_FRAME_WITH_SIZE;
-                   silenceFrameSize = AAC_MONO_SILENCE_FRAME_SIZE;
-               }
-               while(frameCount > 0) {
-                   memcpy(dataPtr,silenceFrameData,silenceFrameSize);
-                   dataPtr+=silenceFrameSize;
-                   numOfBytes+=silenceFrameSize - 2;
-                   frameCount--;
+               else if( iAudioFormatType == android::AudioSystem::AMR_NB ) {
+                   int frameCount = dataDuration/20; // 20ms is duration of one amr-nb frame
+                   uint8* dataPtr = data;
+                   numOfBytes = 0;
+                   while(frameCount > 0) {
+                       memcpy(dataPtr,AMR_NB_SILENCE_FRAME,AMR_NB_SILENCE_FRAME_SIZE);
+                       dataPtr += AMR_NB_SILENCE_FRAME_SIZE;
+                       numOfBytes += AMR_NB_SILENCE_FRAME_SIZE;
+                       frameCount--;
+                   }
                }
            }
 
