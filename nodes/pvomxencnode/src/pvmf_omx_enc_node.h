@@ -1058,7 +1058,7 @@ class PVMFOMXEncNode
         uint32 GetIFrameInterval();
         uint32 GetOutputSamplingRate();
         uint32 GetOutputNumChannels();
-
+        PVMFStatus GetTrackTransform( uint32& transform );
         // Capability exchange
         PVMFNodeCapability iCapability;
 
@@ -1414,6 +1414,7 @@ class PVMFOMXEncNode
         uint32 iTimeScale;
         uint32 iInTimeScale;
         uint32 iOutTimeScale;
+        uint32 iTransform;
 
         MediaClockConverter iInputTimestampClock;
         OMX_TICKS iOMXTicksTimestamp;

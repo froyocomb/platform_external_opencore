@@ -178,7 +178,9 @@ class PVA_FF_Mpeg4File : public PVA_FF_IMpeg4File, public PVA_FF_Parentable
         }
 
         virtual void setVideoParams(uint32 trackID, float frate, uint16 interval,
-                                    uint32 frame_width, uint32 frame_height);
+                                    uint32 frame_width, uint32 frame_height );
+
+        virtual void setTrackTransform( uint32 trackID, uint32 transform );
 
         virtual void setAudioEncodeParams(uint32 trackId,
                                           PVMP4FFComposerAudioEncodeParams &audioParams);

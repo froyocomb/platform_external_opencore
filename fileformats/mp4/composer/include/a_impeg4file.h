@@ -328,6 +328,8 @@ class PVA_FF_IMpeg4File : public PVA_FF_ISucceedFail
                                          uint8 profile,
                                          uint8 level) = 0;
 
+        virtual void setTrackTransform( uint32 trackID, uint32 transform ) = 0;
+
         virtual bool addMultipleAccessUnitsToTrack(uint32 trackID, GAU *pgau) = 0;
         virtual bool renderTruncatedFile(PVA_FF_UNICODE_STRING_PARAM filename) = 0;
 

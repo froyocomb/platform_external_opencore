@@ -64,6 +64,7 @@ struct PVMP4FFCNFormatSpecificConfig
     uint32 iWidth;
     uint32 iHeight;
     PVMP4FFCNRateControlType iRateControlType;
+    uint32 iTransform;
 
     // H263 configuration
     uint8 iH263Profile;

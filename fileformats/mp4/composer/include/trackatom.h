@@ -148,6 +148,9 @@ class PVA_FF_TrackAtom : public PVA_FF_Atom, public PVA_FF_ISucceedFail
             _pmediaAtom->updateAtomFileOffsets(offset);
         }
 
+        void setTransform( uint32 transform ){
+          _ptrackHeader->setTransform( transform );
+        }
 
         // Mpeg4 movie timescale
         void setTimeScale(uint32 ts)

@@ -1232,7 +1232,7 @@ PVA_FF_Mpeg4File::setVideoParams(uint32 trackID,
                                  float frate,
                                  uint16 interval,
                                  uint32 frame_width,
-                                 uint32 frame_height)
+                                 uint32 frame_height )
 {
     OSCL_UNUSED_ARG(frate);
     OSCL_UNUSED_ARG(interval);
@@ -1240,7 +1240,20 @@ PVA_FF_Mpeg4File::setVideoParams(uint32 trackID,
     trackAtom = _pmovieAtom->getMediaTrack(trackID);
 
     if (trackAtom != NULL)
-        trackAtom->setVideoParams(frame_width, frame_height);
+      trackAtom->setVideoParams(frame_width, frame_height);
+
+    return;
+}
+
+void
+PVA_FF_Mpeg4File::setTrackTransform(uint32 trackID,
+                                    uint32 transform )
+{
+    PVA_FF_TrackAtom *trackAtom;
+    trackAtom = _pmovieAtom->getMediaTrack(trackID);
+
+    if (trackAtom != NULL)
+      trackAtom->setTransform( transform );
 
     return;
 }

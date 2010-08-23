@@ -2114,6 +2114,7 @@ PVMFStatus PVMp4FFComposerNode::AddTrack(PVMp4FFComposerPort *aPort)
                     iMpeg4File->setTimeScale(trackId, config->iTimescale);
                     iMpeg4File->setVideoParams(trackId, (float)config->iFrameRate,
                                                (uint16)config->iIFrameInterval, config->iWidth, config->iHeight);
+                    iMpeg4File->setTrackTransform( trackId, config->iTransform );
                     break;
             }
             break;
