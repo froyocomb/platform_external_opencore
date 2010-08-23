@@ -9595,6 +9595,62 @@ void PVMFOMXEncNode::DoCapConfigSetParameters(PvmiKvp* aParameters, int aNumElem
         return;
     }
 
+    if( aNumElements == 1 && aParameters[0].key != NULL &&
+        (oscl_strcmp(aParameters[0].key,"rotated") == 0)  ){
+
+      OMX_CONFIG_ROTATIONTYPE rtype;
+      CONFIG_SIZE_AND_VERSION( rtype );
+
+      OMX_ERRORTYPE Err;
+      rtype.nPortIndex = iInputPortIndex;
+
+      Err = OMX_GetConfig(iOMXEncoder, OMX_IndexConfigCommonRotate, &rtype);
+      if (Err != OMX_ErrorNone){
+        LOGE("OMX_GetConfig for rotate failed");
+      }
+
+      rtype.nRotation = aParameters[0].value.uint32_value;
+      CONFIG_SIZE_AND_VERSION( rtype );
+
+      Err = OMX_SetConfig(iOMXEncoder, OMX_IndexConfigCommonRotate, &rtype);
+      if (Err != OMX_ErrorNone){
+        LOGE("OMX_SetConfig for rotate failed");
+        return;
+      }
+
+      //update the input and output height and width parameters by reading
+      //from the component
+      iParamPort.nPortIndex = iInputPortIndex;
+      CONFIG_SIZE_AND_VERSION( iParamPort );
+
+      // get new width and height parameters from both ports
+      OMX_GetParameter(iOMXEncoder, OMX_IndexParamPortDefinition, &iParamPort);
+
+      iVideoInputFormat.iFrameWidth =  iParamPort.format.video.nFrameWidth;
+      iVideoInputFormat.iFrameHeight = iParamPort.format.video.nFrameHeight;
+
+#if 1
+      //we should output port values too, as the component can itself do the
+      //rotation, component should update outport too. until then, swap ourselves
+      iParamPort.nPortIndex = iOutputPortIndex;
+      CONFIG_SIZE_AND_VERSION( iParamPort );
+
+      OMX_GetParameter(iOMXEncoder, OMX_IndexParamPortDefinition, &iParamPort);
+
+      iVideoEncodeParam.iFrameWidth[0] = iParamPort.format.video.nFrameWidth;
+      iVideoEncodeParam.iFrameHeight[0] = iParamPort.format.video.nFrameHeight;
+#endif
+
+#if 0
+      //swap output values too
+      uint32 temp = iVideoEncodeParam.iFrameWidth[0];
+      iVideoEncodeParam.iFrameWidth[0] = iVideoEncodeParam.iFrameHeight[0];
+      iVideoEncodeParam.iFrameHeight[0] = temp;
+#endif
+
+      return;
+    }
+
     // Go through each parameter
     for (int32 paramind = 0; paramind < aNumElements; ++paramind)
     {

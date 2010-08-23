@@ -518,6 +518,13 @@ class PVAuthorEngineInterface
          *
          **/
         OSCL_IMPORT_REF static void GetSDKInfo(PVSDKInfo& aSDKInfo);
+
+        /**
+         * Notifies engine of current orientation. Encoder and composer component will be adjusted
+         * accordingly
+         *
+         */
+        virtual PVCommandId SetOrientation( int rotate ) = 0;
 };
 
 #endif // PVAUTHORENGINE_H_INCLUDED

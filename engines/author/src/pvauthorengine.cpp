@@ -56,6 +56,10 @@
 
 #include "pv_author_sdkinfo.h"
 
+#include <utils/Log.h>
+#undef LOG_TAG
+#define LOG_TAG  "PVAuthorEngine"
+
 // Define entry point for this DLL
 OSCL_DLL_ENTRY_POINT_DEFAULT()
 
@@ -436,6 +440,43 @@ OSCL_EXPORT_REF PVCommandId PVAuthorEngine::QueryInterface(const PVUuid& aUuid,
     return iCommandId++;
 }
 
+OSCL_EXPORT_REF PVCommandId PVAuthorEngine::SetOrientation( int rotate ){
+  int * value = (int *)OSCL_MALLOC(sizeof(int));
+  *value = rotate;
+
+  PVEngineCommand cmd(PVAE_CMD_SET_ORIENTATION, iCommandId, NULL, (OsclAny*)value, NULL);
+  PushCmdInFront(cmd);
+  return iCommandId++;
+}
+
+PVMFStatus PVAuthorEngine::DoSetOrientation(PVEngineCommand& aCmd) {
+
+  PvmiKvp paramkvp;
+  int numparam = 0;
+  PvmiKvp** retkvp;
+
+  if( aCmd.GetParam1( ) ){
+    paramkvp.value.uint32_value = *((int *)aCmd.GetParam1());
+    OSCL_FREE( (int *)aCmd.GetParam1() );
+  }
+  else {
+    paramkvp.value.uint32_value = 0;
+  }
+
+  paramkvp.key = "rotated";
+  paramkvp.length = 1;
+  paramkvp.capacity = 1;
+
+  for(unsigned int i =0; i < iEncoderNodes.size( ); i++ ){
+    if (iEncoderNodes[i]->iNodeCapConfigIF)
+      {
+        PvmiCapabilityAndConfig* capconfig = ((PvmiCapabilityAndConfig*)iEncoderNodes[i]->iNodeCapConfigIF);
+        capconfig->setParametersSync( NULL, &paramkvp, 1, *retkvp );
+      }
+  }
+  return PVMFSuccess;
+}
+
 ////////////////////////////////////////////////////////////////////////////
 OSCL_EXPORT_REF PVAEState PVAuthorEngine::GetPVAuthorState()
 {
@@ -800,6 +841,9 @@ void PVAuthorEngine::Run()
           break;
         case PVAE_CMD_CAPCONFIG_SET_PARAMETERS:
             status = DoCapConfigSetParameters(cmd, false);
+            break;
+        case PVAE_CMD_SET_ORIENTATION:
+            status = DoSetOrientation( cmd );
             break;
         default:
             status = PVMFErrNotSupported;

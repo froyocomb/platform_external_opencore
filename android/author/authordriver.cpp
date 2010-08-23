@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <media/thread_init.h>
 #include <surfaceflinger/ISurface.h>
+#include <camera/CameraParameters.h>
 #include <camera/ICamera.h>
 #include <cutils/properties.h> // for property_get
 #include "authordriver.h"
@@ -1106,7 +1107,12 @@ void AuthorDriver::handleSetCameraParameters(set_camera_parameters_command *ac)
     }
 
     if(ret == PVMFSuccess) {
-        FinishNonAsyncCommand(ac);
+      if( mAuthor->GetPVAuthorState() <= PVAE_STATE_INITIALIZED ){
+        CameraParameters cp(p);
+        int rotate = cp.getInt("rotation");
+        mAuthor->SetOrientation( rotate );
+      }
+      FinishNonAsyncCommand(ac);
     } else {
         LOGE("Ln %d handleSetCameraParameters error", __LINE__);
         commandFailed(ac);

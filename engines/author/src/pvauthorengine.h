@@ -110,7 +110,8 @@ typedef enum
     PVAE_CMD_STOP_MAX_SIZE,
     PVAE_CMD_STOP_MAX_DURATION,
     PVAE_CMD_STOP_EOS_REACHED,
-    PVAE_CMD_CAPCONFIG_SET_PARAMETERS
+    PVAE_CMD_CAPCONFIG_SET_PARAMETERS,
+    PVAE_CMD_SET_ORIENTATION
 } PVAECmdType;
 
 // Structure to hold the key string info for
@@ -206,6 +207,7 @@ class PVAuthorEngine : public PVAuthorEngineInterface,
         OSCL_IMPORT_REF PVCommandId GetSDKInfo(PVSDKInfo& aSDKInfo, const OsclAny* aContextData = NULL);
         OSCL_IMPORT_REF PVCommandId GetSDKModuleInfo(PVSDKModuleInfo& aSDKModuleInfo, const OsclAny* aContextData = NULL);
         OSCL_IMPORT_REF PVCommandId CancelAllCommands(const OsclAny* aContextData = NULL);
+        OSCL_IMPORT_REF PVCommandId SetOrientation( int rotate) ;
 
         // Implement pure virtual from PVMFNodeErrorEventObserver
         void HandleNodeErrorEvent(const PVMFAsyncEvent& aEvent);
@@ -359,6 +361,8 @@ class PVAuthorEngine : public PVAuthorEngineInterface,
         PVMFStatus DoVerifyAndSetAuthorProductInfoParameter(PvmiKvp& aParameter, bool aSetParam);
         PVMFStatus DoGetAuthorProductInfoParameter(PvmiKvp*& aParameters, int& aNumParamElements, int32 aIndex, PvmiKvpAttr reqattr);
         PVMFStatus DoGetAuthorParameter(PvmiKvp*& aParameters, int& aNumParamElements, int32 aIndex, PvmiKvpAttr reqattr);
+        PVMFStatus DoSetOrientation(PVEngineCommand& aCmd);
+
     private:
 
         // Engine commands

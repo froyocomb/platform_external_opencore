@@ -69,10 +69,11 @@
 // Platform-specic and temporal workaround to prevent video size
 // from being set too large
 
-#define ANDROID_MIN_ENCODED_FRAME_WIDTH            176
+#define ANDROID_MIN_ENCODED_FRAME_WIDTH            144
 #define ANDROID_MIN_ENCODED_FRAME_HEIGHT           144
+
 #define ANDROID_MAX_ENCODED_FRAME_WIDTH            1920
-#define ANDROID_MAX_ENCODED_FRAME_HEIGHT           1088
+#define ANDROID_MAX_ENCODED_FRAME_HEIGHT           1280
 
 #define ANDROID_MIN_FRAME_RATE_FPS                 5
 #define ANDROID_MAX_FRAME_RATE_FPS                 30
