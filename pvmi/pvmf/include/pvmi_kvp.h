@@ -378,6 +378,10 @@ class PvmfAssetInfo3GPPLocationStruct
 
 #define VIDEO_FRAME_ORIENTATION_CUR_QUERY ".../output/frame_orientation;attr=cur"
 #define VIDEO_FRAME_ORIENTATION_CUR_VALUE ".../output/frame_orientation;valtype=uint8"
+
+#define VIDEO_TRACK_TRANSFORM_CUR_QUERY ".../output/track_transform;attr=cur"
+#define VIDEO_TRACK_TRANSFORM_CUR_VALUE ".../output/track_transform;valtype=uint32"
+
 #define VIDEO_OUTPUT_HEIGHT_CAP_QUERY ".../output/height;attr=cap"
 #define VIDEO_OUTPUT_HEIGHT_CAP_RANGE ".../output/height;valtype=range_uint32"
 #define VIDEO_OUTPUT_HEIGHT_CUR_QUERY ".../output/height;attr=cur"

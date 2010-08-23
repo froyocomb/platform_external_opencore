@@ -101,7 +101,7 @@ class PVA_FF_TrackHeaderAtom : public PVA_FF_FullAtom
         // Rendering the PVA_FF_Atom in proper format (bitlengths, etc.) to an ostream.
         virtual bool renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp);
         void setVideoWidthHeight(int16 width, int16 height);
-
+        void setTransform( uint32 transform );
     private:
         virtual void recomputeSize();
         int32 _mediaType;

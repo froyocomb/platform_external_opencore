@@ -29,6 +29,11 @@
 
 #define TIMED_TEXT_WIDTH 176
 #define TIMED_TEXT_HEIGHT 177
+
+#include <utils/Log.h>
+#undef LOG_TAG
+#define LOG_TAG "TrackHeaderAtom"
+
 // Constructor
 PVA_FF_TrackHeaderAtom::PVA_FF_TrackHeaderAtom(int32 type, uint32 trackID, uint8 version, uint32 flags, uint32 fileAuthoringFlags)
         : PVA_FF_FullAtom(TRACK_HEADER_ATOM, version, flags)
@@ -49,6 +54,29 @@ PVA_FF_TrackHeaderAtom::~PVA_FF_TrackHeaderAtom()
 {
     // Empty
 }
+
+#define TM_R1( v1, v2, v3 ) do {          \
+                                          \
+  _reserved5[0] = v1;                    \
+  _reserved5[1] = v2;                    \
+  _reserved5[2] = v3;                    \
+  }while( 0 )
+
+#define TM_R2( v1, v2, v3 ) do {          \
+                                          \
+  _reserved5[3] = v1;                    \
+  _reserved5[4] = v2;                    \
+  _reserved5[5] = v3;                    \
+  }while( 0 )
+
+
+#define TM_R3( v1, v2, v3 ) do {          \
+                                          \
+  _reserved5[6] = v1;                    \
+  _reserved5[7] = v2;                    \
+  _reserved5[8] = v3;                    \
+  }while( 0 )
+
 
 void
 PVA_FF_TrackHeaderAtom::init(int32 type)
@@ -114,6 +142,40 @@ void PVA_FF_TrackHeaderAtom::setVideoWidthHeight(int16 width, int16 height)
     _height = height;
     _reserved6 = (_width << 16); ;
     _reserved7 = (_height << 16);;
+}
+
+
+void PVA_FF_TrackHeaderAtom::setTransform( uint32 transform )
+{
+
+  LOGV("SetTransform called for transform=%d", transform );
+
+  switch( transform ){
+  case 0:
+    TM_R1( 0x00010000, 0 ,         0 );
+    TM_R2( 0,          0x00010000, 0 );
+    TM_R3( 0,          0,          0x40000000 );
+    break;
+  case 90:
+    TM_R1( 0,          0x00010000 , 0 );
+    TM_R2( 0xffff0000, 0,           0 );
+    TM_R3( _reserved6, 0,           0x40000000 );
+    break;
+  case 180:
+    TM_R1( 0xffff0000, 0 ,         0 );
+    TM_R2( 0,          0xffff0000, 0 );
+    TM_R3( _reserved6, _reserved7, 0x40000000 );
+    break;
+  case 270:
+    TM_R1( 0,          0xffff0000, 0 );
+    TM_R2( 0x00010000, 0,          0 );
+    TM_R3( 0,          _reserved7, 0x40000000 );
+    break;
+  default:
+    //unknown transform
+    break;
+  }
+
 }
 
 void

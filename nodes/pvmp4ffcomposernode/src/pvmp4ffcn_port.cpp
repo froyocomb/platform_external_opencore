@@ -37,6 +37,10 @@
 #include "pv_mime_string_utils.h"
 #endif
 
+#include <utils/Log.h>
+#undef LOG_TAG
+#define LOG_TAG "PVMp4FFComposerPort"
+
 #define LOG_STACK_TRACE(m) PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE, m);
 #define LOG_DEBUG(m) PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_DEBUG, m);
 #define LOG_ERR(m) PVLOGGER_LOGMSG(PVLOGMSG_INST_REL,iLogger,PVLOGMSG_ERR,m);
@@ -886,6 +890,20 @@ PVMFStatus PVMp4FFComposerPort::GetInputParametersFromPeer(PvmiCapabilityAndConf
         else
         {
             iFormatSpecificConfig.iTimescale = kvp[0].value.uint32_value;
+            aConfig->releaseParameters(NULL, kvp, numParams);
+        }
+        kvp = NULL;
+        numParams = 0;
+
+        status = aConfig->getParametersSync(NULL, (PvmiKeyType)VIDEO_TRACK_TRANSFORM_CUR_QUERY, kvp, numParams, NULL);
+        if (status != PVMFSuccess || numParams != 1)
+        {
+          LOG_DEBUG((0, "PVMp4FFComposerPort::GetInputParametersFromPeer: Track transform not available. Use default"));
+          iFormatSpecificConfig.iTransform = PVMF_MP4FFCN_VIDEO_TRACK_TRANSFORM;
+        }
+        else
+        {
+            iFormatSpecificConfig.iTransform = kvp[0].value.uint32_value;
             aConfig->releaseParameters(NULL, kvp, numParams);
         }
         kvp = NULL;

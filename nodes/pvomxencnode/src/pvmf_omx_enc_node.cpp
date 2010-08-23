@@ -932,6 +932,7 @@ PVMFOMXEncNode::PVMFOMXEncNode(int32 aPriority) :
     iInputTimestampClock.set_clock(iBOSTimestamp, 0);
     iOMXTicksTimestamp = ConvertTimestampIntoOMXTicks(iInputTimestampClock);
 
+    iTransform = 0;
     sendYuvFsi = true;
 
     iNodeTypeId = LOG_ID_UNKNOWN;
@@ -8998,6 +8999,13 @@ uint32 PVMFOMXEncNode::GetOutputNumChannels()
     return (uint32) iAudioEncodeParam.iOutputNumChannels;
 }
 
+/* Get transformation value */
+PVMFStatus PVMFOMXEncNode::GetTrackTransform( uint32& transform)
+{
+  transform = iTransform;
+  return PVMFSuccess;
+}
+
 /////////////////////////AMRENCInterfaceExtension //////////////////////////
 OSCL_EXPORT_REF PVMFStatus PVMFOMXEncNode::SetOutputBitRate(PVMF_GSMAMR_Rate aBitRate)
 {
@@ -9598,6 +9606,14 @@ void PVMFOMXEncNode::DoCapConfigSetParameters(PvmiKvp* aParameters, int aNumElem
     if( aNumElements == 1 && aParameters[0].key != NULL &&
         (oscl_strcmp(aParameters[0].key,"rotated") == 0)  ){
 
+      /*
+       * save value and return here to avoid calling OMX_SetConfig.
+       * Keeping it here for now. This will be removed once
+       * firmware supports rotation for all resolutions
+       */
+      iTransform = aParameters[0].value.uint32_value;
+      return;
+
       OMX_CONFIG_ROTATIONTYPE rtype;
       CONFIG_SIZE_AND_VERSION( rtype );
 
@@ -9615,6 +9631,10 @@ void PVMFOMXEncNode::DoCapConfigSetParameters(PvmiKvp* aParameters, int aNumElem
       Err = OMX_SetConfig(iOMXEncoder, OMX_IndexConfigCommonRotate, &rtype);
       if (Err != OMX_ErrorNone){
         LOGE("OMX_SetConfig for rotate failed");
+
+        //set transform here, the composer node will
+        //read this value.
+        iTransform = aParameters[0].value.uint32_value;
         return;
       }
 

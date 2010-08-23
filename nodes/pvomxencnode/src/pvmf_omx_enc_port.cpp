@@ -18,6 +18,9 @@
 #include "pvmf_omx_enc_port.h"
 #include "pvmf_omx_enc_node.h"
 
+#include <utils/Log.h>
+#undef LOG_TAG
+#define LOG_TAG "PVMFOMXEncPort"
 
 PVMFOMXEncPort::PVMFOMXEncPort(int32 aTag, PVMFNodeInterface* aNode, const char*name)
         : PvmfPortBaseImpl(aTag, aNode, name)
@@ -460,6 +463,31 @@ PVMFStatus PVMFOMXEncPort::GetOutputParametersSync(PvmiKeyType identifier, PvmiK
             else
             {
                 parameters[0].value.uint32_value = height;
+            }
+        }
+    }
+
+    else if (pv_mime_strcmp(identifier, VIDEO_TRACK_TRANSFORM_CUR_QUERY) == 0)
+    {
+      num_parameter_elements = 1;
+      status = AllocateKvp(parameters, (OMX_STRING)VIDEO_TRACK_TRANSFORM_CUR_VALUE, num_parameter_elements);
+      if (status != PVMFSuccess)
+        {
+          PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_ERR, (0, "PVMFOMXEncPort::GetOutputParametersSync: Error - AllocateKvp failed. status=%d", status));
+          return status;
+        }
+      else
+        {
+          uint32 transform;
+          status = iOMXNode->GetTrackTransform( transform );
+          if (status != PVMFSuccess)
+            {
+              LOGE("PVMFOMXEncPort::GetOutputParametersSync: Error - iOMXNode->GetOutputFrameSize failed.");
+              PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_ERR, (0, "PVMFOMXEncPort::GetOutputParametersSync: Error - iOMXNode->GetOutputFrameSize failed. status=%d", status));
+            }
+          else
+            {
+              parameters[0].value.uint32_value = transform;
             }
         }
     }
