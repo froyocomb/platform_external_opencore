@@ -1803,7 +1803,8 @@ void PVPlayer::check_for_live_streaming(status_t s, void *cookie, bool cancelled
     if (s == NO_ERROR && !cancelled) {
         PVPlayer *p = (PVPlayer*)cookie;
         if ( (p->mPlayerDriver->getFormatType() == PVMF_MIME_DATA_SOURCE_RTSP_URL) ||
-             (p->mPlayerDriver->getFormatType() == PVMF_MIME_DATA_SOURCE_MS_HTTP_STREAMING_URL) ) {
+             (p->mPlayerDriver->getFormatType() == PVMF_MIME_DATA_SOURCE_MS_HTTP_STREAMING_URL) ||
+             (p->mPlayerDriver->getFormatType() == PVMF_MIME_DATA_SOURCE_SDP_FILE) ) {
             p->mPlayerDriver->enqueueCommand(new PlayerCheckLiveStreaming( do_nothing, NULL));
         }
     }
