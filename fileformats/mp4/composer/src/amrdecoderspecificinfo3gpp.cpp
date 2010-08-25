@@ -86,7 +86,7 @@ PVA_FF_AMRSpecificAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_AMRSpecificAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 9; // FOR DECODER SPECIFIC STRUCT
 

@@ -89,7 +89,7 @@ PVA_FF_MovieExtendsHeaderAtom::writeMovieFragmentDuration(MP4_AUTHOR_FF_FILE_IO_
 void
 PVA_FF_MovieExtendsHeaderAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 4; // For fragment duration
 

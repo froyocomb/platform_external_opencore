@@ -123,7 +123,7 @@ PVA_FF_MovieFragmentRandomAccessAtom::updateMoofOffset(uint32 offset)
 void
 PVA_FF_MovieFragmentRandomAccessAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     // add size of mfro atom
     size += _pMfroAtom->getSize();

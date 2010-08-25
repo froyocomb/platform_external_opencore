@@ -228,7 +228,7 @@ PVA_FF_MovieAtom::getTimeScale() const
 void
 PVA_FF_MovieAtom::recomputeSize()
 {
-    int32 size = getDefaultSize(); // From base class
+    uint32 size = getDefaultSize(); // From base class
 
     size += _pmovieHeaderAtom->getSize();
 

@@ -292,7 +292,7 @@ PVA_FF_SampleTableAtom::updateLastTSEntry(uint32 ts)
 void
 PVA_FF_SampleTableAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += _ptimeToSampleAtom->getSize();
     size += _psampleSizeAtom->getSize();

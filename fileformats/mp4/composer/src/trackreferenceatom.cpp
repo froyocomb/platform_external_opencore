@@ -69,7 +69,7 @@ PVA_FF_TrackReferenceAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_TrackReferenceAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
     size += _ptrackReferenceTypeAtom->getSize();
     _size = size;
 

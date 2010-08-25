@@ -768,7 +768,7 @@ PVA_FF_SampleDescriptionAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_SampleDescriptionAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
     size += 4; // For _entryCount
 
     if (_psampleEntryVec->size() >= getEntryCount())

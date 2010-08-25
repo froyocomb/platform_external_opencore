@@ -165,7 +165,7 @@ PVA_FF_VisualSampleEntry::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_VisualSampleEntry::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 8; // For reserved and dataRefIndex of PVA_FF_SampleEntry base class
 

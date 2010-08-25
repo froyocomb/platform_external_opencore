@@ -154,7 +154,7 @@ PVA_FF_ChunkOffsetAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_ChunkOffsetAtom::recomputeSize()
 {
-    int size = getDefaultSize();
+    uint32 size = getDefaultSize();
     size += 4; // For entryCount
     size += 4 * getEntryCount();
 

@@ -60,7 +60,7 @@ PVA_FF_MovieHeaderAtom::~PVA_FF_MovieHeaderAtom()
 void
 PVA_FF_MovieHeaderAtom::recomputeSize()
 {
-    int32 size = getDefaultSize(); // Default size of PVA_FF_FullAtom class
+    uint32 size = getDefaultSize(); // Default size of PVA_FF_FullAtom class
     size += sizeof(_creationTime); // Sizes of member variables
     size += sizeof(_modificationTime);
     size += sizeof(_timeScale);

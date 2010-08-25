@@ -122,7 +122,14 @@ class OsclNativeFile : public HeapBase
         void ReadAsyncCancel();
 
     private:
-        int32 OpenFileOrSharedFd(const char *filename, const char *openmode);
+#if (OSCL_HAS_LARGE_FILE_SUPPORT)
+#ifdef ANDROID
+        int32 FindLargeFileOpenMode(uint32 mode);
+        int32           iFileDescriptor;
+#endif
+#endif
+
+        int32 OpenFileOrSharedFd(const char *filename, uint32 mode);
 
         //current open mode
         uint32 iMode;

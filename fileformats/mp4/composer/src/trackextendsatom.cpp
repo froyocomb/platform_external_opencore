@@ -64,7 +64,7 @@ PVA_FF_TrackExtendsAtom::setTrackId(uint32 trackId)
 void
 PVA_FF_TrackExtendsAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     size += 4; // For trackId
     size += 4; // For sample description

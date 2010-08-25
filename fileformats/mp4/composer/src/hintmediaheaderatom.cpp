@@ -104,7 +104,7 @@ PVA_FF_HintMediaHeaderAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_HintMediaHeaderAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
     size += 4; // for max and avf PDU sizes
     size += 12; // for max, avg, and sliding bitrates
 

@@ -200,7 +200,7 @@ PVA_FF_MovieFragmentAtom::setTrackFragmentBaseDataOffset(uint32 trackId, uint32 
 void
 PVA_FF_MovieFragmentAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
     // add size of mfhd atom
     size += _pMfhdAtom->getSize();

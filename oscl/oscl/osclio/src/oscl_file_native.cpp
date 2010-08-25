@@ -48,6 +48,12 @@ OsclNativeFile::OsclNativeFile()
     iSharedFd = -1;
 #endif
 
+#if (OSCL_HAS_LARGE_FILE_SUPPORT)
+#ifdef ANDROID
+    iFileDescriptor = 0;
+#endif
+#endif
+
 }
 
 OsclNativeFile::~OsclNativeFile()
@@ -71,6 +77,11 @@ int32  OsclNativeFile::Open(const OsclFileHandle& aHandle, uint32 mode
         iFile = aHandle.Handle();
     }
 
+#if (OSCL_HAS_LARGE_FILE_SUPPORT)
+#ifdef ANDROID
+    iFileDescriptor = fileno(aHandle.Handle());
+#endif
+#endif
     return 0;
 }
 
@@ -119,8 +130,12 @@ static void OpenModeToString(uint32 mode, char mode_str[4])
 }
 
 int32 OsclNativeFile::OpenFileOrSharedFd(
-    const char *filename, const char *openmode)
+    const char *filename, const uint32 mode)
 {
+
+    char openmode[4];
+    OpenModeToString(mode, openmode);
+
 #ifdef ENABLE_SHAREDFD_PLAYBACK
     int fd;
     long long offset;
@@ -138,6 +153,23 @@ int32 OsclNativeFile::OpenFileOrSharedFd(
     else
 #endif
     {
+
+#if (OSCL_HAS_LARGE_FILE_SUPPORT)
+#ifdef ANDROID
+      int largeFileOpenMode = FindLargeFileOpenMode(mode);
+
+      iFileDescriptor = open(filename, largeFileOpenMode, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+
+      //Populate iFile
+      iFile = fdopen(iFileDescriptor, openmode);
+      if (iFileDescriptor == -1)
+        {
+          return -1;
+        }
+      else
+        return 0;
+#endif
+#endif
         if ((iFile = fopen(filename, openmode)) == NULL)
         {
             return -1;
@@ -160,10 +192,6 @@ int32 OsclNativeFile::Open(const oscl_wchar *filename, uint32 mode
 
         if (!filename || *filename == '\0') return -1; // Null string not supported in fopen, error out
 
-        char openmode[4];
-
-        OpenModeToString(mode, openmode);
-
 #ifdef _UNICODE
         oscl_wchar convopenmode[4];
         if (0 == oscl_UTF8ToUnicode(openmode, oscl_strlen(openmode), convopenmode, 4))
@@ -182,7 +210,7 @@ int32 OsclNativeFile::Open(const oscl_wchar *filename, uint32 mode
         {
             return -1;
         }
-        return OpenFileOrSharedFd(convfilename, openmode);
+        return OpenFileOrSharedFd(convfilename, mode);
 #endif
     }
 
@@ -200,11 +228,7 @@ int32 OsclNativeFile::Open(const char *filename, uint32 mode
 
     if (!filename || *filename == '\0') return -1; // Null string not supported in fopen, error out
 
-    char openmode[4];
-
-    OpenModeToString(mode, openmode);
-
-    return OpenFileOrSharedFd(filename, openmode);
+    return OpenFileOrSharedFd(filename, mode);
 
 }
 
@@ -241,6 +265,11 @@ int32 OsclNativeFile::Close()
         {
             closeret = fclose(iFile);
             iFile = NULL;
+#if (OSCL_HAS_LARGE_FILE_SUPPORT)
+#ifdef ANDROID
+            iFileDescriptor = 0;
+#endif
+#endif
         }
 #ifdef ENABLE_SHAREDFD_PLAYBACK
         else if (iSharedFd >= 0)
@@ -289,9 +318,24 @@ uint32 OsclNativeFile::Read(OsclAny *buffer, uint32 size, uint32 numelements)
     }
 #endif
 
-    if (iFile)
+    int32 result = 0;
+
+#if (OSCL_HAS_LARGE_FILE_SUPPORT)
+#ifdef ANDROID
     {
-        return fread(buffer, OSCL_STATIC_CAST(int32, size), OSCL_STATIC_CAST(int32, numelements), iFile);
+      int32 bytesToBeRead = size * numelements;
+      result = read(iFileDescriptor, buffer, bytesToBeRead);
+      if (result != -1)
+        {
+          return (uint32)(result / size);
+        }
+      return -1;
+    }
+#endif
+#endif
+    {
+      result = fread(buffer, OSCL_STATIC_CAST(int32, size), OSCL_STATIC_CAST(int32, numelements), iFile);
+      return result;
     }
     return 0;
 }
@@ -329,7 +373,19 @@ uint32 OsclNativeFile::Write(const OsclAny *buffer, uint32 size, uint32 numeleme
 #endif
     if (iFile)
     {
-        struct timeval startTimeVal, endTimeVal;
+#if (OSCL_HAS_LARGE_FILE_SUPPORT)
+#ifdef ANDROID
+
+      int32 num_bytes_written = write(iFileDescriptor, buffer, (size * numelements));
+      if (num_bytes_written != -1)
+        {
+          return (uint32)(num_bytes_written / size);
+        }
+      else
+        return -1;
+#endif
+#endif
+       struct timeval startTimeVal, endTimeVal;
         gettimeofday(&startTimeVal, NULL);
         uint32 items = fwrite(buffer, OSCL_STATIC_CAST(int32, size), OSCL_STATIC_CAST(int32, numelements), iFile);
         gettimeofday(&endTimeVal, NULL);
@@ -372,6 +428,13 @@ int32 OsclNativeFile::Seek(TOsclFileOffset offset, Oscl_File::seek_type origin)
             else if (origin == Oscl_File::SEEKEND)
                 seekmode = SEEK_END;
 #if OSCL_HAS_LARGE_FILE_SUPPORT
+#ifdef ANDROID
+            TOsclFileOffset seekResult = lseek64(iFileDescriptor, offset, seekmode);
+            if (seekResult == -1)
+              return -1;
+            else
+              return 0;
+#endif
             return fseeko(iFile, offset, seekmode);
 #else
             return fseek(iFile, offset, seekmode);
@@ -392,6 +455,10 @@ TOsclFileOffset OsclNativeFile::Tell()
     if (iFile)
     {
 #if OSCL_HAS_LARGE_FILE_SUPPORT
+#ifdef ANDROID
+
+      return lseek64(iFileDescriptor, 0, SEEK_CUR);
+#endif
         result = ftello(iFile);
 #else
         result = ftell(iFile);
@@ -421,6 +488,14 @@ int32 OsclNativeFile::EndOfFile()
     if (iSharedFd >= 0)
         return iSharedFilePosition >= iSharedFileSize;
 #endif
+#if OSCL_HAS_LARGE_FILE_SUPPORT
+#ifdef ANDROID
+    if (iFile)
+      {
+        return Tell() < Size() ? 0 : 1;
+      }
+#endif
+#endif
     if (iFile)
         return feof(iFile);
     return 0;
@@ -435,3 +510,39 @@ int32 OsclNativeFile::GetError()
     return 0;
 }
 
+#if (OSCL_HAS_LARGE_FILE_SUPPORT)
+#ifdef ANDROID
+int32 OsclNativeFile::FindLargeFileOpenMode(uint32 mode)
+{
+
+  int32 largeFileOpenMode = 0;
+
+  if (mode & Oscl_File::MODE_APPEND)
+    {
+      largeFileOpenMode = O_CREAT | O_APPEND;
+    }
+  else if (mode & Oscl_File::MODE_READ)
+    {
+      largeFileOpenMode = O_RDONLY;
+    }
+  else if (mode & Oscl_File::MODE_READ_PLUS)
+    {
+      largeFileOpenMode = O_RDWR;
+    }
+  else if (mode & Oscl_File::MODE_READWRITE)
+    {
+      largeFileOpenMode = (O_RDWR | O_CREAT);
+      if (mode & Oscl_File::MODE_APPEND)
+        {
+          largeFileOpenMode |= O_APPEND;
+        }
+      else
+        {
+          largeFileOpenMode |= O_TRUNC;
+        }
+    }
+  largeFileOpenMode |= O_LARGEFILE;
+  return largeFileOpenMode;
+}
+#endif
+#endif

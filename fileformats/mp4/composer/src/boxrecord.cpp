@@ -96,7 +96,7 @@ bool PVA_FF_BoxRecord::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 
 void PVA_FF_BoxRecord::recomputeSize()
 {
-    int32 size = 0;
+    uint32 size = 0;
 
     size += 2;
     size += 2;

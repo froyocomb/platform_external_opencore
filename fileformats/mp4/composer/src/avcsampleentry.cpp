@@ -227,7 +227,7 @@ PVA_FF_AVCSampleEntry::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_AVCSampleEntry::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
 
 // From PVA_FF_SampleEntry base class
     for (int k = 0; k < 6; k++)

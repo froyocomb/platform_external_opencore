@@ -315,7 +315,7 @@ PVA_FF_SampleToChunkAtom::renderToFileStream(MP4_AUTHOR_FF_FILE_IO_WRAP *fp)
 void
 PVA_FF_SampleToChunkAtom::recomputeSize()
 {
-    int32 size = getDefaultSize();
+    uint32 size = getDefaultSize();
     size += 4; // For entryCount
 
     size += 12 * _entryCount; // For each of the 3 4-byte entries
