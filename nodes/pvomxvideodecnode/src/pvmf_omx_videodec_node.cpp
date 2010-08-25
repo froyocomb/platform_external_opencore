@@ -1440,7 +1440,7 @@ OMX_ERRORTYPE PVMFOMXVideoDecNode::EventHandlerProcessing(OMX_OUT OMX_HANDLETYPE
         case OMX_EventError:
         {
 
-            LOGE("Ln %d OMX_EventError nData1 %d nData2 %d", __LINE__, aData1, aData2);
+            LOGE("Ln %d OMX_EventError nData1 0x%x nData2 0x%x", __LINE__, aData1, aData2);
             if (aData1 == (OMX_U32) OMX_ErrorStreamCorrupt)
             {
                 PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_ERR,
