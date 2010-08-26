@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (C) 2010 Code Aurora Forum, All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +34,7 @@
 #include "pvmf_cpmplugin_access_interface_factory.h"
 #include "pvmi_data_stream_interface.h"
 
-OSCL_EXPORT_REF int32 PVFile::Seek(int32 offset, Oscl_File::seek_type origin)
+OSCL_EXPORT_REF int32 PVFile::Seek(TOsclFileOffset offset, Oscl_File::seek_type origin)
 {
     if (iFile)
         return iFile->Seek(offset, origin);
@@ -63,14 +64,14 @@ OSCL_EXPORT_REF int32 PVFile::Seek(int32 offset, Oscl_File::seek_type origin)
     return(-1);//error
 }
 
-OSCL_EXPORT_REF int32 PVFile::Tell()
+OSCL_EXPORT_REF TOsclFileOffset PVFile::Tell()
 {
     if (iFile)
-        return (TOsclFileOffsetInt32)iFile->Tell();
+        return (TOsclFileOffset)iFile->Tell();
     else if (iFilePtr)
-        return (TOsclFileOffsetInt32)iFilePtr->Tell();
+        return (TOsclFileOffset)iFilePtr->Tell();
     else if (iDataStreamAccess)
-        return (int32)(iDataStreamAccess->GetCurrentPointerPosition(iDataStreamSession));
+        return (TOsclFileOffset)(iDataStreamAccess->GetCurrentPointerPosition(iDataStreamSession));
     return (-1);//error
 }
 

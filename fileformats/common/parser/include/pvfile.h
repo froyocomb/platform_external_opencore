@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (C) 2010 Code Aurora Forum, All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,8 +210,8 @@ class PVFile
         }
 
         //Access APIs, same functionality as Oscl File I/O.
-        OSCL_IMPORT_REF int32 Seek(int32 offset, Oscl_File::seek_type origin);
-        OSCL_IMPORT_REF int32 Tell();
+        OSCL_IMPORT_REF int32 Seek(TOsclFileOffset offset, Oscl_File::seek_type origin);
+        OSCL_IMPORT_REF TOsclFileOffset Tell();
         OSCL_IMPORT_REF uint32 Read(OsclAny *buffer, uint32 size, uint32 numelements) ;
         OSCL_IMPORT_REF int32 Close();
         OSCL_IMPORT_REF int32 Flush();

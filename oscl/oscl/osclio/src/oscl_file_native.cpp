@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (C) 2010 Code Aurora Forum, All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -430,8 +431,10 @@ int32 OsclNativeFile::Seek(TOsclFileOffset offset, Oscl_File::seek_type origin)
 #if OSCL_HAS_LARGE_FILE_SUPPORT
 #ifdef ANDROID
             TOsclFileOffset seekResult = lseek64(iFileDescriptor, offset, seekmode);
-            if (seekResult == -1)
+            if (seekResult == -1){
+              LOGE("OsclNativeFile::Seek lseek64 failed");
               return -1;
+            }
             else
               return 0;
 #endif
@@ -456,12 +459,16 @@ TOsclFileOffset OsclNativeFile::Tell()
     {
 #if OSCL_HAS_LARGE_FILE_SUPPORT
 #ifdef ANDROID
-
-      return lseek64(iFileDescriptor, 0, SEEK_CUR);
+      result = lseek64(iFileDescriptor, 0, SEEK_CUR);
+      if( result == -1 ){
+        LOGE("OsclNativeFile::Tell lseek64 failed");
+        return -1;
+      }
+      else return result;
 #endif
-        result = ftello(iFile);
+      result = ftello(iFile);
 #else
-        result = ftell(iFile);
+      result = ftell(iFile);
 #endif
     }
     return result;
