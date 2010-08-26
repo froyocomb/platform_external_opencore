@@ -184,7 +184,7 @@ class AtomUtils
         OSCL_IMPORT_REF static void   seekFromStart(MP4_FF_FILE *fp, uint32 n);
         OSCL_IMPORT_REF static void   seekToEnd(MP4_FF_FILE *fp);
         OSCL_IMPORT_REF static void   rewindFilePointerByN(MP4_FF_FILE *fp, uint32 n);
-        OSCL_IMPORT_REF static int32  getCurrentFilePosition(MP4_FF_FILE *fp);
+        OSCL_IMPORT_REF static uint32  getCurrentFilePosition(MP4_FF_FILE *fp);
         OSCL_IMPORT_REF static int32  OpenMP4File(OSCL_wString& filename, uint32 mode, MP4_FF_FILE *fp);
         OSCL_IMPORT_REF static int32  CloseMP4File(MP4_FF_FILE *fp);
         OSCL_IMPORT_REF static int32  Flush(MP4_FF_FILE *fp);

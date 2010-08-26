@@ -775,7 +775,7 @@ OSCL_EXPORT_REF void AtomUtils::rewindFilePointerByN(MP4_FF_FILE *fp, uint32 n)
     fp->_pvfile.Seek((-1 *(int32) n), Oscl_File::SEEKCUR);
 }
 
-OSCL_EXPORT_REF int32 AtomUtils::getCurrentFilePosition(MP4_FF_FILE *fp)
+OSCL_EXPORT_REF uint32 AtomUtils::getCurrentFilePosition(MP4_FF_FILE *fp)
 {
     return (fp->_pvfile.Tell());
 }
