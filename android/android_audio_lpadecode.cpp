@@ -1005,6 +1005,16 @@ int AndroidAudioLPADecode::audout_thread_func()
         } else {
             LOGV("AudioSink Opened a session(%d)",sessionId);
             bIsAudioRouted = true;
+
+            if ( ioctl(afd, AUDIO_START, 0) < 0 ) {
+                LOGE("Failed to start the driver");
+                close(afd);
+                afd = -1;
+                nRetVal = -1;
+            } else {
+                LOGV("pcm_dec: AUDIO_START Successful");
+                iHwState = STATE_HW_STARTED;
+            }
         }
 
         if ( -1 == nRetVal ) {
@@ -1019,16 +1029,6 @@ int AndroidAudioLPADecode::audout_thread_func()
                 }
                 continue;
             }
-        }
-
-        if ( ioctl(afd, AUDIO_START, 0) < 0 ) {
-            LOGE("Failed to start the driver");
-            close(afd);
-            afd = -1;
-            nRetVal = -1;
-        } else {
-            LOGV("pcm_dec: AUDIO_START Successful");
-            iHwState = STATE_HW_STARTED;
         }
     }
 
