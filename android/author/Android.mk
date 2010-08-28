@@ -43,6 +43,10 @@ else
     endif
 endif
 
+ifeq ($(TARGET_BOARD_PLATFORM),msm8660)
+   LOCAL_CFLAGS += -DNTENCODE_8660
+endif
+
 LOCAL_ARM_MODE := arm
 
 LOCAL_C_INCLUDES := $(PV_INCLUDES) \

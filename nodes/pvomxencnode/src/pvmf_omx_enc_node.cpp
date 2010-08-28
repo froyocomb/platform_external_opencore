@@ -91,6 +91,8 @@ static const char PVOMXENCMETADATA_SEMICOLON[] = ";";
 static const char LOG_ID_AUDIO_AMRNB[]  = "Audio_AMRNB";
 static const char LOG_ID_AUDIO_AMRWB[]  = "Audio_AMRWB";
 static const char LOG_ID_AUDIO_AAC[]  = "Audio_AAC";
+static const char LOG_ID_AUDIO_QCELP[]  = "Audio_QCELP";
+static const char LOG_ID_AUDIO_EVRC[]  = "Audio_EVRC";
 static const char LOG_ID_VIDEO_H263[] = "Video_H263";
 static const char LOG_ID_VIDEO_M4V[] =  "Video_M4V";
 static const char LOG_ID_VIDEO_AVC[] =  "Video_AVC";
@@ -721,6 +723,8 @@ PVMFOMXEncNode::PVMFOMXEncNode(int32 aPriority) :
              iCapability.iOutputFormatCapability.push_back(PVMF_MIME_ADTS);
              iCapability.iOutputFormatCapability.push_back(PVMF_MIME_ADIF);
              iCapability.iOutputFormatCapability.push_back(PVMF_MIME_MPEG4_AUDIO);
+             iCapability.iOutputFormatCapability.push_back(PVMF_MIME_QCELP);
+             iCapability.iOutputFormatCapability.push_back(PVMF_MIME_EVRC);
 
              // video input
              iCapability.iInputFormatCapability.push_back(PVMF_MIME_YUV420);
@@ -3460,6 +3464,14 @@ bool PVMFOMXEncNode::NegotiateAudioComponentParameters()
     {
         DesiredPortFormat = OMX_AUDIO_CodingAAC;
     }
+    else if (iOutFormat == PVMF_MIME_QCELP)
+    {
+        DesiredPortFormat = OMX_AUDIO_CodingQCELP13;
+    }
+    else if (iOutFormat == PVMF_MIME_EVRC)
+    {
+        DesiredPortFormat = OMX_AUDIO_CodingEVRC;
+    }
     else
     {
         DesiredPortFormat = OMX_AUDIO_CodingUnused;
@@ -3555,6 +3567,14 @@ bool PVMFOMXEncNode::NegotiateAudioComponentParameters()
     {
         iParamPort.format.audio.eEncoding = OMX_AUDIO_CodingAAC;
     }
+    else if (iOutFormat == PVMF_MIME_QCELP)
+    {
+        DesiredPortFormat = OMX_AUDIO_CodingQCELP13;
+    }
+    else if (iOutFormat == PVMF_MIME_EVRC)
+    {
+        DesiredPortFormat = OMX_AUDIO_CodingEVRC;
+    }
 
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                     (0, "PVMFOMXEncNode-%s::NegotiateAudioComponentParameters() Outport buffers %d,size %d", iNodeTypeId, iNumOutputBuffers, iOMXComponentOutputBufferSize));
@@ -3584,6 +3604,14 @@ bool PVMFOMXEncNode::NegotiateAudioComponentParameters()
              (iOutFormat == PVMF_MIME_MPEG4_AUDIO))
     {
         status = SetAACEncoderParameters();
+    }
+    else if (iOutFormat == PVMF_MIME_QCELP)
+    {
+        status = SetQCELPEncoderParameters();
+    }
+    else if (iOutFormat == PVMF_MIME_EVRC)
+    {
+        status = SetEVRCEncoderParameters();
     }
 
 
@@ -3761,6 +3789,71 @@ bool PVMFOMXEncNode::SetAACEncoderParameters()
 
     return true;
 }
+
+bool PVMFOMXEncNode::SetQCELPEncoderParameters()
+{
+
+    OMX_ERRORTYPE Err = OMX_ErrorNone;
+    OMX_AUDIO_PARAM_QCELP13TYPE Qcelp13Type;
+
+    CONFIG_SIZE_AND_VERSION(Qcelp13Type);
+    Qcelp13Type.nPortIndex = iOutputPortIndex;
+
+    Err = OMX_GetParameter(iOMXEncoder, OMX_IndexParamAudioQcelp13, &Qcelp13Type);
+    if (Err != OMX_ErrorNone)
+    {
+        PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                        (0, "PVMFOMXEncNode-%s::SetQcelpEncoderParameters - Problem getting Qcelp13 parameters in output port %d ", iNodeTypeId, iOutputPortIndex));
+        return false;
+    }
+    PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_DEBUG,
+                        (0, "PVMFOMXEncNode-%s::SetQcelpEncoderParameters - default param minrate %d maxrate %d cdmarate %d", iNodeTypeId, Qcelp13Type.nMinBitRate, Qcelp13Type.nMaxBitRate, Qcelp13Type.eCDMARate));
+    //Set the default got from OMX
+    Qcelp13Type.nChannels = iAudioEncodeParam.iOutputNumChannels;
+
+    Err = OMX_SetParameter(iOMXEncoder, OMX_IndexParamAudioQcelp13, &Qcelp13Type);
+    if (Err != OMX_ErrorNone)
+    {
+        PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                        (0, "PVMFOMXEncNode-%s::SetQcelpEncoderParameters - Problem setting Qcelp13 parameters in output port %d ", iNodeTypeId, iOutputPortIndex));
+        return false;
+    }
+
+    return true;
+}
+
+bool PVMFOMXEncNode::SetEVRCEncoderParameters()
+{
+
+    OMX_ERRORTYPE Err = OMX_ErrorNone;
+    OMX_AUDIO_PARAM_EVRCTYPE EvrcType;
+
+    CONFIG_SIZE_AND_VERSION(EvrcType);
+    EvrcType.nPortIndex = iOutputPortIndex;
+
+    Err = OMX_GetParameter(iOMXEncoder, OMX_IndexParamAudioEvrc, &EvrcType);
+    if (Err != OMX_ErrorNone)
+    {
+        PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                        (0, "PVMFOMXEncNode-%s::SetEvrcEncoderParameters - Problem getting EVRC parameters in output port %d ", iNodeTypeId, iOutputPortIndex));
+        return false;
+    }
+    PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_DEBUG,
+                        (0, "PVMFOMXEncNode-%s::SetEvrcEncoderParameters - default param minrate %d maxrate %d cdmarate %d", iNodeTypeId, EvrcType.nMinBitRate, EvrcType.nMaxBitRate, EvrcType.eCDMARate));
+    //Set the default got from OMX
+    EvrcType.nChannels = iAudioEncodeParam.iOutputNumChannels;
+
+    Err = OMX_SetParameter(iOMXEncoder, OMX_IndexParamAudioEvrc, &EvrcType);
+    if (Err != OMX_ErrorNone)
+    {
+        PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                        (0, "PVMFOMXEncNode-%s::SetEvrcEncoderParameters - Problem setting Qcelp13 parameters in output port %d ", iNodeTypeId, iOutputPortIndex));
+        return false;
+    }
+
+    return true;
+}
+
 
 bool PVMFOMXEncNode::SetDefaultCapabilityFlags()
 {
@@ -5893,6 +5986,16 @@ void PVMFOMXEncNode::DoPrepare(PVMFOMXEncNodeCommand& aCmd)
                 Role = (OMX_STRING)"audio_encoder.aac";
                 iNodeTypeId = LOG_ID_AUDIO_AAC;
             }
+            else if (iOutFormat == PVMF_MIME_QCELP)
+            {
+                Role = (OMX_STRING)"audio_encoder.qcelp13";
+                iNodeTypeId = LOG_ID_AUDIO_QCELP;
+            }
+            else if (iOutFormat == PVMF_MIME_EVRC)
+            {
+                Role = (OMX_STRING)"audio_encoder.evrc";
+                iNodeTypeId = LOG_ID_AUDIO_EVRC;
+	    }
             else
             {
                 // Illegal codec specified.
@@ -6078,7 +6181,8 @@ void PVMFOMXEncNode::DoPrepare(PVMFOMXEncNodeCommand& aCmd)
 
             // find out about parameters
             if ((iOutFormat == PVMF_MIME_AMR_IETF) || (iOutFormat == PVMF_MIME_AMRWB_IETF) || (iOutFormat == PVMF_MIME_AMR_IF2) ||
-                    (iOutFormat == PVMF_MIME_ADIF) || (iOutFormat == PVMF_MIME_ADTS) || (iOutFormat == PVMF_MIME_MPEG4_AUDIO))
+                    (iOutFormat == PVMF_MIME_ADIF) || (iOutFormat == PVMF_MIME_ADTS) || (iOutFormat == PVMF_MIME_MPEG4_AUDIO) ||
+		    (iOutFormat == PVMF_MIME_QCELP) || (iOutFormat == PVMF_MIME_EVRC))
             {
                 if (!NegotiateAudioComponentParameters())
                 {
@@ -8821,6 +8925,14 @@ PVMFStatus PVMFOMXEncNode::SetCodecType(PVMFFormatType aCodec)
     else if (aCodec == PVMF_MIME_ADTS ||
              aCodec == PVMF_MIME_ADIF ||
              aCodec == PVMF_MIME_MPEG4_AUDIO)
+    {
+        iOutFormat = aCodec;
+    }
+    else if(aCodec == PVMF_MIME_QCELP)
+    {
+        iOutFormat = aCodec;
+    }
+    else if(aCodec == PVMF_MIME_EVRC)
     {
         iOutFormat = aCodec;
     }

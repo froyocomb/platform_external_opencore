@@ -543,7 +543,10 @@ PVMFStatus AndroidAudioInput::getParametersSync(PvmiMIOSession session,
     if( pv_mime_strcmp(identifier, OUTPUT_FORMATS_CAP_QUERY) == 0 ||
             pv_mime_strcmp(identifier, OUTPUT_FORMATS_CUR_QUERY) == 0)
     {
-#if defined SURF8K || defined SURF7x30
+#if defined NTENCODE_8660
+        // No. of Supported audio format types
+        num_parameter_elements = 1;
+#elif defined SURF8K || defined SURF7x30
         // No. of Supported audio format types
         num_parameter_elements = 4;
 #else
@@ -560,6 +563,7 @@ PVMFStatus AndroidAudioInput::getParametersSync(PvmiMIOSession session,
         {
             // Supported audio format types
             parameters[0].value.pChar_value = (char*)PVMF_MIME_PCM16;
+#ifndef NTENCODE_8660
             parameters[1].value.pChar_value = (char*)PVMF_MIME_QCELP;
             parameters[2].value.pChar_value = (char*)PVMF_MIME_EVRC;
 #ifdef SURF7x30
@@ -572,6 +576,7 @@ PVMFStatus AndroidAudioInput::getParametersSync(PvmiMIOSession session,
 #else
             parameters[3].value.pChar_value = (char*)PVMF_MIME_AMR_IETF;
             parameters[4].value.pChar_value = (char*)PVMF_MIME_MPEG4_AUDIO;
+#endif
 #endif
 #endif
         }
@@ -1284,10 +1289,19 @@ int AndroidAudioInput::audin_thread_func() {
 
     if (iAudioFormatType == android::AudioSystem::PCM_16_BIT)
     {
+#ifndef NTENCODE_8660
         if (iAudioNumChannels > 1)
             kBufferSize = 4096; //Buffer Size for stereo channels
         else
             kBufferSize = 2048; //Buffer Size for mono channels
+#else
+        // On 8660 buffer size needs to be in Multiple of 480.
+        // 2400 is the size used for MONO.
+        if (iAudioNumChannels > 1)
+            kBufferSize = 480 * 5 * iAudioNumChannels; //Buffer Size for stereo channels
+        else
+            kBufferSize = 480 * 5 * iAudioNumChannels; //Buffer Size for mono channels
+#endif
     }
     // if format is AMR then set the corresponding map type from audiosystem
     else if (iAudioFormatType == android::AudioSystem::AMR_NB)
