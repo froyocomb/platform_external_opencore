@@ -41,7 +41,7 @@ MovieExtendsAtom::MovieExtendsAtom(MP4_FF_FILE *fp,
 
     PV_MP4_FF_NEW(fp->auditCB, trackExtendsAtomVecType, (), _pTrackExtendsAtomVec);
 
-    uint32 count = size - DEFAULT_ATOM_SIZE;
+    int32 count = size - DEFAULT_ATOM_SIZE;
 
     if (_success)
     {
@@ -87,7 +87,21 @@ MovieExtendsAtom::MovieExtendsAtom(MP4_FF_FILE *fp,
                 count -= pTrackExtendsAtom->getSize();
                 _pTrackExtendsAtomVec->push_back(pTrackExtendsAtom);
             }
+            else
+            {
+                //invalid atom type
+                _success = false;
+                _mp4ErrorCode = READ_MOVIE_EXTENDS_ATOM_FAILED;
+                break;
+            }
 
+        }
+
+        if (count < 0)
+        {
+            //count can't be negative. Something went wrong during the read.
+            _success = false;
+            _mp4ErrorCode = READ_MOVIE_EXTENDS_ATOM_FAILED;
         }
     }
     else
