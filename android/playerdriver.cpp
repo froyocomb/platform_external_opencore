@@ -2228,3 +2228,8 @@ void PlayerDriver::PausePosition()
     LOGE("PlayerDriver Pause position = %d", profiling.iPosValue.millisec_value);
     LOGE("========================================");
 }
+
+status_t PVPlayer::setParameters(const String8& params)
+{
+    return NO_ERROR;
+}
