@@ -3204,7 +3204,7 @@ bool PVMFOMXEncNode::NegotiateAudioComponentParameters()
     {
         // get port parameters, and determine if it is input or output
         // if there are more than 2 ports, the first one we encounter that has input direction is picked
-        iParamPort.format.audio.cMIMEType = NULL;
+
 
         CONFIG_SIZE_AND_VERSION(iParamPort);
         //port
@@ -3241,7 +3241,7 @@ bool PVMFOMXEncNode::NegotiateAudioComponentParameters()
     {
         // get port parameters, and determine if it is input or output
         // if there are more than 2 ports, the first one we encounter that has output direction is picked
-        iParamPort.format.audio.cMIMEType = NULL;
+
 
         CONFIG_SIZE_AND_VERSION(iParamPort);
         //port
@@ -3335,7 +3335,7 @@ bool PVMFOMXEncNode::NegotiateAudioComponentParameters()
 
 
 
-    iParamPort.format.audio.cMIMEType = NULL;
+
     CONFIG_SIZE_AND_VERSION(iParamPort);
     iParamPort.nPortIndex = iInputPortIndex;
     Err = OMX_GetParameter(iOMXEncoder, OMX_IndexParamPortDefinition, &iParamPort);
@@ -3505,7 +3505,7 @@ bool PVMFOMXEncNode::NegotiateAudioComponentParameters()
         return false;
     }
 
-    iParamPort.format.audio.cMIMEType = NULL;
+
     //Port 1 for output port
     CONFIG_SIZE_AND_VERSION(iParamPort);
     iParamPort.nPortIndex = iOutputPortIndex;
