@@ -464,6 +464,7 @@ TOsclFileOffset OsclNativeFile::Tell()
         LOGE("OsclNativeFile::Tell lseek64 failed");
         return -1;
       }
+      else return result;
 #endif
       result = ftello(iFile);
 #else
