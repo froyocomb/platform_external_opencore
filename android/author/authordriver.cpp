@@ -1316,7 +1316,7 @@ int AuthorDriver::authorThread()
 static int setVideoBitrateHeuristically(int videoWidth)
 {
     int bitrate_setting = 192000;
-    char value[PROPERTY_VALUE_MAX];
+
     if (videoWidth >= 480) {
         bitrate_setting = 6000000;
     } else if (videoWidth >= 352) {
@@ -1324,9 +1324,7 @@ static int setVideoBitrateHeuristically(int videoWidth)
     } else if (videoWidth >= 320) {
         bitrate_setting = 320000;
     }
-    if (property_get("cam.video.bitrate", value, NULL) > 0 && atoi(value) > 0) {
-        bitrate_setting = atoi(value);
-    }
+
     return bitrate_setting;
 }
 
@@ -1536,9 +1534,16 @@ void AuthorDriver::CommandCompleted(const PVCmdResponse& aResponse)
                     mVideo_bitrate_setting = setVideoBitrateHeuristically(mVideoWidth);
                     LOGW("Video encoding bit rate is set to %d bps", mVideo_bitrate_setting);
                 }
+
                 char value[PROPERTY_VALUE_MAX];
-                if (!property_get("cam.video.bitrate", value, 0))
-                    clipVideoBitrate();
+                if ( property_get("cam.video.bitrate", value, 0) > 0 && atoi( value ) > 0){
+                  LOGV("Setting bit rate to %d", atoi( value ));
+                  mVideo_bitrate_setting = atoi( value );
+                }
+                else {
+                  clipVideoBitrate();
+                }
+
                 config->SetNumLayers(1);
                 config->SetOutputBitRate(0, mVideo_bitrate_setting);
                 config->SetOutputFrameSize(0, mVideoWidth, mVideoHeight);
