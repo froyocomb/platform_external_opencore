@@ -1102,6 +1102,20 @@ void AuthorDriver::handleSetCameraParameters(set_camera_parameters_command *ac)
 
     String8 p(ac->params());
 
+    /*
+     * TODO -
+     * Providing temporary option to set rotation value
+     * value from command line. Needs to be removed once
+     * the app can send rotation values.
+     * the value must be one of 0,90,180,270
+     */
+    char value[PROPERTY_VALUE_MAX];
+    if (property_get("cam.video.rotation", value, 0) > 0 && atoi(value) >= 0) {
+      CameraParameters cp(ac->params());
+      cp.set("rotation", value );
+      p = cp.flatten( );
+    }
+
     if(mVideoInputMIO){
         ret = ((AndroidCameraInput *)mVideoInputMIO)->SetCameraParameters(p);
     }
