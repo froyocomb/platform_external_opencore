@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009-2010, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,14 @@
 #define MOVIE_FRAG_IDX_SIZE 256
 
 class AVCSampleEntry;
+
+struct TrackIndex
+{
+    uint32 _trackID;
+    uint32 _Index;
+};
+
+typedef Oscl_Vector<TrackIndex*, OsclMemAllocator> TrackIndexVecType;
 
 class Mpeg4File : public IMpeg4File, public Parentable
 {
@@ -1322,6 +1330,17 @@ class Mpeg4File : public IMpeg4File, public Parentable
 	}
 
     private:
+        uint32 getIndexForTrackID(uint32 aTrackID)
+        {
+            for (uint32 i = 0; i < _moofFragmentIdx->size(); i++)
+            {
+                if ((*_moofFragmentIdx)[i]->_trackID == aTrackID)
+                {
+                    return i;
+                }
+            }
+            return 0;
+        }
         void ReserveMemoryForLangCodeVector(Oscl_Vector<uint16, OsclMemAllocator> &iLangCode, int32 capacity, int32 &leavecode);
         void ReserveMemoryForValuesVector(Oscl_Vector<OSCL_wHeapString<OsclMemAllocator>, OsclMemAllocator> &iValues, int32 capacity, int32 &leavecode);
         OSCL_wHeapString<OsclMemAllocator> _emptyString;
@@ -1352,6 +1371,7 @@ class Mpeg4File : public IMpeg4File, public Parentable
         MfraOffsetAtom *_pMfraOffsetAtom;
         uint32 _ptrMoofEnds;
         uint32 _parsing_mode;
+        TrackIndexVecType *_moofFragmentIdx;
         uint32 _movieFragmentIdx[MOVIE_FRAG_IDX_SIZE];
         uint32 _peekMovieFragmentIdx[MOVIE_FRAG_IDX_SIZE];
         TrackDurationContainer *_pTrackDurationContainer;
