@@ -3413,6 +3413,27 @@ PVMFStatus PVMp4FFComposerNode::SendProgressReport(uint32 aTimestamp)
 //////////////////////////////////////////////////////////////////////////////////
 PVMFStatus PVMp4FFComposerNode::CheckMaxFileSize(uint32 aFrameSize)
 {
+
+   /*
+    * Below check added to limit recording to 4GB.
+    * This check will be performed even if iMaxFileSizeEnabled is on/off.
+    */
+    uint64 fileSize = 0;
+    uint32 metaDataSize = 0;
+    uint32 mediaDataSize = 0;
+
+    iMpeg4File->getTargetFileSize(metaDataSize, mediaDataSize);
+
+    fileSize = mediaDataSize;
+    fileSize += metaDataSize;
+    fileSize += aFrameSize;
+
+    if( fileSize >= 0xffffffff ){
+      LOGW("FileSize exceeds 4gb, stopping record");
+      iMaxReachedEvent = PVMF_COMPOSER_MAXFILESIZE_REACHED;
+      return PVMFPending;
+    }
+
     if (iMaxFileSizeEnabled)
     {
         uint32 metaDataSize = 0;
@@ -3427,7 +3448,7 @@ PVMFStatus PVMp4FFComposerNode::CheckMaxFileSize(uint32 aFrameSize)
             // flush() on the writer from this very same
             // thread. Instead, we use a marker to report an event to
             // the author node next time a new fragment is processed.
-            LOG_ERR((0, "PVMp4FFComposerNode::CheckMaxFileSize MAX_FILESIZE Reached"));
+            LOGE("PVMp4FFComposerNode::CheckMaxFileSize MAX_FILESIZE Reached");
             iMaxReachedEvent = PVMF_COMPOSER_MAXFILESIZE_REACHED;
 #else
             // Finalized output file
@@ -3466,7 +3487,7 @@ PVMFStatus PVMp4FFComposerNode::CheckMaxDuration(uint32 aTimestamp)
             // flush() on the writer from this very same
             // thread. Instead, we use a marker to report an event to
             // the author node next time a new fragment is processed.
-            LOG_ERR((0, "PVMp4FFComposerNode::CheckMaxDuration MAX_DURATION Reached"));
+            LOGE("PVMp4FFComposerNode::CheckMaxDuration MAX_DURATION Reached");
             iMaxReachedEvent = PVMF_COMPOSER_MAXDURATION_REACHED;
 #else
 
