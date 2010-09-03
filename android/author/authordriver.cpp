@@ -29,6 +29,11 @@
 #include "pv_omxcore.h"
 #include <sys/prctl.h>
 #include "pvmf_composer_size_and_duration.h"
+#include "pvmf_basic_errorinfomessage.h"
+#include <utils/Log.h>
+#undef LOG_TAG
+#define LOG_TAG "AuthorDriver"
+
 #include "android_camera_input.h"
 
 using namespace android;
@@ -280,6 +285,7 @@ void AuthorDriver::Run()
 
     case AUTHOR_PREPARE: handlePrepare(ac); break;
     case AUTHOR_START: handleStart(ac); break;
+    case AUTHOR_LIVESNAPSHOT: handleLiveSnapshot(ac); break;
     case AUTHOR_STOP: handleStop(ac); break;
     case AUTHOR_CLOSE: handleClose(ac); break;
     case AUTHOR_RESET: handleReset(ac); break;
@@ -1147,6 +1153,23 @@ void AuthorDriver::handleStart(author_command *ac)
     OSCL_FIRST_CATCH_ANY(error, commandFailed(ac));
 }
 
+void AuthorDriver::handleLiveSnapshot(author_command *ac)
+{
+    LOGV("handleLiveSnapshot");
+    PVMFStatus ret = PVMFSuccess;
+    int error = 0;
+    if(mVideoInputMIO) {
+        ret = ((AndroidCameraInput *)mVideoInputMIO)->takeLiveSnapshot(ac);
+    }
+
+    if(ret == PVMFSuccess) {
+        FinishNonAsyncCommand(ac);
+    } else {
+        LOGE("Ln %d handleLiveSnapshot error", __LINE__);
+        commandFailed(ac);
+    }
+}
+
 void AuthorDriver::handleStop(author_command *ac)
 {
     LOGV("handleStop");
@@ -1744,6 +1767,28 @@ void AuthorDriver::HandleInformationalEvent(const PVAsyncInformationalEvent& aEv
              event_type, PVMFStatusToString(event_type));
     } else {
         LOGV("HandleInformationalEvent(%d)", event_type);
+    }
+
+    PVInterface * eventhdr = aEvent.GetEventExtensionInterface( );
+    PVMFBasicErrorInfoMessage *eventmsg = NULL;
+    eventmsg = OSCL_STATIC_CAST( PVMFBasicErrorInfoMessage*, eventhdr );
+    int32 eCode = -1;
+    PVUuid aUid;
+    if( eventmsg ){
+        eventmsg->GetCodeUUID( eCode, aUid );
+        if( eCode == PVMFInfoDataReady ){
+            OsclAny * data = NULL;
+            aEvent.GetEventData( data );
+            AndroidCameraInputSnapshotData * sData = ( AndroidCameraInputSnapshotData * )data;
+            if( sData == NULL || sData->mImage == NULL ){
+                LOGE("Got NULL image data");
+            }
+            else {
+                LOGV("Got Image data in author driver");
+                mListener->dataCallback(MEDIA_RECORDER_MSG_COMPRESSED_IMAGE, sData->mImage );
+            }
+            return;
+        }
     }
 
     mListener->notify(

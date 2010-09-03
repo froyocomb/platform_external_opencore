@@ -307,6 +307,22 @@ status_t PVMediaRecorder::start()
     return mAuthorDriverWrapper->enqueueCommand(ac, 0, 0);
 }
 
+status_t PVMediaRecorder::takeLiveSnapshot()
+{
+    LOGV("PVMediaRecorder::takeLiveSnapshot");
+    if (mAuthorDriverWrapper == NULL) {
+        LOGE("author driver wrapper is not initialized yet");
+        return UNKNOWN_ERROR;
+    }
+
+    author_command *ac = new author_command(AUTHOR_LIVESNAPSHOT);
+    if (ac == NULL) {
+        LOGE("failed to construct an author command");
+        return UNKNOWN_ERROR;
+    }
+    return mAuthorDriverWrapper->enqueueCommand(ac, 0, 0);
+}
+
 // Make sure that stop also calls PV author engine's Reset()
 // and Close() so that its internal state is maintained correctly
 status_t PVMediaRecorder::stop()

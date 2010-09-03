@@ -60,6 +60,11 @@
 #undef LOG_TAG
 #define LOG_TAG  "PVAuthorEngine"
 
+#include "pvmf_basic_errorinfomessage.h"
+#include <utils/Log.h>
+#undef LOG_TAG
+#define LOG_TAG "PVAuthorEngine"
+
 // Define entry point for this DLL
 OSCL_DLL_ENTRY_POINT_DEFAULT()
 
@@ -542,6 +547,25 @@ void PVAuthorEngine::HandleNodeInformationalEvent(const PVMFAsyncEvent& aEvent)
 {
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                     (0, "PVAuthorEngine::HandleNodeInformationalEvent"));
+
+    if(aEvent.GetEventType( ) == PVMFInfoEvent ){
+        PVInterface * eventhdr = aEvent.GetEventExtensionInterface( );
+        PVMFBasicErrorInfoMessage *eventmsg = NULL;
+        eventmsg = OSCL_STATIC_CAST( PVMFBasicErrorInfoMessage*, eventhdr );
+        int32 eCode = -1;
+        PVUuid aUid;
+        if( eventmsg ){
+            eventmsg->GetCodeUUID( eCode, aUid );
+            if( eCode == PVMFInfoDataReady ){
+                PVAsyncInformationalEvent event(aEvent.GetEventType(),
+                                                NULL,
+                                                eventmsg,
+                                                aEvent.GetEventData());
+                                                iInfoEventObserver->HandleInformationalEvent(event);
+                return;
+            }
+        }
+    }
 
     switch (aEvent.GetEventType())
     {

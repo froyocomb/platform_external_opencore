@@ -139,6 +139,7 @@ enum author_command_type {
     AUTHOR_SET_CAMERA_PARAMETERS,
     AUTHOR_PREPARE,
     AUTHOR_START,
+    AUTHOR_LIVESNAPSHOT,
     AUTHOR_STOP,
     AUTHOR_RESET,
     AUTHOR_CLOSE,
@@ -289,6 +290,7 @@ public:
     void handleSetCameraParameters(set_camera_parameters_command *ac);
     void handlePrepare(author_command *ac);
     void handleStart(author_command *ac);
+    void handleLiveSnapshot(author_command *ac);
     void handleStop(author_command *ac);
     void handleReset(author_command *ac);
     void handleClose(author_command *ac);

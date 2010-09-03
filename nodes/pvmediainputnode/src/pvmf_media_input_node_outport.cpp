@@ -45,6 +45,10 @@
 #define LOG_ERR(m) PVLOGGER_LOGMSG(PVLOGMSG_INST_REL,iLogger,PVLOGMSG_ERR,m);
 #define LOGDATATRAFFIC(m) PVLOGGER_LOGMSG(PVLOGMSG_INST_REL,iDataPathLogger,PVLOGMSG_INFO,m);
 
+#include <utils/Log.h>
+#undef LOG_TAG
+#define LOG_TAG "PVMediaInputNodeOutport"
+
 ////////////////////////////////////////////////////////////////////////////
 PvmfMediaInputNodeOutPort::PvmfMediaInputNodeOutPort(PvmfMediaInputNode* aNode, const char* aName)
         : OsclTimerObject(OsclActiveObject::EPriorityNominal, "PvmfMediaInputNodeOutPort")
@@ -266,6 +270,14 @@ PVMFCommandId PvmfMediaInputNodeOutPort::writeAsync(uint8 format_type, int32 for
         {
             switch (format_index)
             {
+                 case PVMI_MEDIAXFER_FMT_INDEX_INFO_EVENT:
+                 {
+                     LOGV("Sending notification to media input node from outport");
+                     iNode->ReportInfoEvent(PVMFInfoEvent,
+                                            (OsclAny *)(data_header_info.private_data_ptr),
+                                            PVMFInfoDataReady);
+                     break;
+                 }
                     //added for timed text support
                     //here it handles the configuration information for timed text and passes it to the composernode
 
