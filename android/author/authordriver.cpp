@@ -1455,18 +1455,27 @@ void AuthorDriver::clipVideoBitrate()
     }
 
     /* Set bitrate to 14mbps for 7x30 720p
+     * and 20mbps for 8660 1080p
      * recording. Have to make the change here
      * as app cannot have target specific checks
-     * and 14mbps is not supported on all targets.
+     * and 14/20mbps are not supported on all targets.
      */
     char value[PROPERTY_VALUE_MAX];
     property_get("ro.product.device",value,"0");
 
     if(strcmp("msm7630_surf",value) == 0 ){
-      if( mVideoHeight == 720 ){
+      if( mVideoHeight == 720 || mVideoWidth == 720){
+        LOGV("Setting mVideo_bitrate_setting to 14000000");
         mVideo_bitrate_setting = 14000000;
       }
     }
+    else if(strcmp("msm8660_surf",value) == 0 ){
+      if( mVideoWidth == 1080 || mVideoHeight == 1080){
+        LOGV("Setting mVideo_bitrate_setting to 20000000");
+        mVideo_bitrate_setting = 20000000;
+      }
+    }
+
 }
 
 void AuthorDriver::clipVideoFrameRate()
