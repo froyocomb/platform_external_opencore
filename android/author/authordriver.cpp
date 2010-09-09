@@ -779,6 +779,9 @@ void AuthorDriver::handleSetVideoFrameRate(set_video_frame_rate_command *ac)
     }
 
     mVideoFrameRate = ac->rate;
+    clipVideoFrameRate();
+    ((AndroidCameraInput *)mVideoInputMIO)->SetFrameRate(mVideoFrameRate);
+
     FinishNonAsyncCommand(ac);
 }
 
