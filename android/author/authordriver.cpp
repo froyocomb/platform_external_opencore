@@ -1112,12 +1112,18 @@ void AuthorDriver::handleSetCameraParameters(set_camera_parameters_command *ac)
     char value[PROPERTY_VALUE_MAX];
     if (property_get("cam.video.rotation", value, 0) > 0 && atoi(value) >= 0) {
       CameraParameters cp(ac->params());
-      cp.set("rotation", value );
+      cp.set("rotation", atoi(value) );
       p = cp.flatten( );
     }
 
     if(mVideoInputMIO){
-        ret = ((AndroidCameraInput *)mVideoInputMIO)->SetCameraParameters(p);
+      /* TODO
+       * Temporarily, no rotation at source.
+       * send 0 rotation to HAL.
+       */
+      CameraParameters cp(ac->params());
+      cp.set("rotation", 0 );
+      ret = ((AndroidCameraInput *)mVideoInputMIO)->SetCameraParameters(cp.flatten());
     }
 
     if(ret == PVMFSuccess) {
