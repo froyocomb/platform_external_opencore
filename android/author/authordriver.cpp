@@ -1711,9 +1711,15 @@ void AuthorDriver::HandleErrorEvent(const PVAsyncErrorEvent& aEvent)
     LOGE("HandleErrorEvent(%d)", aEvent.GetEventType());
 
     if (mListener != NULL) {
-    mListener->notify(
-        MEDIA_RECORDER_EVENT_ERROR, MEDIA_RECORDER_ERROR_UNKNOWN,
-        aEvent.GetEventType());
+        if (aEvent.GetEventType()== PVMFErrResource){
+            mListener->notify(MEDIA_RECORDER_EVENT_ERROR,
+                               MEDIA_RECORDER_ERROR_RESOURCE,
+                                aEvent.GetEventType());
+        } else {
+            mListener->notify(MEDIA_RECORDER_EVENT_ERROR,
+                               MEDIA_RECORDER_ERROR_UNKNOWN,
+                                aEvent.GetEventType());
+        }
     }
 }
 

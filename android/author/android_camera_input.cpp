@@ -94,6 +94,7 @@ AndroidCameraInput::AndroidCameraInput()
         iVideoDurationToPull = 0;
     }
     iVideoFrameSkipCnt = 0;
+    iError_ExitRequired = false;
 }
 
 void AndroidCameraInput::ReleaseQueuedFrames()
@@ -815,6 +816,13 @@ void AndroidCameraInput::Run()
 
     // dequeue frame buffers and write to peer
     if (NULL != iPeer) {
+        if(iError_ExitRequired == true) {
+            LOGE("iError_ExitRequired is true, clean up the application");
+            AndroidCameraInputMediaData data;
+            iPeer->writeAsync(PVMI_MEDIAXFER_FMT_TYPE_NOTIFICATION,
+                               PVMI_MEDIAXFER_FMT_INDEX_ERROR_EVENT,
+                                NULL, 0, data.iXferHeader);
+        }
         if (iState != STATE_STARTED) {
             ReleaseQueuedFrames();
         }
@@ -940,6 +948,7 @@ PVMFCommandId AndroidCameraInput::AddCmdToQueue(AndroidCameraInputCmdType aType,
     int err = 0;
     OSCL_TRY(err, iCmdQueue.push_back(cmd));
     OSCL_FIRST_CATCH_ANY(err, LOGE("Out of memory"); return -1;);
+
     RunIfNotReady();
     return cmd.iId;
 }
@@ -949,7 +958,6 @@ void AndroidCameraInput::AddDataEventToQueue(uint32 aMicroSecondsToEvent)
     LOGV("AddDataEventToQueue");
     AndroidCameraInputCmd cmd;
     cmd.iType = DATA_EVENT;
-
     int err = 0;
     OSCL_TRY(err, iCmdQueue.push_back(cmd));
     OSCL_FIRST_CATCH_ANY(err, LOGE("Out of memory"); return;);
@@ -995,6 +1003,10 @@ PVMFStatus AndroidCameraInput::DoInit()
     // create a camera if the app didn't supply one
     if (mCamera == 0) {
       mCamera = Camera::connect(); //TODO: Check for mCamera->status here too?
+    }
+
+    if (mCamera != NULL) {
+        mCamera->setListener(mListener);
     }
 
     // always call setPreviewDisplay() regardless whether mCamera is just created or not
@@ -1078,7 +1090,6 @@ PVMFStatus AndroidCameraInput::DoStart()
         status = PVMFFailure;
         LOGE("mCamera is not initialized yet");
     } else {
-        mCamera->setListener(mListener);
         if (mCamera->startRecording() != NO_ERROR) {
             LOGE("mCamera start recording failed");
             status = PVMFFailure;
@@ -1402,6 +1413,31 @@ PVMFStatus AndroidCameraInput::postWriteAsync(nsecs_t timestamp, const sp<IMemor
     iPostCameraFrameAO->ReceiveEvent(P);
 
     return PVMFSuccess;
+}
+
+PVMFStatus AndroidCameraInput::postCameraError(){
+    LOGE("postCameraError: EX");
+    iError_ExitRequired = true;
+    // Call RunIfNotReady from threadsafecallback AO
+    OsclAny* P = NULL;
+    iPostCameraFrameAO->ReceiveEvent(P);
+    return PVMFSuccess;
+}
+
+//camera callback interface for notification
+void AndroidCameraInputListener::notify(int32_t msgType, int32_t ext1, int32_t ext2)
+{
+    if (mCameraInput != NULL) {
+        switch(msgType) {
+            case CAMERA_MSG_ERROR:
+                LOGE("notify: msgType - CAMERA_MSG_ERROR");
+                mCameraInput->postCameraError();
+                break;
+            default:
+                //Nothing at this point.
+                break;
+        }
+    }
 }
 
 // camera callback interface
