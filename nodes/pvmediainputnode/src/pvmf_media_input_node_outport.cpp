@@ -316,6 +316,9 @@ PVMFCommandId PvmfMediaInputNodeOutPort::writeAsync(uint8 format_type, int32 for
                     return iCmdId++;
                 }
                 break;
+                case PVMI_MEDIAXFER_FMT_INDEX_ERROR_EVENT:
+                    iNode->ReportErrorEvent(PVMFErrResource, (OsclAny*)NULL);
+                    break;
                 default:
                 {
                     LOG_ERR((0, "Ignoring Format Index :%d since not supported\n", format_index));

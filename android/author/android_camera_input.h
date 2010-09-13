@@ -88,6 +88,7 @@ typedef enum
     CMD_CANCEL_COMMAND,
     CMD_RESET,
     DATA_EVENT,
+    CMD_ERROR_STOP,
     INVALID_CMD
 } AndroidCameraInputCmdType;
 
@@ -196,7 +197,7 @@ class AndroidCameraInputListener : public CameraListener
 {
 public:
     AndroidCameraInputListener(AndroidCameraInput* input) { mCameraInput = input; }
-    virtual void notify(int32_t msgType, int32_t ext1, int32_t ext2) {}
+    virtual void notify(int32_t msgType, int32_t ext1, int32_t ext2);
     virtual void postData(int32_t msgType, const sp<IMemory>& dataPtr);
     virtual void postDataTimestamp(nsecs_t timestamp, int32_t msgType, const sp<IMemory>& dataPtr);
     void release() { mCameraInput = NULL; }
@@ -438,6 +439,7 @@ public:
     // add for Camcorder
     PVMFStatus              postWriteAsync(nsecs_t timestamp, const sp<IMemory>& frame);
     PVMFStatus              postWriteImageAsync(const sp<IMemory>& frame);
+    PVMFStatus              postCameraError(void);
 
     bool isRecorderStarting() { return iState==STATE_STARTED?true:false; }
 
@@ -581,6 +583,7 @@ private:
 
     uint32 iVideoFrameSkipCnt;
     uint32 iVideoDurationToPull;
+    bool iError_ExitRequired;
 };
 
 #ifdef HIDE_MIO_SYMBOLS
