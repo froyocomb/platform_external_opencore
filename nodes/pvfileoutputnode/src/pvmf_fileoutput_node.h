@@ -490,6 +490,8 @@ class PVMFFileOutputNode :  public OsclActiveObject, public PVMFNodeInterface,
 
         // QCP header structure
         struct qcp_header append_header;
+
+        bool   bHeaderCompiled;
 };
 
 #endif // PVMF_FILEOUTPUT_NODE_H_INCLUDED

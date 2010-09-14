@@ -197,6 +197,20 @@ class PVAuthorEngineNodeFactoryUtility
                 aUuid = PvmfAmrEncNodeUuid;
 #endif
             }
+            else if (CompareMimeTypes(aMimeType, OSCL_HeapString<OsclMemAllocator>(kQCELPEncMimeType)))
+            {
+#if USE_OMX_ENC_NODE
+                // replace amr encoder node with omx encoder node
+                aUuid = KPVMFOMXAudioEncNodeUuid;
+#endif
+            }
+            else if (CompareMimeTypes(aMimeType, OSCL_HeapString<OsclMemAllocator>(kEVRCEncMimeType)))
+            {
+#if USE_OMX_ENC_NODE
+                // replace amr encoder node with omx encoder node
+                aUuid = KPVMFOMXAudioEncNodeUuid;
+#endif
+            }
 #if USE_OMX_ENC_NODE
             // aac encoding is supported only under OMX node
             else if (CompareMimeTypes(aMimeType, OSCL_HeapString<OsclMemAllocator>(KAACADIFEncMimeType)) ||

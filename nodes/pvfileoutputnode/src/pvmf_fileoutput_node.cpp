@@ -57,6 +57,8 @@ PVMFFileOutputNode::PVMFFileOutputNode(int32 aPriority)
         , iClock(NULL)
         , iEarlyMargin(DEFAULT_EARLY_MARGIN)
         , iLateMargin(DEFAULT_LATE_MARGIN)
+        , bHeaderCompiled(false)
+
 {
     ConstructL();
     int32 err;
@@ -181,6 +183,36 @@ PVMFStatus PVMFFileOutputNode::ThreadLogoff()
 ////////////////////////////////////////////////////////////////////////////
 void PVMFFileOutputNode::CloseOutputFile()
 {
+    PVLOGGER_LOGMSG(PVLOGMSG_INST_MLDBG, iLogger, PVLOGMSG_INFO, (0, "PVMFFileOutputNode:CloseOutputFile %d %d", bHeaderCompiled, iFileOpened));
+    if ( !bHeaderCompiled)
+    {
+        PVLOGGER_LOGMSG(PVLOGMSG_INST_MLDBG, iLogger, PVLOGMSG_INFO, (0, "PVMFFileOutputNode:CloseOutputFile"));
+       if (iFileOpened)
+       {
+           // Update the File header, if the format is either QCELP or EVRC
+           if ( (((PVMFFileOutputInPort*)iInPort)->iFormat == PVMF_MIME_QCELP) ||
+             (((PVMFFileOutputInPort*)iInPort)->iFormat == PVMF_MIME_EVRC))
+            {
+               PVMFStatus status = PVMFSuccess;
+
+            // Create the QCP header with the right file size and framecount
+            CreateQCPHeader();
+
+            // Move the file pointer to the begining of the file to write the header
+            iOutputFile.Seek(0, Oscl_File::SEEKSET);
+            // Write the header information to the file
+            status = WriteData((OsclAny*)&append_header, QCP_HEADER_SIZE);
+            if (status != PVMFSuccess)
+            {
+              PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
+                                  (0, "PVMFFileOutputNode::WriteFormatSpecificInfo: Error - WriteData failed"));
+            }
+
+            bHeaderCompiled = true;
+        }
+      }
+    }
+
     // Close output file
     if (iFileOpened)
     {
@@ -1336,6 +1368,8 @@ PVMFStatus PVMFFileOutputNode::ProcessIncomingMsg(PVMFPortInterface* aPort)
               PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
                                   (0, "PVMFFileOutputNode::WriteFormatSpecificInfo: Error - WriteData failed"));
             }
+
+            bHeaderCompiled = true;
         }
 
         CloseOutputFile();
@@ -1636,6 +1670,7 @@ void PVMFFileOutputNode::DoFlush(PVMFFileOutputNodeCommand& aCmd)
                     iPortVector[i]->SuspendInput();
             }
 
+            CloseOutputFile();
             // Stop data source
             break;
 

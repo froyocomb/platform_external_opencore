@@ -1099,6 +1099,8 @@ class PVMFOMXEncNode
         bool NegotiateAudioComponentParameters();
         bool SetAMREncoderParameters();
         bool SetAACEncoderParameters();
+        bool SetQCELPEncoderParameters();
+        bool SetEVRCEncoderParameters();
 
         bool SetDefaultCapabilityFlags();
         bool CreateOutMemPool(uint32 num);
