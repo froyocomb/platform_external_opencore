@@ -119,6 +119,39 @@ void AndroidCameraInput::ReleaseQueuedFrames()
     iFrameQueueMutex.Unlock();
 }
 
+void AndroidCameraInput::NotifySnapshotDataReady( void )
+{
+    Mutex::Autolock _l( iSnapshotLock );
+    while (!iSnapshotQueue.isEmpty()){
+        sp<IMemory> image = iSnapshotQueue[0];
+        uint32 writeAsyncID = 0;
+        OsclLeaveCode error = OsclErrNone;
+        AndroidCameraInputSnapshotData * sData = new AndroidCameraInputSnapshotData;
+        sData->mImage = image;
+        AndroidCameraInputMediaData data;
+        data.iXferHeader.private_data_ptr = ((OsclAny*)(sData));
+        OSCL_TRY(error,writeAsyncID = iPeer->writeAsync(PVMI_MEDIAXFER_FMT_TYPE_NOTIFICATION,
+                                                        PVMI_MEDIAXFER_FMT_INDEX_INFO_EVENT,
+                                                        NULL, 0, data.iXferHeader););
+        if (OsclErrNone == error) {
+             iSnapshotQueue.removeAt(0);
+            delete sData; //shouldnt mess up reference count for IMemory
+            LOGV("Notified MediaInput Node");
+        } else {
+            LOGE("Ln %d Run writeAsync error %d", __LINE__, error);
+            iSnapshotQueue.removeAt(0);
+            delete sData;
+            if(error == OsclErrBusy)
+            {
+                LOGE(" AndroidCameraInput::Run Set Write state to BUSY ");
+                iWriteState = EWriteBusy;
+            }
+            break;
+        }
+    }
+}
+
+
 AndroidCameraInput::~AndroidCameraInput()
 {
     LOGV("destructor");
@@ -291,6 +324,28 @@ PVMFCommandId AndroidCameraInput::Start(const OsclAny* aContext)
     }
 
     return AddCmdToQueue(CMD_START, aContext);
+}
+
+PVMFStatus AndroidCameraInput::takeLiveSnapshot(const OsclAny* aContext)
+{
+    LOGV("takeLiveSnapshot");
+    if (iState != STATE_STARTED) {
+        LOGE("takeLiveSnapshot called in an invalid state(%d)", iState);
+        OSCL_LEAVE(OsclErrInvalidState);
+        return PVMFFailure;
+    }
+
+    if (mCamera != NULL) {
+        mCamera->setListener(mListener);
+        if (mCamera->takeLiveSnapshot() != NO_ERROR) {
+            LOGE("mCamera takeLiveSnapshot failed");
+            return PVMFFailure;
+        } else {
+            return PVMFSuccess;
+        }
+    }
+    LOGE("mCamera is NULL");
+    return PVMFFailure;
 }
 
 PVMFCommandId AndroidCameraInput::Pause(const OsclAny* aContext)
@@ -854,6 +909,11 @@ void AndroidCameraInput::Run()
             }
         }
         iFrameQueueMutex.Unlock();
+
+         //repeat to notify if any live snapshots
+         //are ready
+         if(!iSnapshotQueue.isEmpty())
+             NotifySnapshotDataReady();
     }
 
     PVMFStatus status = PVMFFailure;
@@ -1292,6 +1352,39 @@ PVMFStatus AndroidCameraInput::SetCamera(const sp<android::ICamera>& camera)
     return PVMFSuccess;
 }
 
+PVMFStatus AndroidCameraInput::postWriteImageAsync( const sp<IMemory>& image )
+{
+    if (image == NULL) {
+        LOGE("frame is a NULL pointer");
+        return PVMFFailure;
+    }
+    //Recording wont have started if the below conditions hold true.
+    //therefore, dont push the encoded image onto the queue in case recording has not
+    //started yet.
+    if((!iPeer) || (!isRecorderStarting()) || (iWriteState == EWriteBusy) || (NULL == iAuthorClock)
+    || (iAuthorClock->GetState() != PVMFMediaClock::RUNNING)) {
+        if( NULL == iAuthorClock )
+        {
+            LOGE("Recording is not ready (iPeer %p iState %d iWriteState %d iAuthorClock NULL), image dropped", iPeer, iState, iWriteState);
+        }
+        else
+        {
+            LOGE("Recording is not ready (iPeer %p iState %d iWriteState %d iClockState %d), image dropped", iPeer, iState, iWriteState, iAuthorClock->GetState());
+        }
+        //just returning here, no need to call releaserecordingframe
+        return PVMFSuccess;
+    }
+    {
+        Mutex::Autolock _l( iSnapshotLock );
+        iSnapshotQueue.push( image );
+    }
+    // Call RunIfNotReady from threadsafecallback AO
+    OsclAny* P = NULL;
+    iPostCameraFrameAO->ReceiveEvent(P);
+    return PVMFSuccess;
+}
+
+
 PVMFStatus AndroidCameraInput::postWriteAsync(nsecs_t timestamp, const sp<IMemory>& frame)
 {
     LOGV("postWriteAsync");
@@ -1407,6 +1500,11 @@ PVMFStatus AndroidCameraInput::postWriteAsync(nsecs_t timestamp, const sp<IMemor
 // camera callback interface
 void AndroidCameraInputListener::postData(int32_t msgType, const sp<IMemory>& dataPtr)
 {
+    LOGV("postData");
+    //enqueue the buffer into MIO.
+    if ((mCameraInput != NULL) && (msgType == MEDIA_RECORDER_MSG_COMPRESSED_IMAGE)) {
+        mCameraInput->postWriteImageAsync(dataPtr);
+    }
 }
 
 void AndroidCameraInputListener::postDataTimestamp(nsecs_t timestamp, int32_t msgType, const sp<IMemory>& dataPtr)

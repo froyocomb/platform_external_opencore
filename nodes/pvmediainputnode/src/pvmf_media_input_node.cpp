@@ -36,6 +36,10 @@
 #endif
 #include "oscl_assert.h"
 
+#include <utils/Log.h>
+#undef LOG_TAG
+#define LOG_TAG "PVMFMediaInputNode"
+
 // Define entry point for this DLL
 OSCL_DLL_ENTRY_POINT_DEFAULT()
 
@@ -1597,6 +1601,17 @@ void PvmfMediaInputNode::ReportInfoEvent(PVMFEventType aEventType, OsclAny* aEve
 {
     LOGINFO((0, "PvmfMediaInputNode:NodeInfoEvent Type %d EVData %d EVCode %d"
              , aEventType, aEventData, aEventCode));
+
+    if( aEventCode == PVMFInfoDataReady ){
+        PVMFBasicErrorInfoMessage* eventmsg = OSCL_NEW(PVMFBasicErrorInfoMessage, (aEventCode,
+                                                                                   iEventUuid, NULL));
+        PVMFAsyncEvent asyncevent(PVMFInfoEvent, aEventType,
+                                  NULL,
+                                  OSCL_STATIC_CAST(PVInterface*, eventmsg),
+                                  aEventData, NULL, 0);
+        PVMFNodeInterface::ReportInfoEvent(asyncevent);
+        eventmsg->removeRef();
+    }
 
     //create the extension message if any.
     if (aEventCode != PvmfMediaInputNodeErr_First)

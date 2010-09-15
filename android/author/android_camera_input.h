@@ -63,6 +63,10 @@
 #pragma GCC visibility push(hidden)
 #endif
 
+#ifndef ANDROID_VECTOR_H
+#include <utils/Vector.h>
+#endif
+
 using namespace android;
 
 class ISurface;
@@ -181,6 +185,11 @@ private:
         iFrameSize = aData.iFrameSize;
     }
 };
+
+typedef struct AndroidCameraInputSnapshotData {
+    sp<IMemory> mImage;
+} AndroidCameraInputSnapshotData;
+
 
 class AndroidCameraInput;
 class AndroidCameraInputListener : public CameraListener
@@ -335,6 +344,7 @@ public:
 
     PVMFCommandId Init(const OsclAny* aContext=NULL);
     PVMFCommandId Start(const OsclAny* aContext=NULL);
+    PVMFStatus takeLiveSnapshot(const OsclAny* aContext=NULL);
     PVMFCommandId Reset(const OsclAny* aContext=NULL);
     PVMFCommandId Pause(const OsclAny* aContext=NULL);
     PVMFCommandId Flush(const OsclAny* aContext=NULL);
@@ -427,6 +437,7 @@ public:
 
     // add for Camcorder
     PVMFStatus              postWriteAsync(nsecs_t timestamp, const sp<IMemory>& frame);
+    PVMFStatus              postWriteImageAsync(const sp<IMemory>& frame);
 
     bool isRecorderStarting() { return iState==STATE_STARTED?true:false; }
 
@@ -441,6 +452,7 @@ private:
 
     void Run();
     void FrameSizeChanged();
+    void NotifySnapshotDataReady( );
 
     PVMFCommandId AddCmdToQueue(AndroidCameraInputCmdType aType,
         const OsclAny* aContext,
@@ -508,6 +520,12 @@ private:
     Oscl_Vector<AndroidCameraInputMediaData, OsclMemAllocator> iSentMediaData;
 
     Oscl_Vector<AndroidCameraInputMediaData, OsclMemAllocator> iFrameQueue;
+
+     //vector to store livesnapshots
+    Vector< sp<IMemory> > iSnapshotQueue;
+    //mutex to protect access to iSnapshotQueue;
+    Mutex iSnapshotLock;
+
     OsclMutex iFrameQueueMutex;
 
     AndroidCameraInputCmd iPendingCmd;
