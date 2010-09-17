@@ -447,7 +447,7 @@ void sbr_dec(Int16 *inPcmData,
 
             if (xoverBand > sbrDec->highSubband)
             {
-                xoverBand = 32; /* error condition, default to upsampling mode */
+                xoverBand = (sbrDec->highSubband > 32) ? 32 : sbrDec->highSubband;
             }
 
             m = sbrDec->bufReadOffs + i;    /*  2 + i */
