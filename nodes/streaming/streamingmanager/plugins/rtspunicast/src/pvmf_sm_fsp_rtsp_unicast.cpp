@@ -103,6 +103,11 @@
 
 #include "pvmf_rtp_jitter_buffer_factory.h"
 
+#define DISABLE_RA_FOR_STREAM_1MBPS_OR_MORE 1
+#define MAX_BITRATE_WITH_RA 1000000
+
+
+
 /**
 ///////////////////////////////////////////////////////////////////////////////
 // Node Constructor & Destructor
@@ -1122,6 +1127,38 @@ bool PVMFSMRTSPUnicastNode::PopulateTrackInfoVec()
 
     if (numTracks > 0)
     {
+
+#ifdef DISABLE_RA_FOR_STREAM_1MBPS_OR_MORE
+        uint32 num_high_bit_rate_stream=0;
+        for (int32 i = 0; i < numTracks; i++)
+        {
+        /*
+        * Get the vector of mediaInfo as there can
+        * alternates for each track
+        */
+            Oscl_Vector<mediaInfo*, SDPParserAlloc> mediaInfoVec =
+            iSdpInfo->getMediaInfo(i);
+            uint32 minfoVecLen = mediaInfoVec.size();
+            for (uint32 j = 0; j < minfoVecLen; j++)
+            {
+                mediaInfo* mInfo = mediaInfoVec[j];
+                if (mInfo == NULL)
+                {
+                    continue;
+                }
+                if (mInfo->getSelect())
+                {
+                    if(mInfo->getReportFrequency() > 0)
+                    {
+                        if(mInfo->getBitrate()>=MAX_BITRATE_WITH_RA)
+                        {
+                            num_high_bit_rate_stream++;
+                        }
+                    }
+                }
+            }
+        }
+#endif
         for (int32 i = 0; i < numTracks; i++)
         {
             /*
@@ -1130,7 +1167,6 @@ bool PVMFSMRTSPUnicastNode::PopulateTrackInfoVec()
              */
             Oscl_Vector<mediaInfo*, SDPParserAlloc> mediaInfoVec =
                 iSdpInfo->getMediaInfo(i);
-
             uint32 minfoVecLen = mediaInfoVec.size();
             for (uint32 j = 0; j < minfoVecLen; j++)
             {
@@ -1171,12 +1207,28 @@ bool PVMFSMRTSPUnicastNode::PopulateTrackInfoVec()
 
                     trackInfo.portTag = mInfo->getMediaInfoID();
                     trackInfo.bitRate = mInfo->getBitrate();
+#ifdef DISABLE_RA_FOR_STREAM_1MBPS_OR_MORE
+                    if (mInfo->getReportFrequency() > 0)
+                    {
+                        if(num_high_bit_rate_stream>0)
+                        {
+                            trackInfo.iRateAdaptation = false;
+                        }
+                        else
+                        {
+                            trackInfo.iRateAdaptation = true;
+                            trackInfo.iRateAdaptationFeedBackFrequency =
+                                mInfo->getReportFrequency();
+                        }
+                    }
+#else
                     if (mInfo->getReportFrequency() > 0)
                     {
                         trackInfo.iRateAdaptation = true;
                         trackInfo.iRateAdaptationFeedBackFrequency =
                             mInfo->getReportFrequency();
                     }
+#endif
 
                     if ((mInfo->getRTCPReceiverBitRate() >= 0) &&
                             (mInfo->getRTCPSenderBitRate() >= 0))
@@ -6502,3 +6554,4 @@ void PVMFSMRTSPUnicastNode::DoSetDataSourcePositionOverflow(PVMFSMFSPBaseNodeCom
     }
     return;
 }
+
