@@ -87,7 +87,6 @@
 #include "oscl_file_io.h"
 #include "oscl_string_utf8.h"
 #include "aacfileparser.h"
-#include "amrfileparser.h"
 #include "impeg4file.h"
 #include "iqcpff.h"
 
@@ -2191,18 +2190,6 @@ status_t PVPlayer::usePVPlayer(const char *filename)
         }
     }
 #endif
-    if (status != OK) {
-        CAMRFileParser amrParser;
-
-        if (amrParser.InitAMRFile(wFilename)) {
-            TPVAmrFileInfo amrInfo;
-            if (amrParser.RetrieveFileInfo(amrInfo)) {
-                LOGV("usePVPlayer: recognized .amr file to be played in SF");
-                status = UNKNOWN_ERROR;
-                return status;
-            }
-        }
-    }
     //Then check if raw .aac of sufficient length for LPA
     if (status != OK) {
         CAACFileParser aacParser;
