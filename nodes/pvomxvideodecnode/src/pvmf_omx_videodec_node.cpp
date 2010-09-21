@@ -936,7 +936,7 @@ bool PVMFOMXVideoDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
     {
         iYUVFormat = PVMF_MIME_YUV420_SEMIPLANAR_YVU; // semiplanar with Y and VU interleaved
     }
-    else if (iOMXVideoColorFormat == 0x7F000000)
+    else if (iOMXVideoColorFormat == 0x7FA30C03)
     {
         iYUVFormat = PVMF_MIME_YUV420_PACKEDSEMIPLANAR_TILE;
     }
