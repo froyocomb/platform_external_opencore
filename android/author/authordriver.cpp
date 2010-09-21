@@ -1467,8 +1467,9 @@ void AuthorDriver::clipVideoBitrate()
     property_get("ro.product.device",value,"0");
 
     if(strcmp("msm7630_surf",value) == 0 ){
-      if( mVideoHeight == 720 || mVideoWidth == 720){
-        LOGV("Setting mVideo_bitrate_setting to 14000000");
+      if( (mVideoHeight == 720 &&  mVideoWidth  == 1280 ) ||
+          (mVideoWidth  == 720 &&  mVideoHeight == 1280 ) ){
+        LOGV("Setting mVideo_bitrate_setting to 14000000 for 720p");
         mVideo_bitrate_setting = 14000000;
       }
     }
