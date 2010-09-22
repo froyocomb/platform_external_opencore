@@ -1440,6 +1440,13 @@ void PlayerDriver::CommandCompleted(const PVCmdResponse& aResponse)
 
             case PlayerCommand::PLAYER_SEEK:
                 mPvPlayer->sendEvent(MEDIA_SEEK_COMPLETE);
+                if (mPvPlayer->getIsResume()) {
+                    mPvPlayer->setIsResume(false);
+                    PlayerCommand* command = new PlayerStart(0,0);
+                    command->set(PlayerDriver::syncCompletion, this);
+                    handleStart(static_cast<PlayerStart*>(command));
+                }
+
                 break;
 
             case PlayerCommand::PLAYER_REMOVE_DATA_SOURCE:
@@ -2046,7 +2053,7 @@ status_t PVPlayer::suspend()
         status = mPlayerDriver->enqueueCommand(new PlayerRemoveDataSource(0,0));
     }
     mIsDataSourceSet = false;
-
+    setIsResume(false);
     return status;
 }
 
@@ -2054,6 +2061,7 @@ status_t PVPlayer::resume()
 {
     LOGV("resume");
     // setup data path by calling prepare
+    setIsResume(true);
     status_t status = prepare();
 
     // Seek to position when suspended
