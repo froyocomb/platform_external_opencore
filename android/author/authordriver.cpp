@@ -664,13 +664,7 @@ void AuthorDriver::handleSetAudioEncoder(set_audio_encoder_command *ac)
 
    }else{
 
-        // Set the sampling rate and number of channels
-        if (!mAudioInputMIO->setAudioSamplingRate(mSamplingRate))
-        {
-            LOGE("Failed to set the sampling rate %d", mSamplingRate);
-            commandFailed(ac);
-            return;
-        }
+        // Set the number of channels
         if (!mAudioInputMIO->setAudioNumChannels(mNumberOfChannels))
         {
             LOGE("Failed to set the number of channels %d", mNumberOfChannels);
@@ -684,6 +678,15 @@ void AuthorDriver::handleSetAudioEncoder(set_audio_encoder_command *ac)
             commandFailed(ac);
             return;
         }
+
+        // Set the sampling rate
+        if (!mAudioInputMIO->setAudioSamplingRate(mSamplingRate))
+        {
+            LOGE("Failed to set the sampling rate %d", mSamplingRate);
+            commandFailed(ac);
+            return;
+        }
+
     }
     mAudioEncoder = ac->ae;
 
