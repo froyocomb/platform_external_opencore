@@ -750,8 +750,8 @@ void AuthorDriver::handleSetVideoEncoder(set_video_encoder_command *ac)
 
     }
 
-    if ((mVideoWidth == 1280) &&
-        (mVideoHeight == 720)) {
+    if ((mVideoWidth == 1280 && mVideoHeight == 720) ||
+        (mVideoWidth == 1920 && mVideoHeight == 1088)) {
         if (mVideoEncoder == VIDEO_ENCODER_H263) {
             HandleInformationalEvent(MEDIA_RECORDER_UNSUPPORTED_RESOLUTION);
         }
