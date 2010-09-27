@@ -87,6 +87,8 @@
 #include "pvmf_recognizer_plugin.h"
 
 //
+#include <utils/Log.h>
+#define LOG_TAG "PVPlayerEngine"
 
 #define PVPLAYERENGINE_NUM_COMMANDS 10
 
@@ -6814,9 +6816,8 @@ PVMFStatus PVPlayerEngine::DoSinkNodeTrackSelection(PVCommandId aCmdId, OsclAny*
                     if ( (iSourceFormatType == PVMF_MIME_MP3FF) ||
                          (iSourceFormatType == PVMF_MIME_MP3) ||
                          (iSourceFormatType == PVMF_MIME_AACFF) ||
-                         (iSourceFormatType == PVMF_MIME_MPEG4_AUDIO))
+                         (pv_mime_strcmp(kvpFormatType.value.pChar_value, PVMF_MIME_MPEG4_AUDIO) == 0))
                     {
-
                         // Check if the MIO supports the LPA decode mode
                         status = iDatapathList[i].iSinkNodeCapConfigIF->verifyParametersSync(NULL, &kvpLPADecode, 1);
 

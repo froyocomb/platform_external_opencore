@@ -107,6 +107,7 @@ typedef AndroidSurfaceOutput* (*VideoMioFactory)();
 static const nsecs_t kBufferingUpdatePeriod = seconds(10);
 
 static bool LPAInstanceExists = false;
+static bool mUseLPADecode = false;
 
 namespace {
 
@@ -926,7 +927,7 @@ void PlayerDriver::handleSetAudioSink(PlayerSetAudioSink* command)
                     if ( (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_MP3FF) >= 0) ||
                          (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_MP3) >= 0) ||
                          (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_AACFF) >= 0) ||
-                         (pv_mime_strcmp(iFormatType.getMIMEStrPtr(), PVMF_MIME_MPEG4_AUDIO) >= 0) )
+                         (mUseLPADecode == true))
                     {
                         LOGE("Creating LPA decode mode playback - format %s", iFormatType.getMIMEStrPtr());
                         mAudioOutputMIO = new AndroidAudioLPADecode(); // Need to create custom MIO
@@ -2093,6 +2094,7 @@ status_t PVPlayer::usePVPlayer(const char *filename)
         qcpErr = qcpFile.ParseQcpFile();
         if (qcpErr == QCP_SUCCESS) {
             LOGV("usePVPlayer: recognized qcelp or evrc file");
+            mUseLPADecode = false;
             status = OK;
         }
     }
@@ -2126,6 +2128,25 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                         if (mime[0] == '3' && mime[1] == 'g' && mime[2] == '2') {
                             LOGV("usePVPlayer: recognized file as 3g2");
                             status = OK;
+                            mUseLPADecode = false;
+#ifdef SURF7x30 //LPA
+                            if(count == 1) {
+                                OSCL_HeapString<OsclMemAllocator> streamtype;
+                                mp4Input->getTrackIDList(tracks, count);
+                                mp4Input->getTrackMIMEType(tracks[0], streamtype);
+                                if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO){
+                                    duration  = mp4Input->getMovieDuration();
+                                    timeScale = mp4Input->getMovieTimescale();
+
+                                    // adjust duration to milliseconds if necessary
+                                    duration = (duration * 1000) / timeScale;
+                                    LOGV("usePVPlayer: got duration of %llu milliseconds",duration);
+                                    if (duration >= MIN_LPA_DURATION) {
+                                        mUseLPADecode = true;
+                                    }
+                                }
+                            }
+#endif //#ifdef SURF7x30
                         }
                     }
 
@@ -2150,9 +2171,11 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                                     LOGV("usePVPlayer: got duration of %llu milliseconds",duration);
                                     if (duration >= MIN_LPA_DURATION) {
                                         status = OK;
+                                        mUseLPADecode = true;
                                         goto return_status;
                                     }
                                     else {
+                                        mUseLPADecode = false;
                                         LOGV("usePVPlayer: duration of aac too short to use LPA");
                                         goto return_status;
                                     }
@@ -2160,11 +2183,12 @@ status_t PVPlayer::usePVPlayer(const char *filename)
 #endif
                                 if (streamtype==PVMF_MIME_QCELP || streamtype==PVMF_MIME_EVRC) {
                                     LOGV("usePVPlayer: recognized qcelp or evrc file");
+                                    mUseLPADecode = false;
                                     status = OK;
                                 }
                             }
                         }
-                    delete[] tracks;
+                        delete[] tracks;
                     }
                 }
                 iFs.Close();
@@ -2188,10 +2212,12 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                 duration = mp3File.GetDuration();
                 LOGV("usePVPlayer: duration of mp3 %s is %d", filename, duration);
                 if (duration >= MIN_LPA_DURATION) {
+                    mUseLPADecode = true;
                     status = OK;
                 }
                 else {
                     LOGV("usePVPlayer: mp3 duration too short to use LPA");
+                    mUseLPADecode = false;
                     goto return_status;
                 }
             }
@@ -2202,12 +2228,18 @@ status_t PVPlayer::usePVPlayer(const char *filename)
     if (status != OK) {
         CAACFileParser aacParser;
 
+        mUseLPADecode = false;
         if (aacParser.InitAACFile(wFilename)) {
             TPVAacFileInfo aacInfo;
             if (aacParser.RetrieveFileInfo(aacInfo)) {
                 LOGV("usePVPlayer: recognized .aac file");
                 status = OK;
             }
+#ifdef SURF7x30 //LPA
+            if (aacInfo.iDuration >= MIN_LPA_DURATION) {
+                mUseLPADecode = true;
+            }
+#endif //#ifdef SURF7x30
         }
     }
 
