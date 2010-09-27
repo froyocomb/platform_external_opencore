@@ -3349,7 +3349,12 @@ PVMFStatus PVMp4FFComposerNode::AddMemFragToTrack(Oscl_Vector<OsclMemoryFragment
         if((*((uint32_t*)(bufPtrPos))) != 0x51434F4D)
         {
         //non-tunnel mode encode - single frame
+#if defined  NTENCODE_8660
+        status = CheckMaxDuration(aTimestamp/1000);
+#else
         status = CheckMaxDuration(aTimestamp);
+#endif
+
         if (status == PVMFFailure)
         {
             PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
@@ -3400,7 +3405,11 @@ PVMFStatus PVMp4FFComposerNode::AddMemFragToTrack(Oscl_Vector<OsclMemoryFragment
         }
 
         iClockConverter.set_timescale(timeScale);
+#if defined  NTENCODE_8660
+        iClockConverter.set_clock_other_timescale(aTimestamp, 1000000);
+#else
         iClockConverter.set_clock_other_timescale(aTimestamp, 1000);
+#endif
         uint32 aacTS = iClockConverter.get_current_timestamp();
 
         if (!iMpeg4File->addSampleToTrack(aTrackId, aFrame, aacTS, flags))

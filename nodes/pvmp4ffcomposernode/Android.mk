@@ -11,6 +11,10 @@ LOCAL_MODULE := libpvmp4ffcomposernode
 
 LOCAL_CFLAGS :=  $(PV_CFLAGS)
 
+ifeq ($(TARGET_BOARD_PLATFORM),msm8660)
+   LOCAL_CFLAGS += -DNTENCODE_8660
+endif
+
 
 
 LOCAL_STATIC_LIBRARIES :=
