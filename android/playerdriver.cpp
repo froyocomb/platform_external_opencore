@@ -1441,7 +1441,8 @@ void PlayerDriver::CommandCompleted(const PVCmdResponse& aResponse)
 
             case PlayerCommand::PLAYER_SEEK:
                 mPvPlayer->sendEvent(MEDIA_SEEK_COMPLETE);
-                if (mPvPlayer->getIsResume()) {
+                if (mPvPlayer->getIsResume() && ((mDataSource->GetDataSourceFormatType()== PVMF_MIME_DATA_SOURCE_RTSP_URL) ||
+                                                 (mDataSource->GetDataSourceFormatType()== PVMF_MIME_DATA_SOURCE_SDP_FILE))) {
                     mPvPlayer->setIsResume(false);
                     PlayerCommand* command = new PlayerStart(0,0);
                     command->set(PlayerDriver::syncCompletion, this);
