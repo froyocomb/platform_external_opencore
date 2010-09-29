@@ -3697,7 +3697,7 @@ PVMFStatus PVMp4FFComposerNode::CheckMaxFileSize(uint32 aFrameSize)
     if( fileSize >= 0xffffffff ){
       LOGW("FileSize exceeds 4gb, stopping record");
       iMaxReachedEvent = PVMF_COMPOSER_MAXFILESIZE_REACHED;
-      return PVMFPending;
+      return PVMFSuccess;
     }
 
     if (iMaxFileSizeEnabled)
