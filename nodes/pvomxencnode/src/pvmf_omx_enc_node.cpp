@@ -5682,7 +5682,17 @@ bool PVMFOMXEncNode::QueueOutputBuffer(OsclSharedPtr<PVMFMediaDataImpl> &mediada
 
         // Set timestamp
         // first convert OMX_TICKS into output timescale
-        uint32 output_timestamp = ConvertOMXTicksIntoTimestamp(iTimeStampOut);
+        uint32 output_timestamp = 0;
+#ifdef NTENCODE_8660
+        if (iOutFormat != PVMF_MIME_MPEG4_AUDIO ){
+          output_timestamp = ConvertOMXTicksIntoTimestamp(iTimeStampOut);
+        }
+        else {
+          output_timestamp = iTimeStampOut;
+        }
+#else
+        output_timestamp = ConvertOMXTicksIntoTimestamp(iTimeStampOut);
+#endif
 
         mediaDataOut->setTimestamp(output_timestamp);
 
