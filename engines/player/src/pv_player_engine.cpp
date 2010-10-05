@@ -6816,7 +6816,8 @@ PVMFStatus PVPlayerEngine::DoSinkNodeTrackSelection(PVCommandId aCmdId, OsclAny*
                     if ( (iSourceFormatType == PVMF_MIME_MP3FF) ||
                          (iSourceFormatType == PVMF_MIME_MP3) ||
                          (iSourceFormatType == PVMF_MIME_AACFF) ||
-                         (pv_mime_strcmp(kvpFormatType.value.pChar_value, PVMF_MIME_MPEG4_AUDIO) == 0))
+                         ((pv_mime_strcmp(kvpFormatType.value.pChar_value, PVMF_MIME_MPEG4_AUDIO) == 0)
+                         && (iSourcePresInfoList.getNumTracks() == 1)))
                     {
                         // Check if the MIO supports the LPA decode mode
                         status = iDatapathList[i].iSinkNodeCapConfigIF->verifyParametersSync(NULL, &kvpLPADecode, 1);
