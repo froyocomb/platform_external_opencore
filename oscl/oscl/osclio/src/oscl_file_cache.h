@@ -81,6 +81,9 @@ class OsclFileCache : public HeapBase
             return (Tell() == FileSize()) ? 1 : 0;
         }
 
+        int32 Enable( );
+        int32 Disable( );
+
     private:
         Oscl_File& iContainer;
 
