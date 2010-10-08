@@ -46,6 +46,12 @@
 #endif
 #include "pvmf_omx_basedec_node.h"  // for NUMBER_OUTPUT_BUFFER
 
+#include <cutils/properties.h> // for property_get
+
+// Cache size for file write
+#define CACHE_SIZE_16K 16384
+
+
 #ifdef ANDROID
 namespace android
 {
@@ -1033,8 +1039,10 @@ OSCL_EXPORT_REF PVMFStatus PVMp4FFComposerNode::SetOutputFileDescriptor(const Os
     if (iInterfaceState != EPVMFNodeIdle && iInterfaceState != EPVMFNodeInitialized)
         return false;
 
+    int cachesize = CACHE_SIZE_16K;
+
     iFileObject = OSCL_NEW(Oscl_File, (0, (OsclFileHandle *)aFileHandle));
-    iFileObject->SetPVCacheSize(0);
+    iFileObject->SetPVCacheSize( cachesize );
     iFileObject->SetAsyncReadBufferSize(0);
     iFileObject->SetNativeBufferSize(0);
     iFileObject->SetLoggingEnable(false);
@@ -1045,6 +1053,8 @@ OSCL_EXPORT_REF PVMFStatus PVMp4FFComposerNode::SetOutputFileDescriptor(const Os
     int32 retval = iFileObject->Open(_STRLIT_CHAR("dummy"),
                                      Oscl_File::MODE_READWRITE | Oscl_File::MODE_BINARY,
                                      iFs);
+
+    iFileObject->DisablePVCache( );
 
     if (retval == 0)
     {
@@ -2268,9 +2278,11 @@ PVMFStatus PVMp4FFComposerNode::RenderToFile()
     iFragmentWriter->flush();
 #endif
 
+    iFileObject->EnablePVCache();
+
     if (!iMpeg4File || !iMpeg4File->renderToFile(iFileName))
     {
-        LOG_ERR((0, "PVMp4FFComposerNode::RenderToFile: Error - renderToFile failed"));
+        LOGE("PVMp4FFComposerNode::RenderToFile: Error - renderToFile failed");
         ReportErrorEvent(PVMF_MP4FFCN_ERROR_FINALIZE_OUTPUT_FILE_FAILED);
         status = PVMFFailure;
     }
@@ -2288,7 +2300,7 @@ PVMFStatus PVMp4FFComposerNode::RenderToFile()
         }
 #endif
 
-        LOGDATATRAFFIC((0, "PVMp4FFComposerNode::RenderToFile() Done"));
+        LOGE("PVMp4FFComposerNode::RenderToFile() Done");
         // Delete file format library
         if (iMpeg4File)
         {

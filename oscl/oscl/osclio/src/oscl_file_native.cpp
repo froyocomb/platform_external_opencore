@@ -379,20 +379,20 @@ uint32 OsclNativeFile::Write(const OsclAny *buffer, uint32 size, uint32 numeleme
 
       int32 num_bytes_written = write(iFileDescriptor, buffer, (size * numelements));
       if (num_bytes_written != -1)
-        {
+      {
           return (uint32)(num_bytes_written / size);
-        }
+      }
       else
-        return -1;
+          return -1;
 #endif
 #endif
-       struct timeval startTimeVal, endTimeVal;
+        struct timeval startTimeVal, endTimeVal;
         gettimeofday(&startTimeVal, NULL);
         uint32 items = fwrite(buffer, OSCL_STATIC_CAST(int32, size), OSCL_STATIC_CAST(int32, numelements), iFile);
         gettimeofday(&endTimeVal, NULL);
         long long timeInMicroSeconds = (endTimeVal.tv_sec - startTimeVal.tv_sec) * 1000000LL + (endTimeVal.tv_usec - startTimeVal.tv_usec);
         if (timeInMicroSeconds/1000 > FILE_WRITER_SPEED_TOLERANCE_IN_MILLISECONDS) {
-            LOGW("writing %d bytes takes too long (%lld micro seconds)", items, timeInMicroSeconds);
+          LOGW("writing %d bytes takes too long (%lld micro seconds)", items, timeInMicroSeconds);
         }
         return items;
     }

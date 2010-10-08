@@ -30,6 +30,8 @@
 #include "oscl_file_stats.h"
 #include "oscl_file_async_read.h"
 
+#include <cutils/properties.h> // for property_get
+
 #ifndef OSCL_COMBINED_DLL
 OSCL_DLL_ENTRY_POINT_DEFAULT()
 #endif
@@ -59,7 +61,7 @@ void Oscl_File::Construct()
     iPVCacheSize = 0;
     iAsyncReadBufferSize = 0;
     iAsyncFile = NULL;
-
+    usecache = false;
     //Create the native file I/O implementation
     int32 err;
     OSCL_TRY(err, iNativeFile = OSCL_NEW(OsclNativeFile, ()););
@@ -159,6 +161,20 @@ OSCL_EXPORT_REF void Oscl_File::SetPVCacheSize(uint32 aSize)
     //just save the value now-- it will take effect on the next open.
     iPVCacheSize = aSize;
 }
+
+OSCL_EXPORT_REF void Oscl_File::EnablePVCache()
+{
+    usecache = true;
+    if( iFileCache )
+        iFileCache->Enable();
+}
+
+OSCL_EXPORT_REF void Oscl_File::DisablePVCache()
+{
+    usecache = false; //Disable( ) in PVCache is not
+                      //implemented yet.
+}
+
 
 OSCL_EXPORT_REF void Oscl_File::SetAsyncReadBufferSize(uint32 aSize)
 {
@@ -268,6 +284,7 @@ int32 Oscl_File::OpenFileCacheOrAsyncBuffer(const char *filename
             OSCL_TRY(err, iFileCache = OSCL_NEW(OsclFileCache, (*this)););
             if (!iFileCache)
                 return -1;//allocation failed
+            usecache = true;
         }
     }
     else
@@ -499,7 +516,7 @@ OSCL_EXPORT_REF uint32 Oscl_File::Read(OsclAny *buffer, uint32 size, uint32 nume
 
     if (iIsOpen)
     {
-        if (iFileCache)
+        if (iFileCache && usecache )
             result = iFileCache->Read(buffer, size, numelements);
         else if (iAsyncFile)
             result = iAsyncFile->Read(buffer, size, numelements);
@@ -536,7 +553,7 @@ OSCL_EXPORT_REF uint32 Oscl_File::Write(const OsclAny *buffer, uint32 size, uint
 
     if (iIsOpen)
     {
-        if (iFileCache)
+        if (iFileCache && usecache )
             result = iFileCache->Write(buffer, size, numelements);
         else if (iAsyncFile)
             return iAsyncFile->Write(buffer, size, numelements);
@@ -572,7 +589,7 @@ OSCL_EXPORT_REF int32 Oscl_File::Seek(TOsclFileOffset offset, seek_type origin)
 
     if (iIsOpen)
     {
-        if (iFileCache)
+        if (iFileCache && usecache )
             result = iFileCache->Seek(offset, origin);
         else if (iAsyncFile)
             result = iAsyncFile->Seek(offset, origin);
@@ -609,7 +626,7 @@ OSCL_EXPORT_REF TOsclFileOffset Oscl_File::Tell()
 
     if (iIsOpen)
     {
-        if (iFileCache)
+        if (iFileCache && usecache )
             result = iFileCache->Tell();
         else if (iAsyncFile)
             result = iAsyncFile->Tell();
@@ -645,7 +662,7 @@ OSCL_EXPORT_REF int32 Oscl_File::Flush()
 
     if (iIsOpen)
     {
-        if (iFileCache)
+        if (iFileCache && usecache)
             result = iFileCache->Flush();
         else if (iAsyncFile)
             return iAsyncFile->Flush();
@@ -681,7 +698,7 @@ OSCL_EXPORT_REF int32 Oscl_File::EndOfFile()
     int32 result = (-1);
     if (iIsOpen)
     {
-        if (iFileCache)
+        if (iFileCache && usecache )
             result = iFileCache->EndOfFile();
         else if (iAsyncFile)
             result = iAsyncFile->EndOfFile();
@@ -717,7 +734,7 @@ OSCL_EXPORT_REF TOsclFileOffset Oscl_File::Size()
 
     if (iIsOpen)
     {
-        if (iFileCache)
+        if (iFileCache && usecache )
             result = iFileCache->FileSize();
         else if (iAsyncFile)
             result = iAsyncFile->Size();
