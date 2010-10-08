@@ -384,6 +384,8 @@ PlayerDriver::PlayerDriver(PVPlayer* pvPlayer) :
     mDownloadContextData = NULL;
     mUriHeadersPresent = false;
 
+    //Initializing mIsResume flag to false
+    mPvPlayer->setIsResume(false);
     // running in emulation?
     mLibHandle = NULL;
     char value[PROPERTY_VALUE_MAX];
