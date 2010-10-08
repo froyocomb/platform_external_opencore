@@ -5522,7 +5522,17 @@ void PVMFSMRTSPUnicastNode::GetActualMediaTSAfterSeek()
     iActualMediaDataTS = jbExtIntf->getActualMediaDataTSAfterSeek();
     if (iActualMediaDataTSPtr != NULL)
     {
-        *iActualMediaDataTSPtr = iActualMediaDataTS;
+        //Updating *iActualMediaDataTSPtrlay with media clock corresponding to the requested seek location
+        //Updating the cursor to request seek location
+        if(*iActualRepositionStartNPTInMSPtr < iRepositionRequestedStartNPTInMS)
+        {
+            *iActualMediaDataTSPtr = iActualMediaDataTS + (iRepositionRequestedStartNPTInMS - (*iActualRepositionStartNPTInMSPtr)) ;
+            *iActualRepositionStartNPTInMSPtr = iRepositionRequestedStartNPTInMS;
+        }
+        else
+        {
+            *iActualMediaDataTSPtr = iActualMediaDataTS;
+        }
         PVMF_SM_RTSP_LOG_COMMAND_REPOS((0, "PVMFPVMFSMRTSPUnicastNode::GetActualMediaTSAfterSeek - TargetNPT = %d, ActualNPT=%d, ActualMediaDataTS=%d",
                                         iRepositionRequestedStartNPTInMS, *iActualRepositionStartNPTInMSPtr, *iActualMediaDataTSPtr));
     }
