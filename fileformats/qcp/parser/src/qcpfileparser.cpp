@@ -306,14 +306,16 @@ int32 QcpBitstreamObject::parseQCPHeader()
             oscl_memcpy(qpl_info, &pBuf[cur_pos], QCP_CODEC_INFO_LENGTH);
             cur_pos += QCP_CODEC_INFO_LENGTH;
 
-            if (qpl_info->vr_num_of_rates)
-            {
-                // Vrat chunk info
-                oscl_memcpy(vrat_chunk, &pBuf[cur_pos], QCP_VRAT_CHUNK_LENGTH);
-                cur_pos +=  QCP_VRAT_CHUNK_LENGTH;
+            // Vrat chunk info
+            oscl_memcpy(vrat_chunk, &pBuf[cur_pos], QCP_VRAT_CHUNK_LENGTH);
+            cur_pos +=  QCP_VRAT_CHUNK_LENGTH;
+
+            // If parsed chunk is not VRAT chunk, put the offset back
+            if(vrat_chunk->vrat[0] != 'v' && vrat_chunk->vrat[1] != 'r' &&
+               vrat_chunk->vrat[2] != 'a' && vrat_chunk->vrat[3] != 't'){
+                cur_pos -=  QCP_VRAT_CHUNK_LENGTH;
+                qpl_info->vr_num_of_rates = 0;
             }
-            else
-                cur_pos +=  QCP_VRAT_CHUNK_LENGTH;
 
             /******* End of QCP header Parsing *******/
 
