@@ -1719,9 +1719,12 @@ void PVMFJitterBufferImpl::HandleEvent_JitterBufferBufferingDurationComplete()
 
     if (!irDelayEstablished)
     {
+        // Cache the iReportCanRetrievePacket as IsDelayEstablished resets this flag
+        // on buffering complete
+        bool bReportCanRetrievePacket = iReportCanRetrievePacket;
         uint32 aClockDiff = 0;
         bool delayEstablished = IsDelayEstablished(aClockDiff);//To update delay percent
-        if (iReportCanRetrievePacket && delayEstablished)
+        if (bReportCanRetrievePacket && delayEstablished)
         {
             //Check if delay is established
             //There's no hole for for min threshold time
