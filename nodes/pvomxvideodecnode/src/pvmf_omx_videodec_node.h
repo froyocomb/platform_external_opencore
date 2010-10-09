@@ -218,6 +218,7 @@ class PVMFOMXVideoDecNode
 
         bool bThumbnailMode;
         bool iInterlaceFormatDetected;
+        uint32 iPortSettingsChangedCount;
 };
 
 

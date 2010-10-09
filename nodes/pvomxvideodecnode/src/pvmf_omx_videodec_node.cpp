@@ -158,6 +158,8 @@ PVMFOMXVideoDecNode::PVMFOMXVideoDecNode(int32 aPriority, bool aHwAccelerated, b
     iNodeConfig.iDropFrame = PVOMXVIDEODECNODE_CONFIG_DROPFRAMEENABLE_DEF;
     iNodeConfig.iMimeType = PVMF_MIME_FORMAT_UNKNOWN;
 
+    iPortSettingsChangedCount = 0;
+
 
     int32 err;
     OSCL_TRY(err,
@@ -1484,6 +1486,18 @@ OMX_ERRORTYPE PVMFOMXVideoDecNode::EventHandlerProcessing(OMX_OUT OMX_HANDLETYPE
 
         case OMX_EventPortSettingsChanged:
         {
+            if( iPortSettingsChangedCount >= 1 )
+            {
+               PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                            (0, "PVMFOMXVideoDecNode::EventHandlerProcessing: OMX_EventPortSettingsChanged second request - move to error state"));
+
+                // for now, any error from the component will be reported as error
+                ReportErrorEvent(PVMFErrProcessing, NULL, NULL);
+                SetState(EPVMFNodeError);
+                break;
+            }
+            /* Currently we support one port reconfig at the start of the playback */
+            iPortSettingsChangedCount++;
 
             PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                             (0, "PVMFOMXVideoDecNode::EventHandlerProcessing: OMX_EventPortSettingsChanged returned from OMX component"));
