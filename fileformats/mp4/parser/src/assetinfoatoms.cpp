@@ -815,6 +815,9 @@ AssetInfoAlbumAtom::AssetInfoAlbumAtom(MP4_FF_FILE *fp, uint32 size, uint32 type
                 return;
             }
             count -= _defaultNotice.get_size() + 1;
+            //Decrement the count as file pointer moved to 8 bytes
+            //in readNullTerminatedString function.
+            count -= 8;
         }
         if (_defaultNotice.get_size() > size)
         {
