@@ -496,7 +496,7 @@ void MetadataDriver::doColorConversion()
     //and if we are using hardware accelerated video decoder
     char value[PROPERTY_VALUE_MAX];
     property_get("ro.product.device",value,"0");
-    if(strcmp("msm7630_surf",value) == 0 && aHwAccelerated == true) deinterlaceChroma();
+    if(strncmp("msm7630",value,strlen("msm7630")) == 0 && aHwAccelerated == true) deinterlaceChroma();
 
     if (!bitmap) {
         LOGE("doColorConversion: cannot instantiate a SkBitmap object.");
