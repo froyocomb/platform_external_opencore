@@ -1178,7 +1178,7 @@ int AndroidAudioInputA2DP::auda2dp_thread_func()
     kBufferSize = 2048;
     LOGV("Creating AudioTrack object");
     mpAudioTrack= new AudioTrack(
-                AudioSystem::MUSIC,
+                AudioSystem::FM,
                 iAudioSamplingRate,
                 android::AudioSystem::PCM_16_BIT,
                 (iAudioNumChannels == 2) ? AudioSystem::CHANNEL_OUT_STEREO : AudioSystem::CHANNEL_OUT_MONO,
