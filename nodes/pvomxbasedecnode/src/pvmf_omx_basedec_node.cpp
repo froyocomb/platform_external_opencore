@@ -4261,7 +4261,7 @@ void PVMFOMXBaseDecNode::DoPrepare(PVMFOMXBaseDecNodeCommand& aCmd)
                     {
                         char value[PROPERTY_VALUE_MAX];
                         property_get("ro.product.device",value,"0");
-                        if(strcmp("qsd8250_ffa",value) == 0 || strcmp("qsd8250_surf",value) == 0)
+                        if(strcmp("qsd8250_ffa",value) == 0 || strcmp("qsd8250_surf",value) == 0 || strcmp("qsd8650a_st1x",value) == 0)
                         {
                             if(checkHWAccelconditions(aInputParameters.cComponentRole, ((VideoOMXConfigParserOutputs *)aOutputParameters)->profile))
                             {
