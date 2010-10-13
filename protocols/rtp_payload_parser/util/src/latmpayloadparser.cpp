@@ -58,7 +58,11 @@ OSCL_EXPORT_REF PV_LATM_Parser::PV_LATM_Parser() :
         frameNum(0),
         compositenumframes(0),
         iMediaDataSimpleAlloc(&iLATMDataMemPool),
+#ifdef LATM_PARSE_MULTIPLE_FRAGMENTS
+        iLATMDataMemPool(MAX_NUM_COMPOSITE_FRAMES, PVLATMPARSER_LATMDATA_FRAGMENTSIZE),
+#else
         iLATMDataMemPool(PVLATMPARSER_MEDIADATA_POOLNUM, PVLATMPARSER_LATMDATA_CHUNKSIZE),
+#endif
         iMediaDataMemPool(PVLATMPARSER_MEDIADATA_POOLNUM, PVLATMPARSER_MEDIADATA_CHUNKSIZE),
         sMC(NULL),
         // used only for composemultipleframe, allow at least 4 AAC frames
