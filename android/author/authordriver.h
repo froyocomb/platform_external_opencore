@@ -86,7 +86,7 @@ static const int32 MIN_VIDEO_BITRATE_SETTING = 192000;
 static const int32 MAX_VIDEO_BITRATE_SETTING = 6000000;
 static const int32 MAX_AUDIO_BITRATE_SETTING = 320000; // Max bitrate??
 static const int32 MIN_AUDIO_BITRATE_SETTING = 1;      // Min bitrate??
-static const int32 DEFAULT_AUDIO_BITRATE_SETTING = 64000; // Default for all the other audio
+static const int32 DEFAULT_AUDIO_BITRATE_SETTING = 156000; // Default for all the other audio
 static const PVMF_GSMAMR_Rate DEFAULT_AMR_NARROW_BAND_BITRATE_SETTING = GSM_AMR_12_2;
 static const PVMF_GSMAMR_Rate DEFAULT_AMR_WIDE_BAND_BITRATE_SETTING = GSM_AMR_23_85;
 
