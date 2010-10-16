@@ -777,6 +777,28 @@ PVMFStatus PVMFDummyFileOutputNode::CheckMaxDuration(uint32 aTimestamp)
             // Clear all pending port activity
             ClearPendingPortActivity();
 
+            // Update the file header if required and close the output file
+            if (iFileOpened) {
+                // Update the File header, if the format is either QCELP or EVRC
+                if ( (((PVMFFileOutputInPort*)iInPort)->iFormat == PVMF_MIME_QCELP) ||
+                     (((PVMFFileOutputInPort*)iInPort)->iFormat == PVMF_MIME_EVRC)) {
+                    PVMFStatus status = PVMFSuccess;
+
+                    // Create the QCP header with the right file size and framecount
+                    CreateQCPHeader();
+
+                    // Move the file pointer to the begining of the file to write the header
+                    iOutputFile.Seek(0, Oscl_File::SEEKSET);
+                    // Write the header information to the file
+                    status = WriteData((OsclAny*)&append_header, QCP_HEADER_SIZE);
+                    if (status != PVMFSuccess) {
+                        PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
+                                        (0, "PVMFFileOutputNode::WriteFormatSpecificInfo: Error - WriteData failed"));
+                    }
+                }
+                CloseOutputFile();
+            }
+
             // Report max duration event
             ReportInfoEvent(PVMF_COMPOSER_MAXDURATION_REACHED, NULL);
             return PVMFSuccess;
