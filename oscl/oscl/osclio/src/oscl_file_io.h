@@ -157,6 +157,10 @@ class Oscl_File : public HeapBase
          */
         OSCL_IMPORT_REF void SetPVCacheSize(uint32 aSize);
 
+        OSCL_IMPORT_REF void EnablePVCache( void );
+
+        OSCL_IMPORT_REF void DisablePVCache( void );
+
         /**
          * SetNativeAccessMode allows switching between different native file access
          *  modes, when available.
@@ -463,7 +467,7 @@ class Oscl_File : public HeapBase
         int32 CallNativeGetError();
         OSCL_IMPORT_REF uint32 GetAsyncFileNumOfRun();
         OSCL_IMPORT_REF uint32 GetAsyncFileNumOfRunError();
-
+        bool usecache;
 };
 
 

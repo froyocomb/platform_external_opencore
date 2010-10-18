@@ -548,6 +548,22 @@ int32 OsclFileCache::FillCacheFromFile()
 }
 
 
+int32 OsclFileCache::Enable( ){
+  SetCachePosition( 0 );
+
+  _fileSize = iContainer.CallNativeSize();
+  _nativePosition = iContainer.CallNativeTell();
+
+  SetCachePosition( _nativePosition );
+  return 0;
+}
+
+
+int32 OsclFileCache::Disable( ){
+  //not implemented
+  return -1;
+}
+
 /**
  * WriteCacheToFile
  *
@@ -571,8 +587,8 @@ int32 OsclFileCache::WriteCacheToFile()
         uint32 bytesToWrite = (_cacheUpdateEnd - _cacheUpdateStart);
 
         PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_DEBUG,
-                        (0, "OsclFileCache(0x%x)::WriteCacheToFile nbytes %d filepos %d start %d end %d "
-                         , this, bytesToWrite, _cacheFilePosition, _cacheUpdateStart, _cacheUpdateEnd));
+                         (0, "OsclFileCache(0x%x)::WriteCacheToFile nbytes %u filepos %lld start %u end %u "
+                          , this, bytesToWrite, _cacheFilePosition, _cacheUpdateStart, _cacheUpdateEnd));
 
         //Seek to the correct write location in the file if needed
 
