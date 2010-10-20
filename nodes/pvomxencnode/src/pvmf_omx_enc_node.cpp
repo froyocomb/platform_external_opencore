@@ -2627,6 +2627,27 @@ bool PVMFOMXEncNode::SetMP4EncoderParameters()
     }
     } // end workaround for 7x30
 
+    if(property_get("encoder.video.profile", value, NULL) > 0 ) {
+        OMX_VIDEO_PARAM_PROFILELEVELTYPE profileLevelType;
+        bool supportedProfile = true;
+        if (strcmp("simple", value) == 0) {
+            Mpeg4Type.eProfile = OMX_VIDEO_MPEG4ProfileSimple;
+            LOGW("MPEG4 Simple Profile");
+        }
+        else if (strcmp("asp", value) == 0) {
+            Mpeg4Type.eProfile = OMX_VIDEO_MPEG4ProfileAdvancedSimple;
+            LOGW("MPEG4 Advanced Simple Profile");
+        }
+        else {
+            supportedProfile = false;
+            LOGW("MPEG4 Unsupported Profile");
+        }
+
+        if (supportedProfile) {
+            LOGW("Setting MPEG4 Profile(%d) Level(%d)", Mpeg4Type.eProfile, Mpeg4Type.eLevel);
+        }
+    }
+
     Err = OMX_SetParameter(iOMXEncoder, OMX_IndexParamVideoMpeg4, &Mpeg4Type);
     if (OMX_ErrorNone != Err)
     {
@@ -3037,6 +3058,31 @@ bool PVMFOMXEncNode::SetH264EncoderParameters()
     H264Type.nCabacInitIdc = 0;
     H264Type.eLoopFilterMode = OMX_VIDEO_AVCLoopFilterEnable;
 
+    char value[PROPERTY_VALUE_MAX];
+    if(property_get("encoder.video.profile", value, NULL) > 0) {
+        OMX_VIDEO_PARAM_PROFILELEVELTYPE profileLevelType;
+        bool supportedProfile = true;
+        if (strcmp("base", value) == 0) {
+            H264Type.eProfile = OMX_VIDEO_AVCProfileBaseline;
+            LOGW("H264 Baseline Profile");
+        }
+        else if (strcmp("main", value) == 0) {
+            H264Type.eProfile = OMX_VIDEO_AVCProfileMain;
+            LOGW("H264 Main Profile");
+        }
+        else if (strcmp("high", value) == 0) {
+            H264Type.eProfile = OMX_VIDEO_AVCProfileHigh;
+            LOGW("H264 High Profile");
+        }
+        else {
+            supportedProfile = false;
+            LOGW("H264 Unsupported Profile");
+        }
+
+        if (supportedProfile) {
+            LOGW("Setting H264 Profile(%d) Level(%d)", H264Type.eProfile, H264Type.eLevel);
+        }
+    }
 
     Err = OMX_SetParameter(iOMXEncoder, OMX_IndexParamVideoAvc, &H264Type);
     if (OMX_ErrorNone != Err)
