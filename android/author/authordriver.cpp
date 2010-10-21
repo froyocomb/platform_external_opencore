@@ -1505,7 +1505,7 @@ void AuthorDriver::clipVideoBitrate()
         mVideo_bitrate_setting = 14000000;
       }
     }
-    else if(strcmp("msm8660_surf",value) == 0 ){
+    else if((strncmp(value, "msm8660", strlen("msm8660"))) == 0){
       if( mVideoWidth == 1088 || mVideoHeight == 1088){
         LOGV("Setting mVideo_bitrate_setting to 20000000");
         mVideo_bitrate_setting = 20000000;
