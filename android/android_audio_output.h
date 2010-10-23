@@ -101,6 +101,8 @@ private:
 
     // Wallclock time in nano secs to find the interval between write calls done to device.
     nsecs_t     iClockTimeOfWriting_ns;
+    enum AudioThreadState { IDLE, STOPPED, STARTED, PAUSED };
+    AudioThreadState iAudioThreadState;
 };
 
 #endif // ANDROID_AUDIO_OUTPUT_H
