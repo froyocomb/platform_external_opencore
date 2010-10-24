@@ -2682,6 +2682,7 @@ MP3ErrorType MP3Parser::IsMp3File(MP3_FF_FILE* aFile, uint32 aInitSearchFileSize
     {
         uint32 seekOffset = 0;
         MP3Utils::SeektoOffset(fp, 0 - MP3_FRAME_HEADER_SIZE, Oscl_File::SEEKCUR);
+findSyncWord:
         errCode = mp3FindSync(StartOffset, seekOffset, fp);
         if (errCode == MP3_SUCCESS)
         {
@@ -2718,8 +2719,26 @@ MP3ErrorType MP3Parser::IsMp3File(MP3_FF_FILE* aFile, uint32 aInitSearchFileSize
         }
         else
         {
-            // File is not identified with the provided data
-            return MP3_ERROR_UNKNOWN_OBJECT;
+            iTagSize = 0;
+            if (true == tagParser.IsID3V2Present(fp, iTagSize))
+            {
+                StartOffset += iTagSize;
+            }
+            else
+            {
+               // File is not identified with the provided data
+               return MP3_ERROR_UNKNOWN_OBJECT;
+            }
+            MP3Utils::SeektoOffset(fp, StartOffset, Oscl_File::SEEKSET);
+            if (StartOffset <  iLocalFileSize)
+            {
+                goto findSyncWord;
+            }
+            else
+            {
+                // File is not identified with the provided data
+                return MP3_ERROR_UNKNOWN_OBJECT;
+            }
         }
     }
 
