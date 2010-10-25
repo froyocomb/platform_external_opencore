@@ -87,6 +87,7 @@ int16 SearchNextM4VFrame(mp4StreamType *psBits)
     uint8 *ptr;
     int32 i;
     uint32 initial_byte_aligned_position = (psBits->dataBitPos + 7) >> 3;
+    uint32 old_BytePos = psBits->bytePos;
 
     ptr = psBits->data + initial_byte_aligned_position;
 
@@ -96,6 +97,13 @@ int16 SearchNextM4VFrame(mp4StreamType *psBits)
         status = -1;
     }
     (void)movePointerTo(psBits, ((i + initial_byte_aligned_position) << 3)); /* ptr + i */
+
+    //when the position goes back to the beginning
+    if (psBits->bytePos < old_BytePos)
+    {
+        status = -1;
+    }
+
     return status;
 }
 
