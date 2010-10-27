@@ -916,13 +916,12 @@ void PlayerDriver::handleSetAudioSink(PlayerSetAudioSink* command)
     if (command->audioSink()->realtime()) {
         LOGV("Create realtime output");
 
-#ifdef SURF7x30
-
         char value[128];
 
         property_get("lpa.decode",value,"0");
         if(strcmp("true",value) == 0)
         {
+            LOGI("LPA CASE\n");
             if (mPlayer->GetDataSourceFormatSync(iFormatType) == PVMFSuccess)
             {
                 LOGE("FormatType that is returned is %s", iFormatType.getMIMEStrPtr());
@@ -972,7 +971,6 @@ void PlayerDriver::handleSetAudioSink(PlayerSetAudioSink* command)
                 }
             }
         }
- #endif
         if (!mIsAudioLPADecode)
         {
             LOGE("Creating Non-Tunnel mode playback - uncompressed MIO");
@@ -2138,24 +2136,27 @@ status_t doUsePVPlayer(const char *filename)
                             LOGV("doUsePVPlayer: recognized file as 3g2");
                             status = OK;
                             mUseLPADecode = false;
-#ifdef SURF7x30 //LPA
-                            if(count == 1) {
-                                OSCL_HeapString<OsclMemAllocator> streamtype;
-                                mp4Input->getTrackIDList(tracks, count);
-                                mp4Input->getTrackMIMEType(tracks[0], streamtype);
-                                if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO){
-                                    duration  = mp4Input->getMovieDuration();
-                                    timeScale = mp4Input->getMovieTimescale();
+                            char value[128];
+                            property_get("lpa.decode",value,"0");
+                            if(strcmp("true",value) == 0)
+                            {
+                                if(count == 1) {
+                                    OSCL_HeapString<OsclMemAllocator> streamtype;
+                                    mp4Input->getTrackIDList(tracks, count);
+                                    mp4Input->getTrackMIMEType(tracks[0], streamtype);
+                                    if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO){
+                                        duration  = mp4Input->getMovieDuration();
+                                        timeScale = mp4Input->getMovieTimescale();
 
-                                    // adjust duration to milliseconds if necessary
-                                    duration = (duration * 1000) / timeScale;
-                                    LOGV("doUsePVPlayer: got duration of %llu milliseconds",duration);
-                                    if (duration >= MIN_LPA_DURATION) {
-                                        mUseLPADecode = true;
+                                        // adjust duration to milliseconds if necessary
+                                        duration = (duration * 1000) / timeScale;
+                                        LOGV("doUsePVPlayer: got duration of %llu milliseconds",duration);
+                                        if (duration >= MIN_LPA_DURATION) {
+                                            mUseLPADecode = true;
+                                        }
                                     }
                                 }
-                            }
-#endif //#ifdef SURF7x30
+                           }
                         }
                     }
 
@@ -2169,7 +2170,10 @@ status_t doUsePVPlayer(const char *filename)
                                 LOGV("doUsePVPlayer: got streamtype %s",streamtype.get_cstr());
 
                                 //MIME type X-MPEG4_AUDIO indicates AAC in MP4
-#ifdef SURF7x30 //LPA
+                        char value[128];
+                        property_get("lpa.decode",value,"0");
+                        if(strcmp("true",value) == 0)
+                        {
                                 if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO && count == 1) {
                                     LOGV("doUsePVPlayer: recognized file as AAC in MP4 or 3gpp");
                                     duration = mp4Input->getMovieDuration();
@@ -2189,7 +2193,7 @@ status_t doUsePVPlayer(const char *filename)
                                         goto return_status;
                                     }
                                 }
-#endif
+                        }
                                 if (streamtype==PVMF_MIME_QCELP || streamtype==PVMF_MIME_EVRC) {
                                     LOGV("doUsePVPlayer: recognized qcelp or evrc file");
                                     mUseLPADecode = false;
@@ -2206,33 +2210,36 @@ status_t doUsePVPlayer(const char *filename)
             UninitializeForThread();
         }
     }
-#ifdef SURF7x30 //LPA
-    //Then check if MP3 of sufficient length for LPA
-    if (status != OK && !LPAInstanceExists) {
-        MP3ErrorType mp3Err;
+    char value[128];
+    property_get("lpa.decode",value,"0");
+    if(strcmp("true",value) == 0)
+    {
+        //Then check if MP3 of sufficient length for LPA
+        if (status != OK && !LPAInstanceExists) {
+           MP3ErrorType mp3Err;
 
-        IMpeg3File mp3File(wFilename, mp3Err);
-        if (mp3Err == MP3_SUCCESS) {
-            mp3Err = mp3File.ParseMp3File();
-            if (mp3Err == MP3_SUCCESS) {
-                LOGV("doUsePVPlayer: recognized mp3 stream");
-                uint32 duration;
+           IMpeg3File mp3File(wFilename, mp3Err);
+           if (mp3Err == MP3_SUCCESS) {
+               mp3Err = mp3File.ParseMp3File();
+               if (mp3Err == MP3_SUCCESS) {
+                   LOGV("doUsePVPlayer: recognized mp3 stream");
+                   uint32 duration;
 
-                duration = mp3File.GetDuration();
-                LOGV("doUsePVPlayer: duration of mp3 %s is %d", filename, duration);
-                if (duration >= MIN_LPA_DURATION) {
-                    mUseLPADecode = true;
-                    status = OK;
-                }
-                else {
-                    LOGV("doUsePVPlayer: mp3 duration too short to use LPA");
-                    mUseLPADecode = false;
-                    goto return_status;
-                }
+                   duration = mp3File.GetDuration();
+                   LOGV("doUsePVPlayer: duration of mp3 %s is %d", filename, duration);
+                   if (duration >= MIN_LPA_DURATION) {
+                       mUseLPADecode = true;
+                       status = OK;
+                   }
+                   else {
+                       LOGV("doUsePVPlayer: mp3 duration too short to use LPA");
+                       mUseLPADecode = false;
+                       goto return_status;
+                   }
+               }
             }
         }
     }
-#endif
     //Then check if raw .aac of sufficient length for LPA
     if (status != OK) {
         CAACFileParser aacParser;
@@ -2244,11 +2251,13 @@ status_t doUsePVPlayer(const char *filename)
                 LOGV("doUsePVPlayer: recognized .aac file");
                 status = OK;
             }
-#ifdef SURF7x30 //LPA
-            if (aacInfo.iDuration >= MIN_LPA_DURATION) {
-                mUseLPADecode = true;
+            property_get("lpa.decode",value,"0");
+            if(strcmp("true",value) == 0)
+            {
+               if (aacInfo.iDuration >= MIN_LPA_DURATION) {
+                  mUseLPADecode = true;
             }
-#endif //#ifdef SURF7x30
+          }
         }
     }
 

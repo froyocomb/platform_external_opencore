@@ -80,11 +80,7 @@ static const char PVAACMETADATA_RANDOM_ACCESS_DENIED_KEY[] = "random-access-deni
 #define PVMF_AAC_PARSER_NODE_MAX_CPM_METADATA_KEYS 256
 // Temporary until actual max track data size if used.
 #define MAX_PORTS           2
-#ifdef SURF7x30
-#define NUM_AAC_FRAMES      4
-#else
 #define NUM_AAC_FRAMES      1
-#endif
 
 // using asf specific values until aac specific are known
 #define AAC_MIN_DATA_SIZE_FOR_RECOGNITION  512

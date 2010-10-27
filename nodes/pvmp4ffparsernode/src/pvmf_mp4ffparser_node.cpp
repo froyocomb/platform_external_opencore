@@ -2133,6 +2133,12 @@ PVMFStatus PVMFMP4FFParserNode::DoRequestPort(PVMFMP4FFParserNodeCommand& aCmd, 
     else if (formattype == PVMF_MIME_MPEG4_AUDIO)
     {
         trackportinfo.iNumSamples = MPEG4_AUDIO_NUMSAMPLES;
+        char value[128];
+        property_get("lpa.decode",value,"0");
+        if(strcmp("true",value) == 0)
+        {
+           trackportinfo.iNumSamples = 4;
+        }
     }
     else if (formattype == PVMF_MIME_AMR_IETF)
     {

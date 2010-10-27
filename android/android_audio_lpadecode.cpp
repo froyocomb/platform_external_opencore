@@ -19,7 +19,6 @@
 //#define LOG_NDEBUG 0
 #define LOG_TAG "AudioLPADecode"
 #include <utils/Log.h>
-
 #include "android_audio_lpadecode.h"
 
 #include <sys/prctl.h>

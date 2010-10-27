@@ -25,6 +25,7 @@ ifeq ($(TARGET_BOARD_PLATFORM),msm7k)
     endif
 endif
 
+
 LOCAL_C_INCLUDES := $(PV_INCLUDES) \
     $(PV_TOP)/engines/common/include \
     $(PV_TOP)/fileformats/mp4/parser/include \

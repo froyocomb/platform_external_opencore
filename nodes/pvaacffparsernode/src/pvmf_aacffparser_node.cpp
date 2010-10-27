@@ -35,7 +35,7 @@
 #include "oscl_int64_utils.h"
 #include "aacfileparser.h"
 #include "pvmf_source_context_data.h"
-
+#include <cutils/properties.h>
 #define PVAACFF_MEDIADATA_POOLNUM 8
 #define PVAACFF_MEDIADATA_CHUNKSIZE 128
 
@@ -822,8 +822,13 @@ PVMFStatus PVMFAACFFParserNode::RetrieveMediaSample(PVAACFFNodeTrackPortInfo* aT
     memFragOut.ptr = refCtrMemFragOut.getMemFrag().ptr;
 
     Oscl_Vector<uint32, OsclMemAllocator> payloadSizeVec;
-
+    char value[128];
     uint32 numsamples = NUM_AAC_FRAMES;
+    property_get("lpa.decode",value,"0");
+    if(strcmp("true",value) == 0)
+    {
+       numsamples = 4;
+    }
     // Set up the GAU structure
     GAU gau;
     gau.numMediaSamples = numsamples;
