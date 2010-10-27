@@ -57,6 +57,7 @@
 #define H263_THUMBNAIL_HW_THRESHOLD_HEIGHT 480
 #define H263_THUMBNAIL_HW_THRESHOLD_WIDTH 640
 #define ADVANCE_SIMPLE_PROFILE_LEVEL0 240
+#define FINE_GRANULARITY_SCALABLE_PROFILE_LEVEL5 253
 
 // OMX CALLBACKS
 // 1) AO OMX component running in the same thread as the OMX node
@@ -6295,7 +6296,8 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::checkHWAccelconditions(OMX_STRING role,
            ((video_height >= H263_THUMBNAIL_HW_THRESHOLD_HEIGHT) &&
            (video_width >= H263_THUMBNAIL_HW_THRESHOLD_WIDTH))) ||
            ((0 == oscl_strcmp(role, (OMX_STRING)"video_decoder.mpeg4")) &&
-           profile >= ADVANCE_SIMPLE_PROFILE_LEVEL0) ||
+           (profile >= ADVANCE_SIMPLE_PROFILE_LEVEL0) &&
+           (profile <= FINE_GRANULARITY_SCALABLE_PROFILE_LEVEL5)) ||
            ((0 == oscl_strcmp(role, (OMX_STRING)"video_decoder.avc")) &&
            profile > AVC_BASELINE))
         {
