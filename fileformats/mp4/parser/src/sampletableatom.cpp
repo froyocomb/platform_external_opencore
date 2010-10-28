@@ -3118,7 +3118,10 @@ SampleTableAtom::peekNextNSamples(uint32 startSampleNum,
         mInfo[i].len = tempSize;
         mInfo[i].ts_delta = tsDelta;
         mInfo[i].ctts_offset = getCttsOffsetForSampleNumberPeek(sampleNum);
-        mInfo[i].ts = currTSBase + mInfo[i].ctts_offset;
+        //CTTS offset is added in RetrieveTrackData function in Parser node.
+        //Removed to avoid duplication of ctts.
+        //This was leading to incorrect timestamp.
+        mInfo[i].ts = currTSBase;
         currTSBase += tsDelta;
 
         PVMF_MP4FFPARSER_LOGMEDIASAMPELSTATEVARIABLES((0, "SampleTableAtom::peekNextNSamples- mInfo[%d].len =%d", i, mInfo[i].len));
