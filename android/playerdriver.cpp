@@ -1413,7 +1413,9 @@ void PlayerDriver::CommandCompleted(const PVCmdResponse& aResponse)
                 // If the seek is issued from the prepare state (this is unique interms of bootup time
                 // Put the source node to pause state (This is to handle TCXO shutdown for hardware decoders).
                 // This state transition should be only handled for audio
-                if (!mVideoOutputMIO) {
+                if (!mVideoOutputMIO && !((getFormatType() == PVMF_MIME_DATA_SOURCE_RTSP_URL) ||
+                                          (getFormatType() == PVMF_MIME_DATA_SOURCE_MS_HTTP_STREAMING_URL) ||
+                                          (getFormatType() == PVMF_MIME_DATA_SOURCE_SDP_FILE))) {
                     LOGV("Player is in prepared state, hence put the player to Pause state");
                     mPlayer->Pause(NULL);
                     mIsPausing = true;
