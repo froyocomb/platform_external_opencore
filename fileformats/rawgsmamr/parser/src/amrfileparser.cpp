@@ -138,7 +138,7 @@ int32 bitstreamObject::refill()
         {
             //there is no more data to read.
             if (iBytesRead >= iFileSize || iBytesProcessed >= iFileSize)
-                return bitstreamObject::DATA_INSUFFICIENT;
+                return bitstreamObject::END_OF_FILE;
         }
     }
 
