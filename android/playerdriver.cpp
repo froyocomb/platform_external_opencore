@@ -2081,9 +2081,9 @@ status_t PVPlayer::resume()
 //      -Playing raw .aac files
 //      -Playing files with major brand 3g2
 // Static
-status_t PVPlayer::usePVPlayer(const char *filename)
+status_t doUsePVPlayer(const char *filename)
 {
-    LOGV("usePVPlayer: In usePVPlayer function, filename: %s",filename);
+    LOGV("doUsePVPlayer: In doUsePVPlayer function, filename: %s",filename);
     status_t status = UNKNOWN_ERROR;
 
     oscl_wchar output[MAX_BUFF_SIZE];
@@ -2096,7 +2096,7 @@ status_t PVPlayer::usePVPlayer(const char *filename)
     if (qcpErr == QCP_SUCCESS) {
         qcpErr = qcpFile.ParseQcpFile();
         if (qcpErr == QCP_SUCCESS) {
-            LOGV("usePVPlayer: recognized qcelp or evrc file");
+            LOGV("doUsePVPlayer: recognized qcelp or evrc file");
             mUseLPADecode = false;
             status = OK;
         }
@@ -2111,7 +2111,7 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                 IMpeg4File *mp4Input = IMpeg4File::readMP4File(wFilename, NULL, NULL, 1, &iFs);
                 if (mp4Input)
                 {
-                    LOGV("usePVPlayer: recognized mp4 container");
+                    LOGV("doUsePVPlayer: recognized mp4 container");
                     uint64 duration;
                     uint32 timeScale;
                     uint32 brand;
@@ -2127,9 +2127,9 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                         mime[2] = ((brand >>  8) & 0x00FF);
                         mime[3] = ((brand >>  0) & 0x00FF);
                         mime[4] = '\0';
-                        LOGV("usePVPlayer: got brand %s",mime);
+                        LOGV("doUsePVPlayer: got brand %s",mime);
                         if (mime[0] == '3' && mime[1] == 'g' && mime[2] == '2') {
-                            LOGV("usePVPlayer: recognized file as 3g2");
+                            LOGV("doUsePVPlayer: recognized file as 3g2");
                             status = OK;
                             mUseLPADecode = false;
 #ifdef SURF7x30 //LPA
@@ -2143,7 +2143,7 @@ status_t PVPlayer::usePVPlayer(const char *filename)
 
                                     // adjust duration to milliseconds if necessary
                                     duration = (duration * 1000) / timeScale;
-                                    LOGV("usePVPlayer: got duration of %llu milliseconds",duration);
+                                    LOGV("doUsePVPlayer: got duration of %llu milliseconds",duration);
                                     if (duration >= MIN_LPA_DURATION) {
                                         mUseLPADecode = true;
                                     }
@@ -2160,18 +2160,18 @@ status_t PVPlayer::usePVPlayer(const char *filename)
 
                             mp4Input->getTrackMIMEType(tracks[i], streamtype);
                             if (streamtype.get_size()) {
-                                LOGV("usePVPlayer: got streamtype %s",streamtype.get_cstr());
+                                LOGV("doUsePVPlayer: got streamtype %s",streamtype.get_cstr());
 
                                 //MIME type X-MPEG4_AUDIO indicates AAC in MP4
 #ifdef SURF7x30 //LPA
                                 if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO && count == 1) {
-                                    LOGV("usePVPlayer: recognized file as AAC in MP4 or 3gpp");
+                                    LOGV("doUsePVPlayer: recognized file as AAC in MP4 or 3gpp");
                                     duration = mp4Input->getMovieDuration();
                                     timeScale =  mp4Input->getMovieTimescale();
 
                                     // adjust duration to milliseconds if necessary
                                     duration = (duration * 1000) / timeScale;
-                                    LOGV("usePVPlayer: got duration of %llu milliseconds",duration);
+                                    LOGV("doUsePVPlayer: got duration of %llu milliseconds",duration);
                                     if (duration >= MIN_LPA_DURATION) {
                                         status = OK;
                                         mUseLPADecode = true;
@@ -2179,13 +2179,13 @@ status_t PVPlayer::usePVPlayer(const char *filename)
                                     }
                                     else {
                                         mUseLPADecode = false;
-                                        LOGV("usePVPlayer: duration of aac too short to use LPA");
+                                        LOGV("doUsePVPlayer: duration of aac too short to use LPA");
                                         goto return_status;
                                     }
                                 }
 #endif
                                 if (streamtype==PVMF_MIME_QCELP || streamtype==PVMF_MIME_EVRC) {
-                                    LOGV("usePVPlayer: recognized qcelp or evrc file");
+                                    LOGV("doUsePVPlayer: recognized qcelp or evrc file");
                                     mUseLPADecode = false;
                                     status = OK;
                                 }
@@ -2209,17 +2209,17 @@ status_t PVPlayer::usePVPlayer(const char *filename)
         if (mp3Err == MP3_SUCCESS) {
             mp3Err = mp3File.ParseMp3File();
             if (mp3Err == MP3_SUCCESS) {
-                LOGV("usePVPlayer: recognized mp3 stream");
+                LOGV("doUsePVPlayer: recognized mp3 stream");
                 uint32 duration;
 
                 duration = mp3File.GetDuration();
-                LOGV("usePVPlayer: duration of mp3 %s is %d", filename, duration);
+                LOGV("doUsePVPlayer: duration of mp3 %s is %d", filename, duration);
                 if (duration >= MIN_LPA_DURATION) {
                     mUseLPADecode = true;
                     status = OK;
                 }
                 else {
-                    LOGV("usePVPlayer: mp3 duration too short to use LPA");
+                    LOGV("doUsePVPlayer: mp3 duration too short to use LPA");
                     mUseLPADecode = false;
                     goto return_status;
                 }
@@ -2235,7 +2235,7 @@ status_t PVPlayer::usePVPlayer(const char *filename)
         if (aacParser.InitAACFile(wFilename)) {
             TPVAacFileInfo aacInfo;
             if (aacParser.RetrieveFileInfo(aacInfo)) {
-                LOGV("usePVPlayer: recognized .aac file");
+                LOGV("doUsePVPlayer: recognized .aac file");
                 status = OK;
             }
 #ifdef SURF7x30 //LPA
@@ -2250,15 +2250,73 @@ status_t PVPlayer::usePVPlayer(const char *filename)
     return status;
 }
 
+bool IsDivXAviFile(int fd, int64_t offset) {
+    const int KRiffHeaderSize = 12;
+    char header[KRiffHeaderSize];
+
+    lseek(fd, offset, SEEK_SET);
+    int size_read = read(fd, header, sizeof(header));
+
+    if(size_read<KRiffHeaderSize) {
+        return false;   //Too small.
+    }
+
+    if ((!memcmp(header, "RIFF", 4))  && (!memcmp(header+8, "AVI", 3))){
+        return true;
+    }
+
+    return false;
+}
+
 // Wrapper for usePVPlayer(const char *filename) to enable opening the file with an fd
 // Static
 status_t PVPlayer::usePVPlayer(int fd, int64_t offset, int64_t length)
 {
     LOGV("usePVPlayer: In usePVPlayer function, fd: %d, offset: %lld, length: %lld",fd,offset,length);
 
+    //Bail out early if the file's an AVI - we support that in SF.
+    if(IsDivXAviFile(fd, offset)) {
+        return UNKNOWN_ERROR;
+    }
+
     char buf[80];
     sprintf(buf, "sharedfd://%d:%lld:%lld", fd, offset, length);
-    return usePVPlayer(buf);
+    return doUsePVPlayer(buf);
+}
+
+bool IsDivXAviFile(const char *filename) {
+    FILE* file;
+    if((file = fopen(filename, "r"))==NULL) {
+        return false;
+    }
+    const int KRiffHeaderSize = 12;
+    char header[KRiffHeaderSize];
+
+    fseek(file, 0, SEEK_SET);
+    int size_read = fread(header, 1, sizeof(header), file);
+    fclose(file);
+
+    if(size_read<KRiffHeaderSize) {
+        return false;   //Too small.
+    }
+
+    if ((!memcmp(header, "RIFF", 4))  && (!memcmp(header+8, "AVI", 3))){
+        return true;
+    }
+
+    return false;
+}
+
+status_t PVPlayer::usePVPlayer(const char *filename)
+{
+    LOGV("usePVPlayer: In doUsePVPlayer function, filename: %s",filename);
+
+    //Bail out early if the file's an AVI - we support that in SF.
+    if(IsDivXAviFile(filename)) {
+        return UNKNOWN_ERROR;
+    }
+
+    return doUsePVPlayer(filename);
 }
 
 } // namespace android
