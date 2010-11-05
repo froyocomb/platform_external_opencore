@@ -30,8 +30,6 @@
 #include "oscl_file_stats.h"
 #include "oscl_file_async_read.h"
 
-#include <cutils/properties.h> // for property_get
-
 #ifndef OSCL_COMBINED_DLL
 OSCL_DLL_ENTRY_POINT_DEFAULT()
 #endif

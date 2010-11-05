@@ -21,8 +21,10 @@
 #include "pvlogger.h"
 
 //#define LOG_NDEBUG 0
-//#define LOG_TAG "PMEMBufferAlloc"
+#ifdef ANDROID
+#define LOG_TAG "PMEMBufferAlloc"
 #include <utils/Log.h>
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -37,7 +39,9 @@ nNumBufferAllocated(0)
 
 PVMFPMemBufferAlloc::~PVMFPMemBufferAlloc()
 {
+#ifdef ANDROID
     LOGE("PVMFPMemBufferAlloc::~PVMFPMemBufferAlloc with the num buff as %d", nNumBufferAllocated);
+#endif
     // Not all the buffers is properly cleaned.
     if ( nNumBufferAllocated != 0 ) {
         // cleanup all the memory
@@ -52,7 +56,6 @@ OsclAny* PVMFPMemBufferAlloc::allocate(int32 nSize, int32 *pmem_fd)
     int32 pmemfd = -1;
     void  *pmem_buf = NULL;
 
-    LOGE("PVMFPMemBufferAlloc::allocate calling with required size %d", nSize);
 
     // 1. Open the pmem_audio
     pmemfd = open("/dev/pmem_audio", O_RDWR);
@@ -85,10 +88,11 @@ OsclAny* PVMFPMemBufferAlloc::allocate(int32 nSize, int32 *pmem_fd)
 
     // 5. Send the pmem fd information
     *pmem_fd = pmemfd;
-
+#ifdef ANDROID
+    LOGE("PVMFPMemBufferAlloc::allocate calling with required size %d", nSize);
     LOGE("The PMEM that is allocated is %d and buffer is %x", pmemfd, pmem_buf);
     LOGE("The queue size is %d and num buff allocated is %d", iBuffersAllocQueue.size(), nNumBufferAllocated);
-
+#endif
     // 6. Return the virtual address
     return(OsclAny*)pmem_buf;
 }
@@ -114,9 +118,9 @@ void PVMFPMemBufferAlloc::deallocate(OsclAny *ptr, int32 pmem_fd)
             nNumBufferAllocated--;
         }
     }
-
+#ifdef ANDROID
     LOGE("Inside deallocate and the queue size is set to %d with numbuf as %d", iBuffersAllocQueue.size(), nNumBufferAllocated);
-
+#endif
     iBuffersAllocQueueLock.Unlock();
 }
 

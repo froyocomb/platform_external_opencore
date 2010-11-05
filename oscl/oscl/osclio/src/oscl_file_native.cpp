@@ -26,9 +26,11 @@
 #include "oscl_int64_utils.h"
 
 #ifdef ENABLE_SHAREDFD_PLAYBACK
+#ifdef ANDROID
 #undef LOG_TAG
 #define LOG_TAG "OsclNativeFile"
 #include <utils/Log.h>
+#endif
 #endif
 #include "oscl_mem.h"
 #include "oscl_file_types.h"
@@ -386,6 +388,7 @@ uint32 OsclNativeFile::Write(const OsclAny *buffer, uint32 size, uint32 numeleme
           return -1;
 #endif
 #endif
+#ifdef ANDROID
         struct timeval startTimeVal, endTimeVal;
         gettimeofday(&startTimeVal, NULL);
         uint32 items = fwrite(buffer, OSCL_STATIC_CAST(int32, size), OSCL_STATIC_CAST(int32, numelements), iFile);
@@ -395,6 +398,10 @@ uint32 OsclNativeFile::Write(const OsclAny *buffer, uint32 size, uint32 numeleme
           LOGW("writing %d bytes takes too long (%lld micro seconds)", items, timeInMicroSeconds);
         }
         return items;
+#else
+        uint32 items = fwrite(buffer, OSCL_STATIC_CAST(int32, size), OSCL_STATIC_CAST(int32, numelements), iFile);
+        return items;
+#endif
     }
     return 0;
 }

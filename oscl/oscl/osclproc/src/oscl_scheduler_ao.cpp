@@ -27,9 +27,11 @@
 #define OSCL_DISABLE_WARNING_TYPEDEF_USED_AS_SYNONYM
 #include "osclconfig_compiler_warnings.h"
 
+#ifdef ANDROID
 #undef LOG_TAG
 #define LOG_TAG "PVActiveBase"
 #include <utils/Log.h>
+#endif
 
 #include "oscl_scheduler_tuneables.h"
 
@@ -161,12 +163,16 @@ void PVActiveBase::Activate()
 
     //mimic standard symbian panics.
     if (iBusy) {
+#ifdef ANDROID
       LOGE("AO %s is already Busy", iName.Str( ) );
+#endif
       OsclError::Leave(OsclErrInvalidState);//EExecAlreadyActive
     }
 
     if (!iThreadContext.iOpen) {
+#ifdef ANDROID
       LOGE("AO %s in invalid thread context", iName.Str( ) );
+#endif
       OsclError::Leave(OsclErrInvalidState);//EExecNotAdded
     }
 
