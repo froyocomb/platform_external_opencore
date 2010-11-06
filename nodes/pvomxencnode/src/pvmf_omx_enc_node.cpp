@@ -2480,6 +2480,35 @@ bool PVMFOMXEncNode::NegotiateVideoComponentParameters()
                         (0, "PVMFOMXEncNode-%s::NegotiateVideoComponentParameters() Problem setting OMX_IndexConfigCommonRotate param ", iNodeTypeId));
     }
 
+    char propvalue[PROPERTY_VALUE_MAX];
+    if(property_get("encoder.video.rc", propvalue, NULL) > 0) {
+        int rcvalue = atoi(propvalue);
+        switch (rcvalue) {
+            case 0:
+                LOGW("Rate Control Configuration: RC_OFF");
+                iVideoEncodeParam.iRateControlType = PVMFVEN_RATE_CONTROL_CONSTANT_Q;
+                break;
+            case 1:
+                LOGW("Rate Control Configuration: RC_CBR_CFR");
+                iVideoEncodeParam.iRateControlType = PVMFVEN_RATE_CONTROL_CBR;
+                break;
+            case 2:
+                LOGW("Rate Control Configuration: RC_CBR_VFR");
+                iVideoEncodeParam.iRateControlType = PVMFVEN_RATE_CONTROL_CBR_FRAME_SKIPPING;
+                break;
+            case 3:
+                LOGW("Rate Control Configuration: RC_VBR_CFR");
+                iVideoEncodeParam.iRateControlType = PVMFVEN_RATE_CONTROL_VBR;
+                break;
+            case 4:
+                LOGW("Rate Control Configuration: RC_VBR_VFR");
+                iVideoEncodeParam.iRateControlType = PVMFVEN_RATE_CONTROL_VBR_FRAME_SKIPPING;
+                break;
+            default:
+                LOGW("Rate Control Configuration: Invalid");
+                break;
+        }
+    }
 
     // now call codec specific parameter setting
     bool status = true;
