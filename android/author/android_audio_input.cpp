@@ -37,8 +37,6 @@
 
 using namespace android;
 
-// TODO: get buffer size from AudioFlinger
-static int kBufferSize = 2048;
 
 // Define entry point for this DLL
 OSCL_DLL_ENTRY_POINT_DEFAULT()
@@ -87,7 +85,8 @@ AndroidAudioInput::AndroidAudioInput(uint32 audioSource)
     iAuthorClock(NULL),
     iClockNotificationsInf(NULL),
     iFirstFrameReceived(false),
-    iFirstFrameTs(0)
+    iFirstFrameTs(0),
+    kBufferSize(2048)
 {
     LOGV("AndroidAudioInput constructor %p", this);
     // semaphore used to communicate between this  mio and the audio output thread
