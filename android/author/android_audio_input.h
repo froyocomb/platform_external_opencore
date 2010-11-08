@@ -482,6 +482,7 @@ public:
 
 private:
     uint8 configData[2];
+    int kBufferSize;
 };
 
 }; // namespace android
