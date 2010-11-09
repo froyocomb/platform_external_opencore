@@ -1083,14 +1083,15 @@ int AndroidAudioLPADecode::audout_thread_func()
             LOGV("A2DP is on... Sleep");
             len = 0;
             data = 0;
-            iAudioThreadSem->Wait();
-            LOGV("AudioThread Woken up from A2DP sleep");
 
             if ( iExitAudioThread ) {
                 LOGV("Send response for command id %d and this is from Hardware sleep wakeup", cmdid);
                 if ( len ) sendResponse(cmdid, context, timestamp);
                 break;
             }
+
+            iAudioThreadSem->Wait();
+            LOGV("AudioThread Woken up from A2DP sleep");
 
             // If A2DP is disabled and if the user has not put the playback to explicit pause
             if ( (!bIsA2DPEnabled) && (iState != STATE_MIO_PAUSED) ) {
