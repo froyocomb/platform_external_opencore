@@ -534,6 +534,8 @@ void PVMp4FFComposerPort::Run()
         switch (status)
         {
             case PVMFSuccess:
+            case PVMFErrMaxReached:  //fragment writer queue was full
+
                 // Reschedule if there is more data and the node did not become busy
                 // after processing the current msg
                 if (IncomingMsgQueueSize() > 0 && iNode->IsProcessIncomingMsgReady())

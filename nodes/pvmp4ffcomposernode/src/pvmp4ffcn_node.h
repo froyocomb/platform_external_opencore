@@ -344,6 +344,7 @@ class PVMp4FFComposerNode : public PVMFNodeInterface,
         void ReportInfoEvent(PVMFEventType aEventType, OsclAny* aEventData = NULL);
         void SetState(TPVMFNodeInterfaceState);
 
+        bool isFileWriteQueueFull( void );
     private:
         void GenerateDiagnostics(uint32 aTime, uint32 aSize);
         void LogDiagnostics();

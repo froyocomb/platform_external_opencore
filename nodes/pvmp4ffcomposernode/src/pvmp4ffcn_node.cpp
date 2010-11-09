@@ -92,6 +92,13 @@ class FragmentWriter: public Thread
             free_ring( );
         }
 
+        bool isQueueFull( ){
+          if (mExitRequested) return false; //cancelled
+          Mutex::Autolock lock(mRequestMutex);
+
+          return (mSize == kCapacity);
+        }
+
         bool init_ring( unsigned int w, unsigned int h ) {
 
               bool res = true;
@@ -2567,6 +2574,10 @@ PVMFStatus PVMp4FFComposerNode::ProcessIncomingMsg(PVMFPortInterface* aPort)
                 return PVMFErrBusy;
             }
 
+            if(isFileWriteQueueFull() ){
+              return PVMFErrMaxReached;
+            }
+
             PVMFSharedMediaMsgPtr msg;
             status = port->DequeueIncomingMsg(msg);
             if (status != PVMFSuccess)
@@ -3845,5 +3856,10 @@ void PVMp4FFComposerNode::GetTextSDIndex(uint32 aSampleNum, int32& aIndex)
     }
 }
 
-
-
+bool PVMp4FFComposerNode::isFileWriteQueueFull( ){
+#ifdef ANDROID
+  return iFragmentWriter->isQueueFull( );
+#else
+  return false;
+#endif
+}
