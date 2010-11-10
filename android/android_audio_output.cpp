@@ -55,6 +55,8 @@ OSCL_EXPORT_REF AndroidAudioOutput::AndroidAudioOutput() :
     iClockTimeOfWriting_ns = 0;
     iInputFrameSizeInBytes = 0;
 
+    iAudioThreadState = IDLE;
+
     // semaphore used to communicate between this  mio and the audio output thread
     iAudioThreadSem = new OsclSemaphore();
     iAudioThreadSem->Create(0);
@@ -91,6 +93,8 @@ OSCL_EXPORT_REF AndroidAudioOutput::~AndroidAudioOutput()
         OsclMemAllocator alloc;
         alloc.deallocate(iActiveTiming);
     }
+
+    iAudioThreadState = IDLE;
 
     // clean up some thread interface objects
     iAudioThreadSem->Close();
@@ -238,7 +242,9 @@ PVMFCommandId AndroidAudioOutput::DiscardData(PVMFTimestamp aTimestamp, const Os
 
     // wakeup the audio thread: There is a chance of audio thread waiting in pause 
     // state and possibly with a partial buffer
-    iAudioThreadSem->Signal();
+    if (iAudioThreadState == PAUSED) {
+        iAudioThreadSem->Signal();
+    }
 
     if (sched)
         RunIfNotReady();
@@ -348,10 +354,10 @@ void AndroidAudioOutput::writeAudioBuffer(uint8* aData, uint32 aDataLen, PVMFCom
 
 int AndroidAudioOutput::audout_thread_func()
 {
-    enum { IDLE, STOPPED, STARTED, PAUSED } state = IDLE;
     int64_t lastClock = 0;
 
     // LOGD("audout_thread_func");
+    iAudioThreadState = IDLE;
 
 #if defined(HAVE_SCHED_SETSCHEDULER) && defined(HAVE_GETTID)
     setpriority(PRIO_PROCESS, gettid(), ANDROID_PRIORITY_AUDIO);
@@ -413,7 +419,7 @@ int AndroidAudioOutput::audout_thread_func()
         switch (iActiveTiming->clockState()) {
         case PVMFMediaClock::RUNNING:
             // start output
-            if (state != STARTED) {
+            if (iAudioThreadState != STARTED) {
                 if (iFlushPending) {
                     LOGV("flush");
                     mAudioSink->flush();
@@ -431,7 +437,7 @@ int AndroidAudioOutput::audout_thread_func()
                 if (iDataQueued || len) {
                     LOGV("start");
                     mAudioSink->start();
-                    state = STARTED;
+                    iAudioThreadState = STARTED;
                 } else {
                     LOGV("clock running and no data queued - don't start track");
                 }
@@ -443,11 +449,11 @@ int AndroidAudioOutput::audout_thread_func()
         case PVMFMediaClock::STOPPED:
              LOGV("clock has been stopped...");
         case PVMFMediaClock::PAUSED:
-            if (state == STARTED) {
+            if (iAudioThreadState == STARTED) {
                 LOGV("pause");
                 mAudioSink->pause();
             }
-            state = PAUSED;
+            iAudioThreadState = PAUSED;
             if(!iExitAudioThread && !iReturnBuffers) {
                 if (iFlushPending) {
                     LOGV("flush");
@@ -498,7 +504,7 @@ int AndroidAudioOutput::audout_thread_func()
             // empty buffer means "End-Of-Stream" - send response to MIO
             else if (len == 0) {
                 LOGV("EOS");
-                state = STOPPED;
+                iAudioThreadState = STOPPED;
                 mAudioSink->stop();
                 if(!iExitAudioThread){
                     nsecs_t interval_nanosec = 0; // Interval between last writetime and EOS processing time in nanosec
@@ -545,7 +551,7 @@ int AndroidAudioOutput::audout_thread_func()
         }
 
         // data to output?
-        if (len && (state == STARTED) && !iExitAudioThread) {
+        if (len && (iAudioThreadState == STARTED) && !iExitAudioThread) {
 
             // always align to AudioFlinger buffer boundary
             if (bytesAvailInBuffer == 0)
@@ -578,6 +584,7 @@ int AndroidAudioOutput::audout_thread_func()
         }
     } // while loop
 
+    iAudioThreadState = IDLE;
     LOGV("stop and delete track");
     mAudioSink->stop();
     iClockTimeOfWriting_ns = 0;
