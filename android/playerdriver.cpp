@@ -386,6 +386,8 @@ PlayerDriver::PlayerDriver(PVPlayer* pvPlayer) :
 
     //Initializing mIsResume flag to false
     mPvPlayer->setIsResume(false);
+    //Initializing mIsPlaying flag to true
+    mPvPlayer->setIsPlaying(true);
     // running in emulation?
     mLibHandle = NULL;
     char value[PROPERTY_VALUE_MAX];
@@ -1448,9 +1450,11 @@ void PlayerDriver::CommandCompleted(const PVCmdResponse& aResponse)
                 if (mPvPlayer->getIsResume() && ((mDataSource->GetDataSourceFormatType()== PVMF_MIME_DATA_SOURCE_RTSP_URL) ||
                                                  (mDataSource->GetDataSourceFormatType()== PVMF_MIME_DATA_SOURCE_SDP_FILE))) {
                     mPvPlayer->setIsResume(false);
-                    PlayerCommand* command = new PlayerStart(0,0);
-                    command->set(PlayerDriver::syncCompletion, this);
-                    handleStart(static_cast<PlayerStart*>(command));
+                    if(mPvPlayer->getIsPlaying()) {
+                        PlayerCommand* command = new PlayerStart(0,0);
+                        command->set(PlayerDriver::syncCompletion, this);
+                        handleStart(static_cast<PlayerStart*>(command));
+                    }
                 }
 
                 break;
@@ -2041,7 +2045,7 @@ status_t PVPlayer::suspend()
     status_t status = getCurrentPosition(&mPositionWhenSuspend);
 
     // get playing status
-    mIsPlaying = isPlaying();
+    setIsPlaying(isPlaying());
 
     // Cancel all cmnds
     status = mPlayerDriver->enqueueCommand(new PlayerCancelAllCommands(0,0));
