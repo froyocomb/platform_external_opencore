@@ -304,6 +304,14 @@ class PvmiMIOControl
          */
 
         virtual void ThreadLogoff() = 0;
+
+        /**
+         * Indicates the nature of video recording (true = only video, false = video + audio)
+         *
+         */
+        bool videoOnlyRecording;
+        void setVideoOnlyRecordingStatus(bool status = false) { videoOnlyRecording = status; }
+        bool getVideoOnlyRecordingStatus() { return videoOnlyRecording; }
 };
 
 

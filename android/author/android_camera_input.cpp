@@ -95,6 +95,7 @@ AndroidCameraInput::AndroidCameraInput()
     }
     iVideoFrameSkipCnt = 0;
     iError_ExitRequired = false;
+    videoOnlyRecording = false;
 }
 
 void AndroidCameraInput::ReleaseQueuedFrames()
@@ -1558,7 +1559,7 @@ void AndroidCameraInput::NotificationsInterfaceDestroyed()
 void AndroidCameraInput::ClockStateUpdated()
 {
     PVMFMediaClock::PVMFMediaClockState iClockState = iAuthorClock->GetState();
-    if ((iClockState == PVMFMediaClock::RUNNING) && (iAudioFirstFrameTs == 0)) {
+    if ((iClockState == PVMFMediaClock::RUNNING) && (videoOnlyRecording == false)) {
         // Get the clock time here
         // this will be the time of first audio frame capture
         bool tmpbool = false;

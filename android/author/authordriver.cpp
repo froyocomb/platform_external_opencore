@@ -344,6 +344,11 @@ void AuthorDriver::handleSetAudioSource(set_audio_source_command *ac)
             // force audio source to camcorder when recording video
             if (mVideoInputMIO != NULL) {
                 mAudioInputMIO->setAudioSource(AUDIO_SOURCE_CAMCORDER);
+                mVideoInputMIO->setVideoOnlyRecordingStatus(false);
+            }
+        } else {
+            if (mVideoInputMIO != NULL) {
+                mVideoInputMIO->setVideoOnlyRecordingStatus(true);
             }
         }
     }
@@ -370,6 +375,9 @@ void AuthorDriver::handleSetVideoSource(set_video_source_command *ac)
                     // force audio source to camcorder when recording video
                     if (mAudioInputMIO != NULL) {
                         mAudioInputMIO->setAudioSource(AUDIO_SOURCE_CAMCORDER);
+                        mVideoInputMIO->setVideoOnlyRecordingStatus(false);
+                    } else {
+                        mVideoInputMIO->setVideoOnlyRecordingStatus(true);
                     }
                     break;
                 }
