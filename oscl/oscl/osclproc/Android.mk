@@ -20,7 +20,10 @@ LOCAL_MODULE := libosclproc
 
 LOCAL_CFLAGS :=  $(PV_CFLAGS)
 
-
+ifeq ($(BUILD_PV_AUDIO_DEC_ONLY), 1)
+# building PV audio decoders for WebOS
+LOCAL_CFLAGS += -UANDROID
+endif
 
 LOCAL_STATIC_LIBRARIES := 
 

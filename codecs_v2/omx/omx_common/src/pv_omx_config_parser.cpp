@@ -137,8 +137,9 @@ OSCL_EXPORT_REF OMX_BOOL OMXConfigParser(
             {
                 return OMX_FALSE;
             }
-
+#ifdef BUILD_ENTIRE_OPENCORE
             Status = pv_video_config_parser(&aInputs, (pvVideoConfigParserOutputs *)aOutputParameters);
+#endif
             if (0 != Status)
             {
                 return OMX_FALSE;
