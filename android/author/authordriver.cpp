@@ -1506,14 +1506,14 @@ void AuthorDriver::clipVideoBitrate()
     char value[PROPERTY_VALUE_MAX];
     property_get("ro.product.device",value,"0");
 
-    if(strncmp("msm7630",value,strlen("msm7630")) == 0 ){
+    if((strncmp("msm7630", value, 7) == 0) || (strncmp(value, "msm8660", 7) == 0)) {
       if( (mVideoHeight == 720 &&  mVideoWidth  == 1280 ) ||
           (mVideoWidth  == 720 &&  mVideoHeight == 1280 ) ){
         LOGV("Setting mVideo_bitrate_setting to 14000000 for 720p");
         mVideo_bitrate_setting = 14000000;
       }
     }
-    else if((strncmp(value, "msm8660", strlen("msm8660"))) == 0){
+    if((strncmp(value, "msm8660", strlen("msm8660"))) == 0){
       if( mVideoWidth == 1088 || mVideoHeight == 1088){
         LOGV("Setting mVideo_bitrate_setting to 20000000");
         mVideo_bitrate_setting = 20000000;
