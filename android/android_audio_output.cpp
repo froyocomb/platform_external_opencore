@@ -445,7 +445,7 @@ int AndroidAudioOutput::audout_thread_func()
         case PVMFMediaClock::PAUSED:
             if (state == STARTED) {
                 LOGV("pause");
-                mAudioSink->pause();
+                mAudioSink->stop();
             }
             state = PAUSED;
             if(!iExitAudioThread && !iReturnBuffers) {
