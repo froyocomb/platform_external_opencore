@@ -325,7 +325,10 @@ PVMFCommandId AndroidSurfaceOutput::Start(const OsclAny* aContext)
         processWriteResponseQueue(0);
         status=PVMFSuccess;
         break;
-
+    case STATE_STARTED:
+        PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE, (0,"AndroidSurfaceOutput::already in STARTED state"));
+        status=PVMFSuccess;
+        break;
     default:
         status=PVMFErrInvalidState;
         break;
@@ -635,9 +638,21 @@ PVMFCommandId AndroidSurfaceOutput::writeAsync(uint8 aFormatType, int32 aFormatI
             //Verify the state
             if (iState!=STATE_STARTED)
             {
+//If state is paused and we have data to process forcefully bring the sink to start state
+                if(iState==STATE_PAUSED)
+                {
+                    iState=STATE_STARTED;
+                    processWriteResponseQueue(0);
+                    status = writeFrameBuf(aData, aDataLen, data_header_info);
+                    if (mStatistics && iFirstFrameLatency) FirstFrameLatency();
+                    break;
+                }
+                else
+                {
                 PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
                     (0,"AndroidSurfaceOutput::writeAsync: Error - Invalid state"));
                 status=PVMFErrInvalidState;
+                }
             }
             else
             {
