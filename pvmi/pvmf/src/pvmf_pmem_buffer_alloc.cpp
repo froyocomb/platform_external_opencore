@@ -61,7 +61,9 @@ OsclAny* PVMFPMemBufferAlloc::allocate(int32 nSize, int32 *pmem_fd)
     pmemfd = open("/dev/pmem_audio", O_RDWR);
 
     if ( pmemfd < 0 ) {
+#ifdef ANDROID
         LOGE("PVMFPMemBufferAlloc::allocate failed to open pmem_audio");
+#endif
         *pmem_fd = -1;
         return pmem_buf;
     }
@@ -70,7 +72,9 @@ OsclAny* PVMFPMemBufferAlloc::allocate(int32 nSize, int32 *pmem_fd)
     pmem_buf = mmap(0, nSize, PROT_READ | PROT_WRITE, MAP_SHARED, pmemfd, 0);
 
     if ( NULL == pmem_buf ) {
+#ifdef ANDROID
         LOGE("PVMFPMemBufferAlloc::allocate failed to mmap");
+#endif
         *pmem_fd = -1;
         return pmem_buf;
     }

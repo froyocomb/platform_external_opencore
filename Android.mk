@@ -1,14 +1,21 @@
 ifneq ($(BUILD_WITHOUT_PV),true)
 LOCAL_PATH := $(call my-dir)
 #PV_TOP := $(LOCAL_PATH)
+
 include $(CLEAR_VARS)
 
 # Set up the PV variables.
 include $(LOCAL_PATH)/Config.mk
-
 $(call add-prebuilt-files, ETC, pvplayer.cfg)
 
-
+ifeq ($(BUILD_PV_AUDIO_DEC_ONLY), 1)
+# Build only required librabries for PV Software Audio decoders - used by WebOS
+include $(PV_TOP)/build_config/opencore_dynamic/Android_opencore_common.mk
+include $(PV_TOP)/build_config/opencore_dynamic/Android_omx_sharedlibrary.mk
+include $(PV_TOP)/build_config/opencore_dynamic/Android_omx_aacdec_sharedlibrary.mk
+include $(PV_TOP)/build_config/opencore_dynamic/Android_omx_amrdec_sharedlibrary.mk
+include $(PV_TOP)/build_config/opencore_dynamic/Android_omx_mp3dec_sharedlibrary.mk
+else
 include $(PV_TOP)/build_config/opencore_dynamic/Android_opencore_common.mk
 include $(PV_TOP)/build_config/opencore_dynamic/Android_opencore_author.mk
 include $(PV_TOP)/build_config/opencore_dynamic/Android_opencore_player.mk
@@ -45,5 +52,5 @@ include $(PV_TOP)/oscl/unit_test/Android.mk
 include $(PV_TOP)/engines/player/test/Android.mk
 include $(PV_TOP)/engines/author/test/Android.mk
 endif
-
+endif
 endif

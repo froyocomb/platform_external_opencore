@@ -1,10 +1,11 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-LOCAL_SRC_FILES := \
-	src/pv_video_config_parser.cpp \
- 	src/pv_audio_config_parser.cpp
+LOCAL_SRC_FILES := src/pv_audio_config_parser.cpp
 
+ifneq ($(BUILD_PV_AUDIO_DEC_ONLY),1)
+LOCAL_SRC_FILES += src/pv_video_config_parser.cpp
+endif
 
 LOCAL_MODULE := libpv_config_parser
 
@@ -24,8 +25,10 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_COPY_HEADERS_TO := $(PV_COPY_HEADERS_TO)
 
-LOCAL_COPY_HEADERS := \
-	include/pv_video_config_parser.h \
- 	include/pv_audio_config_parser.h
+LOCAL_COPY_HEADERS := include/pv_audio_config_parser.h
+
+ifneq ($(BUILD_PV_AUDIO_DEC_ONLY),1)
+LOCAL_COPY_HEADERS += include/pv_video_config_parser.h
+endif
 
 include $(BUILD_STATIC_LIBRARY)

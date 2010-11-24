@@ -12,6 +12,11 @@ LOCAL_MODULE := libpvomx_proxy_lib
 
 LOCAL_CFLAGS :=  $(PV_CFLAGS)
 
+# building PV audio decoders for WebOS
+ifeq ($(BUILD_PV_AUDIO_DEC_ONLY), 1)
+LOCAL_CFLAGS += -UANDROID
+endif
+
 LOCAL_ARM_MODE := arm
 
 LOCAL_STATIC_LIBRARIES := 
