@@ -4419,18 +4419,21 @@ void PVMFOMXBaseDecNode::DoPrepare(PVMFOMXBaseDecNodeCommand& aCmd)
                 // 2. If the format is MP3 / MPEG4_AUDIO or AAC ADIF &
                 // 3. If by default bHWAccelerated is set to false (use software decoder)
                 // 4. Then it should be definitely LPA decode -> Use PMemBufferAlloc interface.
-#ifdef SURF7x30
-                if ( (format == PVMF_MIME_MP3) ||
-                     (format == PVMF_MIME_MP3FF) ||
-                     (format == PVMF_MIME_ADIF) ||
-                     (format == PVMF_MIME_MPEG4_AUDIO))
+                char value[128];
+                property_get("lpa.decode",value,"0");
+                if(strcmp("true",value) == 0)
                 {
-                    if (!bHWAccelerated)
+                    if ( (format == PVMF_MIME_MP3) ||
+                         (format == PVMF_MIME_MP3FF) ||
+                         (format == PVMF_MIME_ADIF) ||
+                         (format == PVMF_MIME_MPEG4_AUDIO))
                     {
-                        ipPMemBufferAlloc = new PVMFPMemBufferAlloc();
+                        if (!bHWAccelerated)
+                        {
+                            ipPMemBufferAlloc = new PVMFPMemBufferAlloc();
+                        }
                     }
                 }
-#endif
             }
             // do some sanity checking
 
