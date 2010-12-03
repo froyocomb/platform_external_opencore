@@ -1450,8 +1450,6 @@ int AndroidAudioInput::audin_thread_func() {
             }
 
            if (iFirstFrameReceived == false) {
-                iFirstFrameReceived = true;
-
                 // Get the AudioRecord latency and
                 // get the system clock at this point
                 // The difference in 2 will give the actual time
@@ -1486,6 +1484,7 @@ int AndroidAudioInput::audin_thread_func() {
 
                 iFirstFrameTs = systime - recordLatency;
                 LOGV("First Audio Frame received systime %d, recordLatency %d, iFirstFrameTs %d", systime, recordLatency, iFirstFrameTs);
+                iFirstFrameReceived = true;
             }
 #ifdef DEBUG_TIMESTAMP
             else{

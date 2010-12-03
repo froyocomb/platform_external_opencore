@@ -1427,8 +1427,15 @@ PVMFStatus AndroidCameraInput::postWriteAsync(nsecs_t timestamp, const sp<IMemor
     // In cases of Video Only recording iAudioFirstFrameTs will always be zero,
     // so for such cases assign iAudioFirstFrameTs to Video's first sample TS
     // which will make Video samples to start with Timestamp zero.
-    if (iAudioFirstFrameTs == 0)
-        iAudioFirstFrameTs = ts;
+    if (iAudioFirstFrameTs == 0) {
+        if (videoOnlyRecording)
+            iAudioFirstFrameTs = ts;
+        else {
+            // Wait for first audio frame to be set in ClockStateUpdated
+            mCamera->releaseRecordingFrame(frame);
+            return PVMFSuccess;
+        }
+    }
 
     if (ts < iAudioFirstFrameTs) {
         // Drop the frame
