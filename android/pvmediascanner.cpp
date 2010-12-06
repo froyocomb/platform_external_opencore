@@ -622,8 +622,9 @@ status_t PVMediaScanner::processFile(const char *path, const char* mimeType, Med
     } else if (extension && strcasecmp(extension, ".ogg") == 0) {
         result = parseOgg(path, client);
     } else if (extension &&
-        ( strcasecmp(extension, ".mid") == 0 || strcasecmp(extension, ".smf") == 0
-        || strcasecmp(extension, ".imy") == 0)) {
+        ( strcasecmp(extension, ".mid") == 0 || strcasecmp(extension, ".smf") == 0 ||
+        strcasecmp(extension, ".imy") == 0 || strcasecmp(extension, ".xmf") == 0 ||
+        strcasecmp(extension, ".mxmf")== 0 )) {
         result = parseMidi(path, client);
     } else if (extension &&
        (strcasecmp(extension, ".wma") == 0 || strcasecmp(extension, ".aac") == 0)) {
