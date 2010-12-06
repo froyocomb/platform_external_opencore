@@ -1490,6 +1490,14 @@ ITunesDiskDatatAtom::ITunesDiskDatatAtom(MP4_FF_FILE *fp,
                 PVMF_MP4FFPARSER_LOGERROR((0, "ERROR =>ITunesDiskDatatAtm::ITunesDiskDatatAtom READ_ITUNES_ILST_META_DATA_FAILED  if(!AtomUtils::read16read16(fp, _thisDiskNo, _totalDisks))"));
                 return;
             }
+
+            if (!AtomUtils::read16(fp, junk))
+            {
+                _success = false;
+                _mp4ErrorCode = READ_ITUNES_ILST_META_DATA_FAILED;
+                PVMF_MP4FFPARSER_LOGERROR((0, "ERROR =>ITunesDiskDatatAtom::ITunesDiskDatatAtom READ_ITUNES_ILST_META_DATA_FAILED  if(!AtomUtils::read16(fp,junk))"));
+                return;
+            }
         }
         else
         {
