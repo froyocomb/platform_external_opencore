@@ -65,6 +65,38 @@ static const uint8  AMR_NB_SILENCE_FRAME[]   = {0x44, 0x00, 0x00, 0x00, 0x00, 0x
 static const uint8  AAC_MONO_SILENCE_FRAME_WITH_SIZE[]   = {0x0A, 0x00, 0x01, 0x40, 0x20, 0x06, 0x4F, 0xDE, 0x02, 0x70, 0x0C, 0x1C};
 static const uint8  AAC_STEREO_SILENCE_FRAME_WITH_SIZE[] = {0x0B, 0x00, 0x21, 0x10, 0x05, 0x00, 0xA0, 0x19, 0x33, 0x87, 0xC0, 0x00, 0x7E};
 
+#ifdef SURF7x30
+////////////////////////////////////////////////////////////////////////////
+// Determines if the device is a 7x30 FLUID.
+// This is needed because for 7x30 FLUID, we do AAC encoding in tunnel mode.
+// Returns true if device is 7x30 FLUID, false otherwise.
+static bool determineIfDeviceIs7x30Fluid()
+{
+    // Max device size name. We only need to see if it "Fluid" or not."
+    const int DEVICE_NAME_SIZE = 10;
+    char deviceName[DEVICE_NAME_SIZE];
+    const char * fluidDeviceName = "Fluid";
+    int fluidDeviceNameLen = strlen(fluidDeviceName);
+    FILE * deviceFilePtr = fopen("/sys/devices/system/soc/soc0/hw_platform", "rb");
+    if (deviceFilePtr)
+    {
+        fgets(deviceName, sizeof(deviceName), deviceFilePtr);
+        LOGI("Device name is: %s", deviceName);
+        int minSize = strnlen(deviceName, sizeof(deviceName));
+        if (fluidDeviceNameLen < minSize)
+        {
+            minSize = fluidDeviceNameLen;
+        }
+        fclose(deviceFilePtr);
+        if (!strncmp(fluidDeviceName, deviceName, minSize))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+#endif
+
 ////////////////////////////////////////////////////////////////////////////
 AndroidAudioInput::AndroidAudioInput(uint32 audioSource)
     : OsclTimerObject(OsclActiveObject::EPriorityNominal, "AndroidAudioInput"),
@@ -544,7 +576,17 @@ PVMFStatus AndroidAudioInput::getParametersSync(PvmiMIOSession session,
     {
 #if defined SURF8K || defined SURF7x30
         // No. of Supported audio format types
-        num_parameter_elements = 4;
+        // If device is 7x30 FLUID, then we do AAC encoding in tunnel mode.
+        // Otherwise, AAC encoding is done in non tunnel mode.
+        bool is7x30Fluid = determineIfDeviceIs7x30Fluid();
+        if (is7x30Fluid)
+        {
+            num_parameter_elements = 5;
+        }
+        else
+        {
+            num_parameter_elements = 4;
+        }
 #else
         // No. of Supported audio format types
         num_parameter_elements = 5;
@@ -564,6 +606,11 @@ PVMFStatus AndroidAudioInput::getParametersSync(PvmiMIOSession session,
 #ifdef SURF7x30
             // Supports AMR-NB in tunnel mode and AAC in Non-tunnel mode
             parameters[3].value.pChar_value = (char*)PVMF_MIME_AMR_IETF;
+            // If device is 7x30 FLUID, then we do AAC encoding in tunnel mode.
+            if (is7x30Fluid)
+            {
+                parameters[4].value.pChar_value = (char*)PVMF_MIME_MPEG4_AUDIO;
+            }
 #else
 #ifdef SURF8K
             // Supports AAC in tunnel mode and AMR-NB in Non-tunnel mode
