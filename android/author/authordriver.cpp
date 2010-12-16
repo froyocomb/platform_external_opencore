@@ -123,7 +123,8 @@ AuthorDriver::AuthorDriver()
     mNumberOfChannels(0),
     mAudio_bitrate_setting(0),
     mVideo_bitrate_setting(0),
-    ifpOutput(NULL)
+    ifpOutput(NULL),
+    mDisableAudio(false)
 {
     mSyncSem = new OsclSemaphore();
     mSyncSem->Create();
@@ -316,6 +317,10 @@ void AuthorDriver::handleInit(author_command *ac)
 void AuthorDriver::handleSetAudioSource(set_audio_source_command *ac)
 {
     int error = 0;
+    if (mDisableAudio) {
+        FinishNonAsyncCommand(ac);
+        return;
+    }
     if (ac->as == AUDIO_SOURCE_FM_RX_A2DP) {
         mAudioInputMIOA2DP = new AndroidAudioInputA2DP(ac->as);
         if (mAudioInputMIOA2DP != NULL) {
@@ -464,6 +469,12 @@ void AuthorDriver::media_track_added(status_t status, void *cookie)
 void AuthorDriver::handleSetAudioEncoder(set_audio_encoder_command *ac)
 {
     LOGV("AuthorDriver::handleSetAudioEncoder(%d)", ac->ae);
+
+    if (mDisableAudio) {
+        LOGW("Audio Disabled - Video only encoding");
+        FinishNonAsyncCommand(ac);
+        return;
+    }
 
     int error = 0;
     OSCL_HeapString<OsclMemAllocator> iAudioEncoderMimeType;
@@ -1304,6 +1315,11 @@ int AuthorDriver::authorThread()
         mSyncSem->Signal();
         return -1;
     }
+
+    // Disable Audio Encoding
+    char value[PROPERTY_VALUE_MAX];
+    property_get("camcorder.debug.disableaudio", value, "0");
+    if(atoi(value)) mDisableAudio = true;
 
     LOGV("OMX_MasterInit");
     OMX_MasterInit();

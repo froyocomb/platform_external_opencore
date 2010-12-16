@@ -405,6 +405,8 @@ private:
     int32            mVideo_bitrate_setting;
 
     FILE*       ifpOutput;
+
+    bool        mDisableAudio;
 };
 
 class AuthorDriverWrapper
