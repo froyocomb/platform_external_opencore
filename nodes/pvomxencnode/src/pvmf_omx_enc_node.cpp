@@ -10224,6 +10224,7 @@ bool PVMFOMXEncNode::AVCAnnexBGetNALUnit(uint8 *bitstream, uint8 **nal_unit, int
 {
     int32 i, j, FoundStartCode = 0;
     int32 end;
+    uint8 nalType = 0;
 
     i = 0;
     while (bitstream[i] == 0 && i < *size)
@@ -10239,6 +10240,10 @@ bool PVMFOMXEncNode::AVCAnnexBGetNALUnit(uint8 *bitstream, uint8 **nal_unit, int
     {
         i = -1;  /* start_code_prefix is not at the beginning, continue */
     }
+    else // bitstream == 0x1
+    {
+        nalType = bitstream[i+1] & 0x1F;
+    }
 
     i++;
     *nal_unit = bitstream + i; /* point to the beginning of the NAL unit */
@@ -10247,6 +10252,15 @@ bool PVMFOMXEncNode::AVCAnnexBGetNALUnit(uint8 *bitstream, uint8 **nal_unit, int
     {
         // size not needed, just return with ptr
         return true;
+    }
+
+    if (!iOMXComponentUsesFullAVCFrames)
+    {
+        if ((nalType != 0x7) && (nalType != 0x8)) // NAL Type is not SPS or PPS
+        {
+            *size -= i;
+            return true;
+        }
     }
 
     j = end = i;
