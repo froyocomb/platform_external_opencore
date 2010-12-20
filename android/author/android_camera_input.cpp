@@ -327,7 +327,7 @@ PVMFCommandId AndroidCameraInput::Start(const OsclAny* aContext)
 
     return AddCmdToQueue(CMD_START, aContext);
 }
-
+/*
 PVMFStatus AndroidCameraInput::takeLiveSnapshot(const OsclAny* aContext)
 {
     LOGV("takeLiveSnapshot");
@@ -349,6 +349,7 @@ PVMFStatus AndroidCameraInput::takeLiveSnapshot(const OsclAny* aContext)
     LOGE("mCamera is NULL");
     return PVMFFailure;
 }
+*/
 
 PVMFCommandId AndroidCameraInput::Pause(const OsclAny* aContext)
 {
@@ -1063,7 +1064,7 @@ PVMFStatus AndroidCameraInput::DoInit()
 
     // create a camera if the app didn't supply one
     if (mCamera == 0) {
-      mCamera = Camera::connect(); //TODO: Check for mCamera->status here too?
+      mCamera = Camera::connect(0); //TODO: Check for mCamera->status here too?
     }
 
     if (mCamera != NULL) {
@@ -1546,7 +1547,7 @@ void AndroidCameraInputListener::postData(int32_t msgType, const sp<IMemory>& da
 {
     LOGV("postData");
     //enqueue the buffer into MIO.
-    if ((mCameraInput != NULL) && (msgType == MEDIA_RECORDER_MSG_COMPRESSED_IMAGE)) {
+    if ((mCameraInput != NULL) ) {//&& (msgType == MEDIA_RECORDER_MSG_COMPRESSED_IMAGE)) {
         mCameraInput->postWriteImageAsync(dataPtr);
     }
 }

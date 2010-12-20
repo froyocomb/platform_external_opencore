@@ -96,7 +96,7 @@ status_t AuthorDriverWrapper::enqueueCommand(author_command *ac, media_completio
     return NO_INIT;
 }
 
-status_t AuthorDriverWrapper::setListener(const sp<IMediaPlayerClient>& listener) {
+status_t AuthorDriverWrapper::setListener(const sp<IMediaRecorderClient>& listener) {
     if (mAuthorDriver) {
     return mAuthorDriver->setListener(listener);
     }
@@ -1184,7 +1184,7 @@ void AuthorDriver::handleLiveSnapshot(author_command *ac)
     PVMFStatus ret = PVMFSuccess;
     int error = 0;
     if(mVideoInputMIO) {
-        ret = ((AndroidCameraInput *)mVideoInputMIO)->takeLiveSnapshot(ac);
+        //ret = ((AndroidCameraInput *)mVideoInputMIO)->takeLiveSnapshot(ac);
     }
 
     if(ret == PVMFSuccess) {
@@ -1822,7 +1822,8 @@ void AuthorDriver::HandleInformationalEvent(const PVAsyncInformationalEvent& aEv
             }
             else {
                 LOGV("Got Image data in author driver");
-                mListener->dataCallback(MEDIA_RECORDER_MSG_COMPRESSED_IMAGE, sData->mImage );
+                //TBD listner removed dataCallback
+                //mListener->dataCallback(MEDIA_RECORDER_MSG_COMPRESSED_IMAGE, sData->mImage );
             }
             return;
         }
@@ -1834,7 +1835,7 @@ void AuthorDriver::HandleInformationalEvent(const PVAsyncInformationalEvent& aEv
             aEvent.GetEventType());
 }
 
-status_t AuthorDriver::setListener(const sp<IMediaPlayerClient>& listener) {
+status_t AuthorDriver::setListener(const sp<IMediaRecorderClient>& listener) {
     mListener = listener;
 
     return android::OK;

@@ -36,6 +36,12 @@ PVMediaRecorder::~PVMediaRecorder()
     delete mAuthorDriverWrapper;
 }
 
+status_t PVMediaRecorder::dump(int fd, const Vector<String16>& args) const
+{
+   //TODO
+   return 0;
+}
+
 status_t PVMediaRecorder::init()
 {
     LOGV("init");
@@ -306,7 +312,7 @@ status_t PVMediaRecorder::start()
     }
     return mAuthorDriverWrapper->enqueueCommand(ac, 0, 0);
 }
-
+/*
 status_t PVMediaRecorder::takeLiveSnapshot()
 {
     LOGV("PVMediaRecorder::takeLiveSnapshot");
@@ -322,6 +328,7 @@ status_t PVMediaRecorder::takeLiveSnapshot()
     }
     return mAuthorDriverWrapper->enqueueCommand(ac, 0, 0);
 }
+*/
 
 // Make sure that stop also calls PV author engine's Reset()
 // and Close() so that its internal state is maintained correctly
@@ -404,7 +411,7 @@ status_t PVMediaRecorder::close()
     return mAuthorDriverWrapper->enqueueCommand(ac, 0, 0);
 }
 
-status_t PVMediaRecorder::setListener(const sp<IMediaPlayerClient>& listener) {
+status_t PVMediaRecorder::setListener(const sp<IMediaRecorderClient>& listener) {
     LOGV("setListener");
     if (mAuthorDriverWrapper == NULL) {
         LOGE("author driver wrapper is not initialized yet");
