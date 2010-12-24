@@ -1668,7 +1668,7 @@ namespace android {
 /*static*/ volatile int32_t PVPlayer::sNumInstances = 0;
 #endif
 
-// ----------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // implement the Packet Video player
 // ----------------------------------------------------------------------------
 PVPlayer::PVPlayer()
@@ -2036,14 +2036,38 @@ status_t PVPlayer::getMetadata(const media::Metadata::Filter& ids,
     return ok ? OK : UNKNOWN_ERROR;
 }
 
+
+bool PVPlayer::isNotPaused()
+{
+    int status = 0;
+    if (mPlayerDriver->enqueueCommand(new PlayerGetStatus(&status,0,0)) == NO_ERROR) {
+        return (status != PVP_STATE_PAUSED);
+    }
+    return false;
+}
+
+int PVPlayer::getCurrentPlayerState()
+{
+    int status;
+    if (mPlayerDriver->enqueueCommand(new PlayerGetStatus(&status,0,0)) == NO_ERROR) {
+        return status;
+    }
+    return PVP_STATE_ERROR;
+}
+
 status_t PVPlayer::suspend()
 {
+    status_t status;
     LOGV("suspend");
-    // Retrieve position when suspended
-    status_t status = getCurrentPosition(&mPositionWhenSuspend);
-
-    // get playing status
-    setIsPlaying(isPlaying());
+// Retrieve position when suspended
+    if((getCurrentPlayerState()==PVP_STATE_STARTED) || (getCurrentPlayerState()==PVP_STATE_PAUSED)) {
+        LOGV("suspend at position (%d) with state %d", mPositionWhenSuspend,getCurrentPlayerState());
+        status = getCurrentPosition(&mPositionWhenSuspend);
+        setIsPlaying(isNotPaused());
+    }
+    else {
+        LOGV("suspend in state %d and at position %d, not saving the state and current position ", getCurrentPlayerState(), mPositionWhenSuspend);
+    }
 
     // Cancel all cmnds
     status = mPlayerDriver->enqueueCommand(new PlayerCancelAllCommands(0,0));
