@@ -1041,6 +1041,11 @@ PVMFStatus AuthorDriver::setParameter(
         if (safe_strtoi64(value.string(), &video_bitrate)) {
             return setParamVideoEncodingBitrate(video_bitrate);
         }
+    } else if (key == "video-param-rotation-angle-degrees") {
+       //TODO: Rotation not supported at the moment. Need to add information
+       //to metadata later. This is only a work around in testing the
+       //camcorder.
+       return PVMFSuccess;
     }
 
     // Return error if the key wasnt found
