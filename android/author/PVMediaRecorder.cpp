@@ -28,7 +28,6 @@ PVMediaRecorder::PVMediaRecorder()
 {
     LOGV("constructor");
     mAuthorDriverWrapper = new AuthorDriverWrapper();
-    mOutputFd = -1;
 }
 
 PVMediaRecorder::~PVMediaRecorder()
@@ -135,16 +134,8 @@ status_t PVMediaRecorder::setOutputFile(int fd, int64_t offset, int64_t length)
         LOGE("failed to construct an author command");
         return NO_MEMORY;
     }
-    mOutputFd = dup(fd);
-    if(mOutputFd > 0)
-    {
-        ac->fd = mOutputFd;
-    }
-    else
-    {
-        LOGE("failed to dup fd");
-        return NO_MEMORY;
-    }
+
+    ac->fd = fd;
     ac->offset = offset;
     ac->length = length;
     return mAuthorDriverWrapper->enqueueCommand(ac, 0, 0);
@@ -353,10 +344,7 @@ status_t PVMediaRecorder::stop()
     ret = close();
     if (OK != ret)
     LOGE("close failed");
-    if(mOutputFd > 0) {
-    ::close(mOutputFd);
-    mOutputFd = -1;
-    }
+
     return ret;
 }
 
@@ -379,12 +367,6 @@ status_t PVMediaRecorder::doStop()
 status_t PVMediaRecorder::reset()
 {
     LOGV("reset");
-
-    if(mOutputFd > 0) {
-    ::close(mOutputFd);
-    mOutputFd = -1;
-    }
-
     if (mAuthorDriverWrapper == NULL) {
         LOGE("author driver wrapper is not initialized yet");
         return UNKNOWN_ERROR;
