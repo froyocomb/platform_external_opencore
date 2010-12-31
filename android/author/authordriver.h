@@ -407,6 +407,7 @@ private:
     FILE*       ifpOutput;
 
     bool        mDisableAudio;
+    int32       ifdOutput;
 };
 
 class AuthorDriverWrapper

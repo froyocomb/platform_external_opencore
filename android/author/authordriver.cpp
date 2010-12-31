@@ -124,6 +124,7 @@ AuthorDriver::AuthorDriver()
     mAudio_bitrate_setting(0),
     mVideo_bitrate_setting(0),
     ifpOutput(NULL),
+    ifdOutput(NULL),
     mDisableAudio(false)
 {
     mSyncSem = new OsclSemaphore();
@@ -842,7 +843,13 @@ void AuthorDriver::handleSetOutputFile(set_output_file_command *ac)
     config = OSCL_STATIC_CAST(PvmfFileOutputNodeConfigInterface*, mComposerConfig);
     if (!config) goto exit;
 
-    ifpOutput = fdopen(ac->fd, "wb");
+    ifdOutput = dup(ac->fd);
+    if (ifdOutput < 0) {
+       LOGE("Ln %d dup() error", __LINE__);
+       goto exit;
+    }
+
+    ifpOutput = fdopen(ifdOutput, "wb");
     if (NULL == ifpOutput) {
         LOGE("Ln %d fopen() error", __LINE__);
         goto exit;
@@ -873,6 +880,10 @@ exit:
     if (ifpOutput) {
         fclose(ifpOutput);
         ifpOutput = NULL;
+    }
+    if (ifdOutput) {
+       close(ifdOutput);
+       ifdOutput = -1;
     }
         commandFailed(ac);
     }
@@ -1286,6 +1297,11 @@ void AuthorDriver::doCleanUp()
     if (ifpOutput) {
     fclose(ifpOutput);
     ifpOutput = NULL;
+    }
+
+    if (ifdOutput) {
+    close(ifdOutput);
+    ifdOutput = NULL;
     }
 
     if (mCamera != NULL) {
