@@ -107,7 +107,6 @@ AndroidAudioInput::AndroidAudioInput(uint32 audioSource)
         iAudioFormat=PVMF_MIME_FORMAT_UNKNOWN;
         iExitAudioThread=false;
         // Setting up the default audio source type
-        iBufferForceWrite = 0;
         iCommandCounter=0;
         iCommandResponseQueue.reserve(5);
         iWriteResponseQueue.reserve(5);
@@ -1559,16 +1558,6 @@ int AndroidAudioInput::audin_thread_func() {
         }
 
         record->stop();
-
-        // This is to ensure that the last read buffer is written to the file
-        // before the Audio thread is stopped and the MIO is disconnected
-        if ( (iState == STATE_STOPPED) && (numOfBytes > 0) &&
-             (iAudioFormatType != android::AudioSystem::PCM_16_BIT))
-        {
-          iBufferForceWrite = 1;
-          SendMicData();
-          iBufferForceWrite = 0;
-        }
     }
 
     LOGV("delete record %p, this %p", record, this);
@@ -1581,8 +1570,7 @@ void AndroidAudioInput::SendMicData(void)
 {
     //LOGE("SendMicData in\n");
     //ASSUMPTION: the output queue is always available. no wait
-    if ( (iState != STATE_STARTED) &&
-         (!iBufferForceWrite))
+    if ( (iState != STATE_STARTED) )
     {
         LOGV("not started");
         return;
