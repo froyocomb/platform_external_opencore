@@ -472,7 +472,6 @@ private:
     AndroidAudioInputCmd iStartCmd;
     // Variable to track AudioSource type.
     int iAudioFormatType;
-    bool iBufferForceWrite;
 
     // Audio input thread
     OsclThread AudioInput_Thread;
