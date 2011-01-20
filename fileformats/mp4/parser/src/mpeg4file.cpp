@@ -2918,15 +2918,17 @@ int32 Mpeg4File::getNextBundledAccessUnits(const uint32 trackID,
 
                             _pMovieFragmentAtom->ParseMoofAtom(_movieFragmentFilePtr, moofSize, moofType, _pTrackDurationContainer, _pTrackExtendsAtomVec, moofParsingCompleted, countOfTrunsParsed);
                             moofPtrPos = AtomUtils::getCurrentFilePosition(_movieFragmentFilePtr);
+
+                            if (!_pMovieFragmentAtom->MP4Success())
+                            {
+                                _success = false;
+                                _mp4ErrorCode = _pMovieFragmentAtom->GetMP4Error();
+                                oAllMoofExhausted = true;
+                                return _mp4ErrorCode;
+                            }
+
                             if (moofParsingCompleted)
                             {
-                                if (!_pMovieFragmentAtom->MP4Success())
-                                {
-                                    _success = false;
-                                    _mp4ErrorCode = _pMovieFragmentAtom->GetMP4Error();
-                                    oAllMoofExhausted = true;
-                                    break;
-                                }
                                 _pMovieFragmentAtom->setParent(this);
                                 moofCount -= _pMovieFragmentAtom->getSize();
                             }

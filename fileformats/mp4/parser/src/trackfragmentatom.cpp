@@ -311,6 +311,11 @@ void TrackFragmentAtom::ParseTrafAtom(MP4_FF_FILE *fp,
                     uint32 atomType = UNKNOWN_ATOM;
                     uint32 atomSize = 0;
                     AtomUtils::getNextAtomType(fp, atomSize, atomType);
+                    if (atomType == UNKNOWN_ATOM) {
+                        _success = false;
+                        _mp4ErrorCode = READ_FAILED;
+                        return;
+                    }
 
                     if (atomType == TRACK_FRAGMENT_RUN_ATOM)
                     {

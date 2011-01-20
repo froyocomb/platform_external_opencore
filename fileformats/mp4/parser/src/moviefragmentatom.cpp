@@ -239,6 +239,13 @@ void MovieFragmentAtom::ParseMoofAtom(MP4_FF_FILE *fp,
                         size = count;
                         _pMovieFragmentCurrentOffset += _pTrackFragmentAtom->_trackFragmentEndOffset;
                     }
+
+                    if (!_pTrackFragmentAtom->MP4Success())
+                    {
+                        _success = false;
+                        _mp4ErrorCode = READ_TRACK_FRAGMENT_ATOM_FAILED;
+                        return;
+                    }
                 }
             }
             else if (count > 0)
