@@ -439,7 +439,7 @@ void AuthorDriver::handleSetOutputFormat(set_output_format_command *ac)
         break;
 
     // Adding QCP file support
-    case OUTPUT_FOMRAT_QCP:
+    case OUTPUT_FORMAT_QCP:
         mComposerMimeType = "/x-pvmf/ff-mux/qcp";
         break;
 
@@ -857,7 +857,7 @@ void AuthorDriver::handleSetOutputFile(set_output_file_command *ac)
 
     if (( OUTPUT_FORMAT_AMR_NB == mOutputFormat ) || ( OUTPUT_FORMAT_AMR_WB == mOutputFormat ) ||
         ( OUTPUT_FORMAT_AAC_ADIF == mOutputFormat ) || ( OUTPUT_FORMAT_AAC_ADTS == mOutputFormat ) ||
-        ( OUTPUT_FOMRAT_QCP == mOutputFormat )) {
+        ( OUTPUT_FORMAT_QCP == mOutputFormat )) {
         PvmfFileOutputNodeConfigInterface *config = OSCL_DYNAMIC_CAST(PvmfFileOutputNodeConfigInterface*, mComposerConfig);
         if (!config) goto exit;
 
