@@ -370,7 +370,7 @@ void AndroidAudioLPADecode::HandleA2DPswitch()
             }
 
             // 1.4 Check for Bytes Consumed
-            if ( nBytesConsumed == 0 ) {
+            if ( nBytesConsumed == 0 || iHwState == STATE_HW_STOPPED) {
                 LOGV("DSP did not consume any data. Start A2DP for processing data");
                 iActiveTiming->setThreadSemaphore(iA2DPThreadSem);
                 iA2DPThreadSem->Signal();
