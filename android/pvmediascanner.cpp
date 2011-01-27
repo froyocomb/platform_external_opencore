@@ -559,6 +559,10 @@ static PVMFStatus parseWMA(const char *filename, MediaScannerClient& client)
     if (value)
         client.addStringTag("tracknumber", value);
 
+    value = retriever->extractMetadata(METADATA_KEY_DURATION);
+    if (value)
+        client.addStringTag("duration", value);
+
     retriever->disconnect();
     return PVMFSuccess;
 }
@@ -627,7 +631,9 @@ status_t PVMediaScanner::processFile(const char *path, const char* mimeType, Med
         strcasecmp(extension, ".mxmf")== 0 )) {
         result = parseMidi(path, client);
     } else if (extension &&
-       (strcasecmp(extension, ".wma") == 0 || strcasecmp(extension, ".aac") == 0)) {
+       (strcasecmp(extension, ".wma") == 0 || strcasecmp(extension, ".aac") == 0) ||
+       (strcasecmp(extension, ".amr") == 0 || strcasecmp(extension, ".awb") == 0) ||
+       (strcasecmp(extension, ".wav") == 0 )) {
         //TODO: parseWMA needs to be renamed to reflect what it is really doing,
         //ie. using OpenCORE frame metadata utility(FMU) to retrieve metadata.
         result = parseWMA(path, client);
