@@ -2194,10 +2194,16 @@ status_t doUsePVPlayer(const char *filename)
                                 LOGV("doUsePVPlayer: got streamtype %s",streamtype.get_cstr());
 
                                 //MIME type X-MPEG4_AUDIO indicates AAC in MP4
-                        char value[128];
-                        property_get("lpa.decode",value,"0");
-                        if(strcmp("true",value) == 0)
-                        {
+                            char value[128];
+                            property_get("lpa.decode",value,"0");
+                            if(strcmp("true",value) == 0)
+                            {
+                                if (streamtype == PVMF_MIME_M4V || streamtype == PVMF_MIME_H2631998 ||
+                                    streamtype == PVMF_MIME_H2632000 || streamtype == PVMF_MIME_H264_VIDEO_MP4 ||
+                                    streamtype == PVMF_MIME_H264_VIDEO) {
+                                    LOGV("Found a valid video stream in MP4 container, do not use LPA");
+                                    goto return_status;
+                                }
                                 if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO && count == 1) {
                                     LOGV("doUsePVPlayer: recognized file as AAC in MP4 or 3gpp");
                                     duration = mp4Input->getMovieDuration();
@@ -2217,7 +2223,7 @@ status_t doUsePVPlayer(const char *filename)
                                         goto return_status;
                                     }
                                 }
-                        }
+                            }
                                 if (streamtype==PVMF_MIME_QCELP || streamtype==PVMF_MIME_EVRC) {
                                     LOGV("doUsePVPlayer: recognized qcelp or evrc file");
                                     mUseLPADecode = false;
