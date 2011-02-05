@@ -308,6 +308,11 @@ OSCL_EXPORT_REF MovieAtom::MovieAtom(MP4_FF_FILE *fp,
                     }
                     else
                     {
+                        if (atomSize == 0 || atomSize > size) {
+                            _success = false;
+                            _mp4ErrorCode = READ_TRACK_ATOM_FAILED;
+                             return ;
+                        }
                         count -= atomSize;
                         atomSize -= DEFAULT_ATOM_SIZE;
                         currPos += atomSize;
