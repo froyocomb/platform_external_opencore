@@ -238,7 +238,6 @@ PVMFStatus PVMFOMXVideoDecNode::HandlePortReEnable()
         PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                         (0, "PVMFOMXVideoDecNode::HandlePortReEnable() new output buffers %d, size %d", iNumOutputBuffers, iOMXComponentOutputBufferSize));
 
-        if (!iUpstreamParsing) {
             // set the new width / height
             iYUVWidth =  iParamPort.format.video.nFrameWidth;
             iYUVHeight = iParamPort.format.video.nFrameHeight;
@@ -258,7 +257,6 @@ PVMFStatus PVMFOMXVideoDecNode::HandlePortReEnable()
             {
                 iSliceHeight = iParamPort.format.video.nFrameHeight;
             }
-        }
 
         // Before allocating new set of output buffers, re-send Video FSI to
         // media output node in case of dynamic port reconfiguration
