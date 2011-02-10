@@ -1210,6 +1210,10 @@ int AndroidAudioInputA2DP::auda2dp_thread_func()
             iOSSBTResponseQueue.erase(&iOSSBTResponseQueue[0]);
             iOSSBTResponseQueueLock.Unlock();
             iOSSBTRequestQueueLock.Lock();
+            if(iOSSBTRequestQueue.empty()) {
+                LOGV("auda2dp_thread_func(): Signal to audio thread to read data");
+                iAudioThreadSem->Signal();
+            }
             iOSSBTRequestQueue.push_back(FMDATA);
             iOSSBTRequestQueueLock.Unlock();
         }
