@@ -221,6 +221,8 @@ OSCL_EXPORT_REF AndroidAudioLPADecode::~AndroidAudioLPADecode()
         delete iA2DPThreadTermSem;
         iA2DPThreadCreatedSem->Close();
         delete iA2DPThreadCreatedSem;
+        iA2DPThreadReturnSem->Close();
+        delete iA2DPThreadReturnSem;
 
         iOSSRequestQueueLock.Close();
         iOSSResponseQueueLock.Close();

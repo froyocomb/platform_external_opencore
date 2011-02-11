@@ -2106,13 +2106,15 @@ status_t doUsePVPlayer(const char *filename)
         }
     }
 
+    uint32* tracks = NULL;
+    IMpeg4File *mp4Input = NULL;
+    Oscl_FileServer iFs;
     //Check for clips with LPA implementation in PVPlayer
     //First check if MP4, 3gpp, or 3g2 container
     if (status != OK) {
         if (InitializeForThread()) {
-            Oscl_FileServer iFs;
             if (iFs.Connect() ==0) {
-                IMpeg4File *mp4Input = IMpeg4File::readMP4File(wFilename, NULL, NULL, 1, &iFs);
+                mp4Input = IMpeg4File::readMP4File(wFilename, NULL, NULL, 1, &iFs);
                 if (mp4Input)
                 {
                     LOGV("doUsePVPlayer: recognized mp4 container");
@@ -2120,9 +2122,9 @@ status_t doUsePVPlayer(const char *filename)
                     uint32 timeScale;
                     uint32 brand;
                     int32 count = mp4Input->getNumTracks();
-                    uint32* tracks = new uint32[count];
                     uint8 objectType;
 
+                    tracks = new uint32[count];
                     brand = mp4Input->getCompatibiltyMajorBrand();
                     if (brand != 0) {  // check for 3g2 (not supported by SF, see SniffMPEG4())
                         char mime[5];
@@ -2170,30 +2172,40 @@ status_t doUsePVPlayer(const char *filename)
                                 LOGV("doUsePVPlayer: got streamtype %s",streamtype.get_cstr());
 
                                 //MIME type X-MPEG4_AUDIO indicates AAC in MP4
-                        char value[128];
-                        property_get("lpa.decode",value,"0");
-                        if(strcmp("true",value) == 0)
-                        {
-                                if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO && count == 1) {
-                                    LOGV("doUsePVPlayer: recognized file as AAC in MP4 or 3gpp");
-                                    duration = mp4Input->getMovieDuration();
-                                    timeScale =  mp4Input->getMovieTimescale();
-
-                                    // adjust duration to milliseconds if necessary
-                                    duration = (duration * 1000) / timeScale;
-                                    LOGV("doUsePVPlayer: got duration of %llu milliseconds",duration);
-                                    if (duration >= MIN_LPA_DURATION) {
-                                        status = OK;
-                                        mUseLPADecode = true;
+                                char value[128];
+                                property_get("lpa.decode",value,"0");
+                                if(strcmp("true",value) == 0)
+                                {
+                                    if (streamtype == PVMF_MIME_M4V || streamtype == PVMF_MIME_H2631998 ||
+                                        streamtype == PVMF_MIME_H2632000 || streamtype == PVMF_MIME_H264_VIDEO_MP4 ||
+                                        streamtype == PVMF_MIME_H264_VIDEO) {
+                                        LOGV("Found a valid video stream in MP4 container, do not use LPA");
+                                        mUseLPADecode = false;
+                                        UninitializeForThread();
                                         goto return_status;
                                     }
-                                    else {
-                                        mUseLPADecode = false;
-                                        LOGV("doUsePVPlayer: duration of aac too short to use LPA");
-                                        goto return_status;
+                                    if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO && count == 1) {
+                                        LOGV("doUsePVPlayer: recognized file as AAC in MP4 or 3gpp");
+                                        duration = mp4Input->getMovieDuration();
+                                        timeScale =  mp4Input->getMovieTimescale();
+
+                                        // adjust duration to milliseconds if necessary
+                                        duration = (duration * 1000) / timeScale;
+                                        LOGV("doUsePVPlayer: got duration of %llu milliseconds",duration);
+                                        if (duration >= MIN_LPA_DURATION) {
+                                            status = OK;
+                                            mUseLPADecode = true;
+                                            UninitializeForThread();
+                                            goto return_status;
+                                        }
+                                        else {
+                                            mUseLPADecode = false;
+                                            LOGV("doUsePVPlayer: duration of aac too short to use LPA");
+                                            UninitializeForThread();
+                                            goto return_status;
+                                        }
                                     }
                                 }
-                        }
                                 if (streamtype==PVMF_MIME_QCELP || streamtype==PVMF_MIME_EVRC) {
                                     LOGV("doUsePVPlayer: recognized qcelp or evrc file");
                                     mUseLPADecode = false;
@@ -2201,18 +2213,15 @@ status_t doUsePVPlayer(const char *filename)
                                 }
                             }
                         }
-                        delete[] tracks;
                     }
                 }
-                iFs.Close();
-                IMpeg4File::DestroyMP4FileObject(mp4Input);
             }
             UninitializeForThread();
         }
     }
     char value[128];
     property_get("lpa.decode",value,"0");
-    if(strcmp("true",value) == 0)
+    if(strcmp("true",value) == 0 && status != OK)
     {
         //Then check if MP3 of sufficient length for LPA
         if (status != OK && !LPAInstanceExists) {
@@ -2252,16 +2261,22 @@ status_t doUsePVPlayer(const char *filename)
                 status = OK;
             }
             property_get("lpa.decode",value,"0");
-            if(strcmp("true",value) == 0)
-            {
-               if (aacInfo.iDuration >= MIN_LPA_DURATION) {
-                  mUseLPADecode = true;
+            if (strcmp("true",value) == 0) {
+                if (aacInfo.iDuration >= MIN_LPA_DURATION) {
+                    mUseLPADecode = true;
+                }
             }
-          }
         }
     }
 
-    return_status:
+return_status:
+    iFs.Close();
+    if(mp4Input != NULL) {
+        IMpeg4File::DestroyMP4FileObject(mp4Input);
+    }
+    if(tracks != NULL) {
+        delete[] tracks;
+    }
     return status;
 }
 
