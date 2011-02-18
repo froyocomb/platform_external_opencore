@@ -223,6 +223,39 @@ AtomUtils::read8read8(MP4_FF_FILE *fp, uint8 &data1, uint8 &data2)
     return true;
 }
 // Read in a NULL terminated string byte by byte and take most significant byte first
+// and convert to a OSCL_wString and also update the string length
+OSCL_EXPORT_REF bool
+AtomUtils::readNullTerminatedString(MP4_FF_FILE *fp, OSCL_wString& data, int32 *readIndex)
+{
+    const int MAX_BUFF_SIZE = 1024;
+    uint8 buf[MAX_BUFF_SIZE];
+    int32 index = 0;
+
+    if (!AtomUtils::read8(fp, buf[index]))
+        return false;
+
+    bool nextChar = (buf[index] == 0) ? false : true;
+
+    while (nextChar && (index < MAX_BUFF_SIZE))
+    {
+        index++;
+
+        if (!AtomUtils::read8(fp, buf[index]))
+            return false;
+
+        nextChar = (buf[index] == 0) ? false : true;
+    }
+    // String buffer filled - now create OSCL_wString
+
+    *readIndex = index;
+    OSCL_TCHAR outbuf[MAX_BUFF_SIZE];
+    oscl_UTF8ToUnicode((const char *)buf, index, outbuf, MAX_BUFF_SIZE);
+    OSCL_wHeapString<OsclMemAllocator> temp(outbuf);
+
+    data = temp;
+    return true;
+}
+// Read in a NULL terminated string byte by byte and take most significant byte first
 // and convert to a OSCL_wString
 OSCL_EXPORT_REF bool
 AtomUtils::readNullTerminatedString(MP4_FF_FILE *fp, OSCL_wString& data)
