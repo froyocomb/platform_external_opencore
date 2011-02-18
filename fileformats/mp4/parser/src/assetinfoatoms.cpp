@@ -807,17 +807,15 @@ AssetInfoAlbumAtom::AssetInfoAlbumAtom(MP4_FF_FILE *fp, uint32 size, uint32 type
         }
         else
         {
+            int32 strLength = 0;
             _charType = ORIGINAL_CHAR_TYPE_UTF8;
             // Check to see if the string is actually null-terminated
-            if (!AtomUtils::readNullTerminatedString(fp, _defaultNotice))
+            if (!AtomUtils::readNullTerminatedString(fp, _defaultNotice, &strLength))
             {
                 _success = false;
                 return;
             }
-            count -= _defaultNotice.get_size() + 1;
-            //Decrement the count as file pointer moved to 8 bytes
-            //in readNullTerminatedString function.
-            count -= 8;
+            count -= strLength + 1;
         }
         if (_defaultNotice.get_size() > size)
         {
