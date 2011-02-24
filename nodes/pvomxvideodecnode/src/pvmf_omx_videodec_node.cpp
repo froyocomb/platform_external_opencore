@@ -34,6 +34,7 @@
 
 #include "OMX_QCOMExtns.h"
 
+#include <cutils/properties.h>
 #include "utils/Log.h"
 #undef LOG_TAG
 #define LOG_TAG "PVOMXVidDecNode"
@@ -849,6 +850,14 @@ bool PVMFOMXVideoDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
     VideoPortFormat.nPortIndex = iOutputPortIndex;
 
     VideoPortFormat.nIndex = 0; // read the preferred format - first
+    char curr_target[128] = {0};
+    char target[] = "msm7630_";
+    property_get("ro.product.device", curr_target, "0");
+
+    if (!strncmp(target, curr_target, sizeof(target) - 1)) {
+        LOGV("Set Colorformat to Tile for 7x30");
+        VideoPortFormat.nIndex = 1;
+   }
 
 // doing this in a while loop while incrementing nIndex will get all supported formats
 // until component says OMX_ErrorNoMore
@@ -946,6 +955,13 @@ bool PVMFOMXVideoDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
         return false;
     }
 }
+
+    CONFIG_SIZE_AND_VERSION(iParamPort);
+    OMX_GetParameter(iOMXDecoder, OMX_IndexParamPortDefinition, &iParamPort);
+    iOMXComponentOutputBufferSize = iParamPort.nBufferSize;
+
+    PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                    (0, "PVMFOMXVideoDecNode::NegotiateComponentParameters() Outport buffers %d,size %d", iNumOutputBuffers, iOMXComponentOutputBufferSize));
 
     // Check if Fsi configuration need to be sent
     if (sendFsi)
@@ -1080,7 +1096,6 @@ bool PVMFOMXVideoDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
 
 
     iParamPort.nBufferCountActual = iNumOutputBuffers;
-    CONFIG_SIZE_AND_VERSION(iParamPort);
 
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                     (0, "PVMFOMXVideoDecNode::NegotiateComponentParameters() Outport buffers %d,size %d", iNumOutputBuffers, iOMXComponentOutputBufferSize));
