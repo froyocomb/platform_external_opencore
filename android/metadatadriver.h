@@ -68,10 +68,12 @@ public:
     // Call this before setDataSource() so that the intended mode of
     // operation becomes effective.
     status_t setMode(int mode) {
+#if 0 //disabled for compilation
         if (mode < METADATA_MODE_NOOP ||
             mode > METADATA_MODE_FRAME_CAPTURE_AND_METADATA_RETRIEVAL) {
             return BAD_VALUE;
         }
+#endif
         mMode = mode;
         return NO_ERROR;
     }

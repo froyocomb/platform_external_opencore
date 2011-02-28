@@ -509,7 +509,9 @@ static PVMFStatus parseMidi(const char *filename, MediaScannerClient& client) {
 static PVMFStatus parseWMA(const char *filename, MediaScannerClient& client)
 {
     sp<MediaMetadataRetriever> retriever = new MediaMetadataRetriever();
+#if 0 //disabled for compilation
     retriever->setMode( 1 /*MediaMetadataRetriever.MODE_GET_METADATA_ONLY*/);
+#endif
     status_t status = retriever->setDataSource(filename);
     if (status != NO_ERROR) {
         LOGE("parseWMA setDataSource failed (%d)", status);
@@ -519,13 +521,17 @@ static PVMFStatus parseWMA(const char *filename, MediaScannerClient& client)
 
     const char* value;
 
+#if 0 //disabled for compilation
     value = retriever->extractMetadata(METADATA_KEY_IS_DRM_CRIPPLED);
+#endif
     if (value && strcmp(value, "true") == 0) {
         // we don't support WMDRM currently
         // setting this invalid mimetype will make the java side ignore this file
         client.setMimeType("audio/x-wma-drm");
     }
+#if 0 //disabled for compilation
     value = retriever->extractMetadata(METADATA_KEY_CODEC);
+#endif
     if (value && strcmp(value, "Windows Media Audio 10 Professional") == 0) {
         // we don't support WM 10 Professional currently
         // setting this invalid mimetype will make the java side ignore this file
