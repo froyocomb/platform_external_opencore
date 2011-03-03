@@ -42,11 +42,11 @@
 
 #define PVOMXBASEDEC_MEDIADATA_CHUNKSIZE 128
 
-#if 0
 #include <utils/Log.h>
 #undef LOG_TAG
 #define LOG_TAG "SW_BASE"
 
+#if 0
 #undef PVLOGGER_LOGMSG
 #define PVLOGGER_LOGMSG(IL, LOGGER, LEVEL, MESSAGE) JJLOGE MESSAGE
 #define JJLOGE(id, ...) LOGE(__VA_ARGS__)
@@ -572,7 +572,8 @@ OSCL_EXPORT_REF PVMFOMXBaseDecNode::PVMFOMXBaseDecNode(int32 aPriority, const ch
         bHWAccelerated(accelerated? OMX_TRUE: OMX_FALSE),
         bThumbnailMode(thumbnailmode? OMX_TRUE: OMX_FALSE),
         ipPMemBufferAlloc(NULL),
-        first_iframe_received(OMX_FALSE)
+        first_iframe_received(OMX_FALSE),
+        bEOFNeeded(true)
 {
     iThreadSafeHandlerEventHandler = NULL;
     iThreadSafeHandlerEmptyBufferDone = NULL;
@@ -1925,7 +1926,10 @@ bool PVMFOMXBaseDecNode::SendEOSBufferToOMXComponent()
     // init buffer flags
     input_buf->pBufHdr->nFlags = 0;
 
-    input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+    if (IsEOFNeeded())
+    {
+        input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+    }
     // most importantly, set the EOS flag:
     input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_EOS;
 
@@ -1970,7 +1974,10 @@ OSCL_EXPORT_REF void PVMFOMXBaseDecNode::SendIncompleteBufferUnderConstruction()
     if (iInputBufferUnderConstruction != NULL)
     {
         // mark as end of frame (the actual end piece is missing)
-        iInputBufferUnderConstruction->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+        if (IsEOFNeeded())
+        {
+            iInputBufferUnderConstruction->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+        }
 
         PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                         (0, "%s::SendIncompleteBufferUnderConstruction()  - Sending Incomplete Buffer 0x%x to OMX Component MARKER field set to %x, TS=%d, Ticks=%L", iName.Str(), iInputBufferUnderConstruction->pBufHdr->pBuffer, iInputBufferUnderConstruction->pBufHdr->nFlags, iInTimestamp, iOMXTicksTimestamp));
@@ -2629,7 +2636,10 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendInputBufferToOMXComponent()
                                 ((((PVMFOMXDecPort*)iInPort)->iFormat != PVMF_MIME_3640) &&
                                  (((PVMFOMXDecPort*)iInPort)->iFormat != PVMF_MIME_LATM)))
                         {
-                            input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+                               if (IsEOFNeeded())
+                               {
+                                   input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+                               }
                         }
                         iObtainNewInputBuffer = true;
                     }
@@ -2656,7 +2666,10 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendInputBufferToOMXComponent()
                     {
                         // NAL mode, (uses OMX_BUFFERFLAG_ENDOFFRAME flag to mark end of NAL instead of end of frame)
                         // once NAL is complete, make sure you send it and obtain new buffer
-                        input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+                        if(IsEOFNeeded())
+                        {
+                            input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+                        }
                         iObtainNewInputBuffer = true;
                     }
                     else if (iCurrentMsgMarkerBit & PVMF_MEDIA_DATA_MARKER_INFO_M_BIT)
@@ -2696,7 +2709,10 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::SendInputBufferToOMXComponent()
                     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                                     (0, "%s::SendInputBufferToOMXComponent() - END OF MESSAGE - Buffer 0x%x MARKER bit set to 1, TS=%d, Ticks=%L", iName.Str(), input_buf->pBufHdr->pBuffer, iInTimestamp, iOMXTicksTimestamp));
 
-                    input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+                    if (IsEOFNeeded())
+                    {
+                       input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+                    }
                     // once frame is complete, make sure you send it and obtain new buffer
 
                     iObtainNewInputBuffer = true;
@@ -3021,7 +3037,10 @@ OSCL_EXPORT_REF PVMFStatus PVMFOMXBaseDecNode::SendConfigBufferToOMXComponent(ui
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                     (0, "%s::SendConfigBufferToOMXComponent() - END OF FRAGMENT - Buffer 0x%x MARKER bit set to 1", iName.Str(), input_buf->pBufHdr->pBuffer));
 
-    input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+    if (IsEOFNeeded())
+    {
+        input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+    }
 
     // set buffer flag indicating buffer contains codec config data
     input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_CODECCONFIG;
@@ -4383,8 +4402,6 @@ void PVMFOMXBaseDecNode::DoPrepare(PVMFOMXBaseDecNodeCommand& aCmd)
                 return;
             }
 
-
-
             if (!iOMXDecoder)
             {
                 oscl_free(aOutputParameters);
@@ -4462,6 +4479,10 @@ void PVMFOMXBaseDecNode::DoPrepare(PVMFOMXBaseDecNodeCommand& aCmd)
                 }
             }
             // do some sanity checking
+
+            // Check if EOF is Needed
+            LOGV("Check EOF Needed for component = %s \n", (OMX_STRING)CompName);
+            CheckIfEOFNeeded((OMX_STRING)CompName);
 
             if ((format != PVMF_MIME_H264_VIDEO) && (format != PVMF_MIME_H264_VIDEO_MP4) && (format != PVMF_MIME_H264_VIDEO_RAW))
             {
@@ -6406,7 +6427,10 @@ OSCL_EXPORT_REF PVMFStatus PVMFOMXBaseDecNode::ResendConfigBufferToOMXComponent(
             // init buffer flags
             input_buf->pBufHdr->nFlags = 0;
            // set marker bit on
-           input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+           if (IsEOFNeeded())
+           {
+               input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+           }
            // set buffer flag indicating buffer contains codec config data
            input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_CODECCONFIG;
 
@@ -6420,6 +6444,19 @@ OSCL_EXPORT_REF PVMFStatus PVMFOMXBaseDecNode::ResendConfigBufferToOMXComponent(
         }
     }
     return PVMFSuccess;
+}
+
+void PVMFOMXBaseDecNode::CheckIfEOFNeeded(OMX_STRING cComponentName)
+{
+    if (0 == oscl_strncmp(cComponentName, (OMX_STRING)"OMX.qcom.video.decoder", 22))
+    {
+        LOGV("SendEOF = flase");
+        bEOFNeeded = false;
+    }
+    else
+    {
+        LOGV("SendEOF = true");
+    }
 }
 
 #undef PVLOGGER_LOGMSG
