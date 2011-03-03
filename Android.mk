@@ -10,6 +10,7 @@ $(call add-prebuilt-files, ETC, pvplayer.cfg)
 
 ifeq ($(BUILD_PV_AUDIO_DEC_ONLY), 1)
 # Build only required librabries for PV Software Audio decoders - used by WebOS
+$(info "Building libraries with only Palm stuff")
 include $(PV_TOP)/build_config/opencore_dynamic/Android_opencore_common.mk
 include $(PV_TOP)/build_config/opencore_dynamic/Android_omx_sharedlibrary.mk
 include $(PV_TOP)/build_config/opencore_dynamic/Android_omx_aacdec_sharedlibrary.mk
@@ -52,5 +53,11 @@ include $(PV_TOP)/oscl/unit_test/Android.mk
 include $(PV_TOP)/engines/player/test/Android.mk
 include $(PV_TOP)/engines/author/test/Android.mk
 endif
+
+ifeq ($(BUILD_PV_OMX_TESTAPP), 1)
+include $(PV_TOP)/oscl/unit_test/Android.mk
+include $(PV_TOP)/codecs_v2/omx/omx_testapp/Android.mk
+endif
+
 endif
 endif
