@@ -837,11 +837,13 @@ status_t PVMetadataRetriever::setMode(int mode)
         LOGE("No MetadataDriver available");
         return NO_INIT;
     }
+#if 0 //disabled for compilation
     if (mode < METADATA_MODE_NOOP ||
         mode > METADATA_MODE_FRAME_CAPTURE_AND_METADATA_RETRIEVAL) {
         LOGE("set to invalid mode (%d)", mode);
         return BAD_VALUE;
     }
+#endif
     return mMetadataDriver->setMode(mode);
 }
 
