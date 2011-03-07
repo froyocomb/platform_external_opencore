@@ -633,7 +633,7 @@ PVMFCommandId AndroidAudioLPADecode::DiscardData(PVMFTimestamp aTimestamp, const
     if ( bIsA2DPEnabled ) {
         LOGV("DiscardData data queued = %u, setting flush pending", iDataQueued);
         iFlushPending=true;
-
+        mAudioSink->pause();
         // wakeup the audio thread: There is a chance of audio thread waiting in pause
         // state and possibly with a partial buffer
         iA2DPThreadSem->Signal();
