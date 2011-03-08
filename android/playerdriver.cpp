@@ -14,6 +14,9 @@
 ** See the License for the specific language governing permissions and
 ** limitations under the License.
 */
+/*
+** Copyright (c) 2011, Code Aurora Forum. All rights reserved.
+*/
 
 //#define LOG_NDEBUG 0
 #define LOG_TAG "PlayerDriver"
@@ -2273,7 +2276,8 @@ status_t doUsePVPlayer(const char *filename)
         }
     }
     //Then check if raw .aac of sufficient length for LPA
-    if (status != OK) {
+    // remove support of raw .aac from OC, moving to SF
+    /*if (status != OK) {
         CAACFileParser aacParser;
 
         mUseLPADecode = false;
@@ -2290,8 +2294,7 @@ status_t doUsePVPlayer(const char *filename)
                 }
             }
         }
-    }
-
+	}*/
 return_status:
     iFs.Close();
     if(mp4Input != NULL) {
