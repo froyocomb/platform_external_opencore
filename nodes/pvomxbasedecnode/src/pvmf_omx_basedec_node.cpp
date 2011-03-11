@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2010-2011, Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -334,6 +334,9 @@ OSCL_EXPORT_REF PVMFOMXBaseDecNode::~PVMFOMXBaseDecNode()
         CommandComplete(iInputCommands, iInputCommands.front(), PVMFFailure);
     }
 
+    //Release the config buffer
+    for(int i=0;i<2;i++)
+        oscl_free(iConfigBuffer[i]);
     //Release Input buffer
     iDataIn.Unbind();
 }
@@ -577,6 +580,11 @@ OSCL_EXPORT_REF PVMFOMXBaseDecNode::PVMFOMXBaseDecNode(int32 aPriority, const ch
 
     iInBufMemoryPool = NULL;
     iOutBufMemoryPool = NULL;
+
+    //Initialize the config buffer storage pointers to null
+    for(int i=0;i<2;i++)
+        iConfigBuffer[i] = NULL;
+    iFirstOutputBufferReceived = false;
 
     // init to some value
     iOMXComponentOutputBufferSize = 0;
@@ -2855,6 +2863,21 @@ OSCL_EXPORT_REF PVMFStatus PVMFOMXBaseDecNode::SendConfigBufferToOMXComponent(ui
     PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
                     (0, "%s::SendConfigBufferToOMXComponent() In", iName.Str()));
 
+    //Store the Config Buffer
+    if(!strcmp((const char*)iName.Str(),"PVMFOMXVideoDecNode"))
+    {
+        for(int i=0;i<2;i++)
+        {
+            if (iConfigBuffer[i] == NULL)
+            {
+                iConfigBuffer[i] = (uint8*) oscl_malloc(initbufsize);
+                oscl_memcpy(iConfigBuffer[i],initbuffer,initbufsize);
+                iConfigBufferSize[i] = initbufsize;
+                iConfigBufferTimestamp[i] = iDataIn->getTimestamp();
+                break;
+            }
+        }
+    }
 
     // first of all , get an input buffer. Without a buffer, no point in proceeding
     InputBufCtrlStruct *input_buf = NULL;
@@ -3922,6 +3945,9 @@ OMX_ERRORTYPE PVMFOMXBaseDecNode::FillBufferDoneProcessing(OMX_OUT OMX_HANDLETYP
         }
         else
         {
+             //Set flag if this is the first outputbuffer received
+             if( iFirstOutputBufferReceived == false)
+                 iFirstOutputBufferReceived = true;
 
             // if there's a problem queuing output buffer, MediaDataOut will expire at end of scope and
             // release buffer back to the pool, (this should not be the case)
@@ -5916,6 +5942,17 @@ bool PVMFOMXBaseDecNode::HandleRepositioning()
         iIsOutputPortFlushed = false;
 
         iDoNotSendOutputBuffersDownstreamFlag = false;
+            if( iFirstOutputBufferReceived == false)
+            {
+                if(iConfigBuffer[0]!= NULL || iConfigBuffer[1]!= NULL)
+                {
+                   PVMFStatus configStatus = ResendConfigBufferToOMXComponent();
+                   if(PVMFSuccess != configStatus)
+                   {
+                      return PVMFFailure;
+                   }
+                }
+            }
         return true;
     }
 
@@ -6312,6 +6349,79 @@ OSCL_EXPORT_REF bool PVMFOMXBaseDecNode::checkHWAccelconditions(OMX_STRING role,
     }
     return false;
 }
+
+OSCL_EXPORT_REF PVMFStatus PVMFOMXBaseDecNode::ResendConfigBufferToOMXComponent()
+{
+    for(int i=0;i<2;i++)
+    {
+        if( iConfigBuffer[i] != NULL)
+        {
+            InputBufCtrlStruct *input_buf = NULL;
+            int32 errcode = OsclErrNone;
+            // try to get input buffer header
+            OSCL_TRY(errcode, input_buf = (InputBufCtrlStruct *) iInBufMemoryPool->allocate(iInputAllocSize));
+            if (OsclErrNone != errcode)
+            {
+                PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
+                                (0, "%s::ResendConfigBufferToOMXComponent() Input buffer mempool problem -unexpected at init", iName.Str()));
+                return PVMFErrNoResources;
+            }
+            input_buf->pBufHdr->nFilledLen = 0; //init this to 0
+            iCopyPosition = 0;
+            iFragmentSizeRemainingToCopy  = iConfigBufferSize[i];
+            if (iOMXComponentUsesNALStartCodes == true)
+            {
+                oscl_memcpy(input_buf->pBufHdr->pBuffer,
+                            (void *) NAL_START_CODE,
+                            NAL_START_CODE_SIZE);
+                input_buf->pBufHdr->nFilledLen += NAL_START_CODE_SIZE;
+            }
+            // can the remaining fragment fit into the buffer?
+            uint32 bytes_remaining_in_buffer = (input_buf->pBufHdr->nAllocLen - input_buf->pBufHdr->nFilledLen);
+            if (iFragmentSizeRemainingToCopy <= bytes_remaining_in_buffer)
+            {
+                oscl_memcpy(input_buf->pBufHdr->pBuffer + input_buf->pBufHdr->nFilledLen,
+                            (void *)(iConfigBuffer[i] + iCopyPosition),
+                            iFragmentSizeRemainingToCopy);
+
+                input_buf->pBufHdr->nFilledLen += iFragmentSizeRemainingToCopy;
+                iCopyPosition += iFragmentSizeRemainingToCopy;
+                iFragmentSizeRemainingToCopy = 0;
+             }
+
+            // Got a buffer OK
+            // keep track of buffers. When buffer is deallocated/released, the counter will be decremented
+            iInBufMemoryPool->notifyfreechunkavailable(*this, (OsclAny*) iInBufMemoryPool);
+            iNumOutstandingInputBuffers++;
+            // set buffer fields (this is the same regardless of whether the input is movable or not
+            input_buf->pBufHdr->nOffset = 0;
+            iInputTimestampClock.update_clock(iConfigBufferTimestamp[i]); // this will also take into consideration the timestamp rollover
+            iOMXTicksTimestamp = ConvertTimestampIntoOMXTicks(iInputTimestampClock); // make a conversion into OMX ticks
+            input_buf->pBufHdr->nTimeStamp = iOMXTicksTimestamp;
+            // set ptr to input_buf structure for Context (for when the buffer is returned)
+            input_buf->pBufHdr->pAppPrivate = (OMX_PTR) input_buf;
+            // do not use Mark here (but init to NULL to prevent problems)
+            input_buf->pBufHdr->hMarkTargetComponent = NULL;
+            input_buf->pBufHdr->pMarkData = NULL;
+            // init buffer flags
+            input_buf->pBufHdr->nFlags = 0;
+           // set marker bit on
+           input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_ENDOFFRAME;
+           // set buffer flag indicating buffer contains codec config data
+           input_buf->pBufHdr->nFlags |= OMX_BUFFERFLAG_CODECCONFIG;
+
+           PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR,
+                           (0, "%s::ResendConfigBufferToOMXComponent() Resending Config Buffer 0x%x", iName.Str(),input_buf->pBufHdr));
+           if ( OMX_ErrorNone != OMX_EmptyThisBuffer(iOMXDecoder, input_buf->pBufHdr) )
+           {
+               EmptyBufferDoneProcessing(iOMXDecoder, NULL, input_buf->pBufHdr);
+               return PVMFFailure;
+           }
+        }
+    }
+    return PVMFSuccess;
+}
+
 #undef PVLOGGER_LOGMSG
 #define PVLOGGER_LOGMSG(IL, LOGGER, LEVEL, MESSAGE) OSCL_UNUSED_ARG(LOGGER);
 
