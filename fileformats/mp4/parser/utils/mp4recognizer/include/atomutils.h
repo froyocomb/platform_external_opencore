@@ -149,6 +149,7 @@ class AtomUtils
         OSCL_IMPORT_REF static bool read8(MP4_FF_FILE *fp, uint8 &data);
         OSCL_IMPORT_REF static bool read8read8(MP4_FF_FILE *fp, uint8 &data1, uint8 &data2);
         OSCL_IMPORT_REF static bool readNullTerminatedString(MP4_FF_FILE *fp, OSCL_wString& data);
+        OSCL_IMPORT_REF static bool readNullTerminatedString(MP4_FF_FILE *fp, OSCL_wString& data, int32 *readIndex);
 
         OSCL_IMPORT_REF static bool readNullTerminatedUnicodeString(MP4_FF_FILE *fp, OSCL_wString& data);
         OSCL_IMPORT_REF static bool readNullTerminatedAsciiString(MP4_FF_FILE *fp, OSCL_wString& data);
