@@ -781,6 +781,23 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
 #ifdef AAC_PLUS
     if ((pVars->bno <= 1) && (!empty_frame))
     {
+        if (pExt->samplingRate > 24000) {
+            if (pExt->extendedAudioObjectType == MP4AUDIO_AAC_LC ||
+                pExt->extendedAudioObjectType == MP4AUDIO_LTP) {
+                if (pMC_Info->upsamplingFactor == 2) {
+                    // The stream turns out to be not aacPlus mode anyway
+                    PVMP4AudioDecoderDisableAacPlus(pExt, pMem);
+                }
+             }
+             else {
+                 if (pMC_Info->upsamplingFactor == 1) {
+                     // aacPlus mode does not buy us anything, but to cause
+                     // 1. CPU load to increase, and
+                     // 2. a half speed of decoding
+                     PVMP4AudioDecoderDisableAacPlus(pExt, pMem);
+                 }
+            }
+        }
         if(!sbrBitStream->NrElements)
         {
             PVMP4AudioDecoderDisableAacPlus(pExt, pMem);
