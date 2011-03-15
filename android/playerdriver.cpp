@@ -1,6 +1,7 @@
 /* playerdriver.cpp
 **
 ** Copyright 2007, The Android Open Source Project
+** Copyright (c) 2010-2011, Code Aurora Forum. All rights reserved.
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -2160,6 +2161,11 @@ status_t doUsePVPlayer(const char *filename)
                    LOGV("doUsePVPlayer: recognized mp3 stream");
                    uint32 duration;
 
+                   property_get("lpa.use-stagefright",value,"0");
+                   if(strcmp("true",value) == 0 && status != OK) {
+                       mUseLPADecode = false;
+                       goto return_status;
+                   }
                    duration = mp3File.GetDuration();
                    LOGV("doUsePVPlayer: duration of mp3 %s is %d", filename, duration);
                    if (duration >= MIN_LPA_DURATION) {
