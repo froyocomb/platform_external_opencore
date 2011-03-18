@@ -129,7 +129,13 @@ Mpeg4File::Mpeg4File(MP4_FF_FILE *fp,
 
         AtomUtils::getNextAtomType(fp, atomSize, atomType);
 
-        if ((atomType == SKIP_ATOM)
+        if ((int32)atomSize < 0) {
+                //atomSize can't be negative.
+                _success = false;
+                _mp4ErrorCode = READ_FAILED;
+                break;
+        }
+        else if ((atomType == SKIP_ATOM)
                 || (atomType == FREE_SPACE_ATOM)
                 || (atomType == UUID_ATOM)
                 || (atomType == UNKNOWN_ATOM)
