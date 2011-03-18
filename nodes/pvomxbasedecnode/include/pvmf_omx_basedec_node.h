@@ -866,10 +866,6 @@ class PVMFOMXBaseDecNode
         bool   iFirstOutputBufferReceived;
         OSCL_IMPORT_REF PVMFStatus ResendConfigBufferToOMXComponent();
 
-        // Check if EOF is needed
-        bool bEOFNeeded;
-        bool IsEOFNeeded() { return bEOFNeeded;};
-        void CheckIfEOFNeeded(OMX_STRING role);
 };
 
 
