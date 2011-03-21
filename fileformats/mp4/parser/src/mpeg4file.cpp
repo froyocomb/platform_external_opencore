@@ -2881,6 +2881,13 @@ int32 Mpeg4File::getNextBundledAccessUnits(const uint32 trackID,
 
                                 else
                                 {
+                                    if (atomSize < DEFAULT_ATOM_SIZE)
+                                    {
+                                        _success = false;
+                                        oAllMoofExhausted = true;
+                                        _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
+                                        return MP4_INSUFFICIENT_DATA;
+                                    }
                                     if (count > 0)
                                     {
                                         count -= atomSize;
@@ -4702,6 +4709,13 @@ int32 Mpeg4File::peekNextBundledAccessUnits(const uint32 trackID,
 
                             else
                             {
+                                if (atomSize < DEFAULT_ATOM_SIZE)
+                                {
+                                    _success = false;
+                                    oAllMoofExhausted = true;
+                                    _mp4ErrorCode = ZERO_OR_NEGATIVE_ATOM_SIZE;
+                                    return MP4_INSUFFICIENT_DATA;
+                                }
                                 if (count > 0)
                                 {
                                     count -= atomSize;
