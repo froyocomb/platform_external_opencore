@@ -91,7 +91,7 @@
 #include "oscl_string_utf8.h"
 #include "aacfileparser.h"
 #include "impeg4file.h"
-#include "iqcpff.h"
+
 
 using namespace android;
 
@@ -2122,7 +2122,7 @@ status_t doUsePVPlayer(const char *filename)
     OSCL_wHeapString<OsclMemAllocator> wFilename(output);
 
     //Check for QCelp (no SF support)
-    QCPErrorType qcpErr;
+    /*QCPErrorType qcpErr;
     IQcpFile qcpFile(wFilename, qcpErr);
     if (qcpErr == QCP_SUCCESS) {
         qcpErr = qcpFile.ParseQcpFile();
@@ -2131,11 +2131,12 @@ status_t doUsePVPlayer(const char *filename)
             mUseLPADecode = false;
             status = OK;
         }
-    }
+    }*/
 
     uint32* tracks = NULL;
     IMpeg4File *mp4Input = NULL;
     Oscl_FileServer iFs;
+
     //Check for clips with LPA implementation in PVPlayer
     //First check if MP4, 3gpp, or 3g2 container
     if (status != OK) {
