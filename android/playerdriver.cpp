@@ -91,7 +91,7 @@
 #include "oscl_string_utf8.h"
 #include "aacfileparser.h"
 #include "impeg4file.h"
-
+#include "iqcpff.h"
 
 using namespace android;
 
@@ -2122,7 +2122,7 @@ status_t doUsePVPlayer(const char *filename)
     OSCL_wHeapString<OsclMemAllocator> wFilename(output);
 
     //Check for QCelp (no SF support)
-    /*QCPErrorType qcpErr;
+    QCPErrorType qcpErr;
     IQcpFile qcpFile(wFilename, qcpErr);
     if (qcpErr == QCP_SUCCESS) {
         qcpErr = qcpFile.ParseQcpFile();
@@ -2131,7 +2131,7 @@ status_t doUsePVPlayer(const char *filename)
             mUseLPADecode = false;
             status = OK;
         }
-    }*/
+    }
 
     uint32* tracks = NULL;
     IMpeg4File *mp4Input = NULL;
@@ -2278,7 +2278,7 @@ status_t doUsePVPlayer(const char *filename)
     }
     //Then check if raw .aac of sufficient length for LPA
     // remove support of raw .aac from OC, moving to SF
-    /*if (status != OK) {
+    if (status != OK) {
         CAACFileParser aacParser;
 
         mUseLPADecode = false;
@@ -2295,7 +2295,7 @@ status_t doUsePVPlayer(const char *filename)
                 }
             }
         }
-	}*/
+    }
 return_status:
     iFs.Close();
     if(mp4Input != NULL) {
