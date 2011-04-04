@@ -2163,6 +2163,7 @@ status_t doUsePVPlayer(const char *filename)
                     }
 
                     if (status != OK && tracks) {
+                        bool videoTrackFound = false;
                         mp4Input->getTrackIDList(tracks, count);
                         for (int i = 0; i < count; ++i) {
                             OSCL_HeapString<OsclMemAllocator> streamtype;
@@ -2181,8 +2182,7 @@ status_t doUsePVPlayer(const char *filename)
                                         streamtype == PVMF_MIME_H264_VIDEO) {
                                         LOGV("Found a valid video stream in MP4 container, do not use LPA");
                                         mUseLPADecode = false;
-                                        UninitializeForThread();
-                                        goto return_status;
+                                        videoTrackFound = true;
                                     }
                                     if (!LPAInstanceExists && streamtype==PVMF_MIME_MPEG4_AUDIO && count == 1) {
                                         LOGV("doUsePVPlayer: recognized file as AAC in MP4 or 3gpp");
@@ -2212,6 +2212,12 @@ status_t doUsePVPlayer(const char *filename)
                                     status = OK;
                                 }
                             }
+                        }
+                        /*If a valid video track is found and the audio track is not QCELP/EVRC
+                          then it should be played through Stagefright */
+                        if (status != OK && videoTrackFound == true) {
+                            UninitializeForThread();
+                            goto return_status;
                         }
                     }
                 }
