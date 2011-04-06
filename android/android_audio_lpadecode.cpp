@@ -366,8 +366,13 @@ void AndroidAudioLPADecode::HandleA2DPswitch()
                 if ( ioctl(afd, AUDIO_GET_STATS, &stats) < 0 ) {
                     LOGE("AUDIO_GET_STATUS failed");
                 } else {
-                    LOGV("Number of bytes consumed by DSP is %u", stats.byte_count);
-                    nBytesConsumed = stats.byte_count;
+                    nBytesConsumed = 0;
+                    if(stats.unused[0] > 0) {
+                        nBytesConsumed = stats.unused[0];
+                        nBytesConsumed <<= 32;
+                    }
+                    nBytesConsumed |= stats.byte_count;
+                    LOGV("Number of bytes consumed by DSP is %llu", nBytesConsumed);
                 }
             }
 
@@ -843,8 +848,13 @@ void AndroidAudioLPADecode::TimeoutOccurred(int32 timerID, int32 /*timeoutInfo*/
                 if ( ioctl(afd, AUDIO_GET_STATS, &stats)  < 0 ) {
                     LOGE("AUDIO_GET_STATUS failed");
                 } else {
-                    LOGV("Number of bytes consumed by DSP is %u", stats.byte_count);
-                    nBytesConsumed = stats.byte_count;
+                    nBytesConsumed = 0;
+                    if(stats.unused[0] > 0) {
+                        nBytesConsumed = stats.unused[0];
+                        nBytesConsumed <<= 32;
+                    }
+                    nBytesConsumed |= stats.byte_count;
+                    LOGV("Number of bytes consumed by DSP is %llu", nBytesConsumed);
                 }
 
                 // Set the Suspension to true
@@ -1443,7 +1453,7 @@ int AndroidAudioLPADecode::event_thread_func()
 
                                 int32 nBytesRemain = nBytesConsumed - nBytesWritten;
 
-                                LOGV("nBytesConsumed set to %d,nBytesWritten set to %d and nBytesRemain set to %d", nBytesConsumed, nBytesWritten, nBytesRemain);
+                                LOGV("nBytesConsumed set to %llu,nBytesWritten set to %llu and nBytesRemain set to %d", nBytesConsumed, nBytesWritten, nBytesRemain);
 
                                 // This is the total number of bytes consumed.
                                 // This buffer needs be released back, since it is consumed by driver
@@ -1594,7 +1604,7 @@ int AndroidAudioLPADecode::event_thread_func()
                             } else {
                                 if ( !iFlushPending ) {
                                     nBytesWritten = nBytesWritten +  iOSSResponseQueue[i].iDataLen;
-                                    LOGV("Number of Bytes actually written to DSP is %d", nBytesWritten);
+                                    LOGV("Number of Bytes actually written to DSP is %llu", nBytesWritten);
                                 }
 
                                 LOGV("Sending response to cmdid %d", iOSSResponseQueue[i].iCmdId);
@@ -1631,8 +1641,13 @@ int AndroidAudioLPADecode::event_thread_func()
                         if ( ioctl(afd, AUDIO_GET_STATS, &stats)  < 0 ) {
                             LOGE("AUDIO_GET_STATUS failed");
                         } else {
-                            LOGV("Number of bytes consumed by DSP is %u", stats.byte_count);
-                            nBytesConsumed = stats.byte_count;
+                            nBytesConsumed = 0;
+                            if(stats.unused[0] > 0) {
+                                nBytesConsumed = stats.unused[0];
+                                nBytesConsumed <<= 32;
+                            }
+                            nBytesConsumed |= stats.byte_count;
+                            LOGV("Number of bytes consumed by DSP is %llu", nBytesConsumed);
                         }
 
                         // Set the Suspension to true

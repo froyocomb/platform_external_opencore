@@ -183,10 +183,10 @@ private:
     int   sessionId;
 
     // Number of Bytes actually consumed
-    uint32 nBytesConsumed;
+    uint64 nBytesConsumed;
 
     // Number of Bytes written
-    uint32 nBytesWritten;
+    uint64 nBytesWritten;
 
     // Hardware State
     enum HWState {
