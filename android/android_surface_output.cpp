@@ -933,6 +933,14 @@ PVMFStatus AndroidSurfaceOutput::verifyParametersSync (PvmiMIOSession aSession, 
                 return PVMFErrNotSupported;
             }
         }
+        // For lpa decode, just return invalid argument as this is video MIO
+        // Correct value i.e. if LPA is supported is returned by audio MIO
+        // - for Engine to choose default software decoder
+        else if ( pv_mime_strcmp(compstr, _STRLIT_CHAR("x-pvmf/media/support-LPAdecode")) == 0) {
+            PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE,
+                (0,"AndroidSurfaceOutput::verifyParametersSync() Error, unknown type LPAdecode"));
+            return PVMFErrArgument;
+        }
     }
     return PVMFSuccess;
 }
