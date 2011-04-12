@@ -265,7 +265,7 @@ OSCL_EXPORT_REF void PVMFJitterBufferMisc::StreamingSessionBufferingStart(bool a
 
 OSCL_EXPORT_REF void PVMFJitterBufferMisc::StreamingSessionBufferingEnd()
 {
-    if (ipSessionDurationTimer)
+    if (ipSessionDurationTimer && ipSessionDurationTimer->IsTimerStarted())
     {
         if (iBufferingDuetoDataOutage && !iStreamingSessionExpired)
         {
