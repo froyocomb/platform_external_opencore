@@ -1433,7 +1433,7 @@ void PlayerDriver::CommandCompleted(const PVCmdResponse& aResponse)
                 // is sent to notify the user that it is okay to
                 // begin playback.  If it is a local file, just
                 // send it now at the completion of Prepare().
-                if ((mDownloadContextData == NULL) || mDataReadyReceived) {
+                if (((mDownloadContextData == NULL) || mDataReadyReceived)&& !mPvPlayer->getIsResume()){
                     mPvPlayer->sendEvent(MEDIA_PREPARED);
                 }
                 break;
