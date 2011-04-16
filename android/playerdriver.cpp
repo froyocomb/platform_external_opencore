@@ -285,6 +285,7 @@ class PlayerDriver :
 
     // Callback for synchronous commands.
     static void syncCompletion(status_t s, void *cookie, bool cancelled);
+    static void donothing(status_t s, void *cookie, bool cancelled);
 
     PVPlayer                *mPvPlayer;
     PVPlayerInterface       *mPlayer;
@@ -1337,7 +1338,10 @@ int PlayerDriver::playerThread()
     ed->mSyncStatus = s;
     ed->mSyncSem->Signal();
 }
-
+/*static*/ void PlayerDriver::donothing(status_t s, void *cookie, bool cancelled)
+{
+    return;
+}
 void PlayerDriver::handleCheckLiveStreamingComplete(PlayerCheckLiveStreaming* cmd)
 {
     if (mCheckLiveValue.empty())
@@ -1453,7 +1457,7 @@ void PlayerDriver::CommandCompleted(const PVCmdResponse& aResponse)
                     mPvPlayer->setIsResume(false);
                     if(mPvPlayer->getIsPlaying()) {
                         PlayerCommand* command = new PlayerStart(0,0);
-                        command->set(PlayerDriver::syncCompletion, this);
+                        command->set(PlayerDriver::donothing, this);
                         handleStart(static_cast<PlayerStart*>(command));
                     }
                 }
@@ -1902,6 +1906,9 @@ status_t PVPlayer::prepareAsync()
 status_t PVPlayer::start()
 {
     LOGV("start");
+    if(getIsResume()&&((mPlayerDriver->getFormatType() == PVMF_MIME_DATA_SOURCE_RTSP_URL) ||
+             (mPlayerDriver->getFormatType() == PVMF_MIME_DATA_SOURCE_SDP_FILE)))
+        return OK;
     return mPlayerDriver->enqueueCommand(new PlayerStart(0,0));
 }
 
