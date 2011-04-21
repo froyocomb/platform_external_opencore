@@ -4320,6 +4320,14 @@ void PVMFOMXBaseDecNode::DoPrepare(PVMFOMXBaseDecNodeCommand& aCmd)
                         }
 #endif
 
+#ifndef USE_HW_AAC_DEC
+                        if((0 == oscl_strncmp(aInputParameters.cComponentName, "OMX.qcom.audio.decoder.aac", PV_OMX_MAX_COMPONENT_NAME_LENGTH )))
+                        {
+                            PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_DEBUG,
+                                            (0, "%s::DoPrepare(): Use SW Decoder ", iName.Str()));
+                            continue;
+                        }
+#endif
                             // try to create component
                             err = OMX_MasterGetHandle(&iOMXDecoder, (OMX_STRING) aInputParameters.cComponentName, (OMX_PTR) this, (OMX_CALLBACKTYPE *) & iCallbacks, bHWAccelerated);
                         // if successful, no need to continue
