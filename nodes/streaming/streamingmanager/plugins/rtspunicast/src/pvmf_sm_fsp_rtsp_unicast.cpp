@@ -103,6 +103,8 @@
 
 #include "pvmf_rtp_jitter_buffer_factory.h"
 
+#include <cutils/properties.h> // for property_get
+
 #define DISABLE_RA_FOR_STREAM_1MBPS_OR_MORE 1
 #define MAX_BITRATE_WITH_RA 1000000
 
@@ -1207,29 +1209,37 @@ bool PVMFSMRTSPUnicastNode::PopulateTrackInfoVec()
 
                     trackInfo.portTag = mInfo->getMediaInfoID();
                     trackInfo.bitRate = mInfo->getBitrate();
-#ifdef DISABLE_RA_FOR_STREAM_1MBPS_OR_MORE
-                    if (mInfo->getReportFrequency() > 0)
-                    {
-                        if(num_high_bit_rate_stream>0)
-                        {
-                            trackInfo.iRateAdaptation = false;
-                        }
-                        else
-                        {
-                            trackInfo.iRateAdaptation = true;
-                            trackInfo.iRateAdaptationFeedBackFrequency =
-                                mInfo->getReportFrequency();
-                        }
-                    }
-#else
-                    if (mInfo->getReportFrequency() > 0)
-                    {
-                        trackInfo.iRateAdaptation = true;
-                        trackInfo.iRateAdaptationFeedBackFrequency =
-                            mInfo->getReportFrequency();
-                    }
-#endif
 
+                    //Check if rate adaptation is enabled in properties
+                    char value[PROPERTY_VALUE_MAX];
+                    if (property_get("media.pv.disable-ra", value, "0")
+                         && (!strcmp(value, "1") || !strcasecmp(value, "true"))) {
+                       //Disable rate adaptation
+                        trackInfo.iRateAdaptation = false;
+                     } else {
+#ifdef DISABLE_RA_FOR_STREAM_1MBPS_OR_MORE
+                        if (mInfo->getReportFrequency() > 0)
+                        {
+                           if(num_high_bit_rate_stream>0)
+                           {
+                               trackInfo.iRateAdaptation = false;
+                           }
+                           else
+                           {
+                               trackInfo.iRateAdaptation = true;
+                               trackInfo.iRateAdaptationFeedBackFrequency =
+                                            mInfo->getReportFrequency();
+                           }
+                        }
+#else
+                        if (mInfo->getReportFrequency() > 0)
+                        {
+                           trackInfo.iRateAdaptation = true;
+                           trackInfo.iRateAdaptationFeedBackFrequency =
+                               mInfo->getReportFrequency();
+                        }
+#endif
+                    }
                     if ((mInfo->getRTCPReceiverBitRate() >= 0) &&
                             (mInfo->getRTCPSenderBitRate() >= 0))
                     {
