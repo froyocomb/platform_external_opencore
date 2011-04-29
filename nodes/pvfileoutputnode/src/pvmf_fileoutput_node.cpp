@@ -1023,13 +1023,35 @@ PVMFStatus PVMFFileOutputNode::CheckMaxFileSize(uint32 aFrameSize)
 {
     if (iMaxFileSizeEnabled)
     {
-        if ((iFileSize + aFrameSize) >= iMaxFileSize)
+        if ((iFileSize + aFrameSize + QCP_HEADER_SIZE) >= iMaxFileSize)
         {
             // Change state to initialized
             ChangeNodeState(EPVMFNodeInitialized);
 
             // Clear all pending port activity
             ClearPendingPortActivity();
+
+            // Update the file header if required and close the output file
+            if (iFileOpened) {
+                // Update the File header, if the format is either QCELP or EVRC
+                if ( (((PVMFFileOutputInPort*)iInPort)->iFormat == PVMF_MIME_QCELP) ||
+                     (((PVMFFileOutputInPort*)iInPort)->iFormat == PVMF_MIME_EVRC)) {
+                    PVMFStatus status = PVMFSuccess;
+
+                    // Create the QCP header with the right file size and framecount
+                    CreateQCPHeader();
+
+                    // Move the file pointer to the begining of the file to write the header
+                    iOutputFile.Seek(0, Oscl_File::SEEKSET);
+                    // Write the header information to the file
+                    status = WriteData((OsclAny*)&append_header, QCP_HEADER_SIZE);
+                    if (status != PVMFSuccess) {
+                        PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
+                                        (0, "PVMFFileOutputNode::WriteFormatSpecificInfo: Error - WriteData failed"));
+                    }
+                }
+                CloseOutputFile();
+            }
 
             // Report max file size event
             ReportInfoEvent(PVMF_COMPOSER_MAXFILESIZE_REACHED, NULL);
@@ -1605,6 +1627,7 @@ void PVMFFileOutputNode::DoStop(PVMFFileOutputNodeCommand& aCmd)
     {
         case EPVMFNodeStarted:
         case EPVMFNodePaused:
+        case EPVMFNodeInitialized:
             // Stop data source
             if (iInPort)
             {
