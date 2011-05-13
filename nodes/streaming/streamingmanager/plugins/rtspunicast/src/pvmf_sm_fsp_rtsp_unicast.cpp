@@ -103,6 +103,8 @@
 
 #include "pvmf_rtp_jitter_buffer_factory.h"
 
+#include <cutils/properties.h> // for property_get
+
 /**
 ///////////////////////////////////////////////////////////////////////////////
 // Node Constructor & Destructor
@@ -1171,11 +1173,20 @@ bool PVMFSMRTSPUnicastNode::PopulateTrackInfoVec()
 
                     trackInfo.portTag = mInfo->getMediaInfoID();
                     trackInfo.bitRate = mInfo->getBitrate();
-                    if (mInfo->getReportFrequency() > 0)
-                    {
-                        trackInfo.iRateAdaptation = true;
-                        trackInfo.iRateAdaptationFeedBackFrequency =
-                            mInfo->getReportFrequency();
+
+                    //Check if rate adaptation is enabled in properties
+                    char value[PROPERTY_VALUE_MAX];
+                    if (property_get("media.pv.disable-ra", value, "0")
+                         && (!strcmp(value, "1") || !strcasecmp(value, "true"))) {
+                       //Disable rate adaptation
+                        trackInfo.iRateAdaptation = false;
+                    } else {
+                        if (mInfo->getReportFrequency() > 0)
+                        {
+                           trackInfo.iRateAdaptation = true;
+                           trackInfo.iRateAdaptationFeedBackFrequency =
+                           mInfo->getReportFrequency();
+                        }
                     }
 
                     if ((mInfo->getRTCPReceiverBitRate() >= 0) &&
