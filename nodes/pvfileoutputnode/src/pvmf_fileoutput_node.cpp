@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
- * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2009, 2011 Code Aurora Forum. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ PVMFFileOutputNode::PVMFFileOutputNode(int32 aPriority)
         , iEarlyMargin(DEFAULT_EARLY_MARGIN)
         , iLateMargin(DEFAULT_LATE_MARGIN)
         , bHeaderCompiled(false)
+        , bWriteHeader(false)
 
 {
     ConstructL();
@@ -1059,7 +1060,7 @@ PVMFStatus PVMFFileOutputNode::CheckMaxFileSize(uint32 aFrameSize)
         {
             // Change state to initialized
             ChangeNodeState(EPVMFNodeInitialized);
-
+            bWriteHeader = true;
             // Clear all pending port activity
             ClearPendingPortActivity();
 
@@ -1150,20 +1151,22 @@ PVMFStatus PVMFFileOutputNode::WriteData(OsclAny* aData, uint32 aSize)
         return PVMFFailure;
     }
 
-    switch (CheckMaxFileSize(aSize))
-    {
-        case PVMFFailure:
-            PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
-                            (0, "PVMFFileOutputNode::WriteData: Error - CheckMaxFileSize failed"));
-            return PVMFFailure;
+    if (false == bWriteHeader) {
+        switch (CheckMaxFileSize(aSize))
+        {
+            case PVMFFailure:
+                PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_ERR,
+                                (0, "PVMFFileOutputNode::WriteData: Error - CheckMaxFileSize failed"));
+                return PVMFFailure;
 
-        case PVMFSuccess:
-            PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_DEBUG,
-                            (0, "PVMFFileOutputNode::WriteData: Maxmimum file size reached"));
-            return PVMFSuccess;
+            case PVMFSuccess:
+                PVLOGGER_LOGMSG(PVLOGMSG_INST_REL, iLogger, PVLOGMSG_DEBUG,
+                                (0, "PVMFFileOutputNode::WriteData: Maxmimum file size reached"));
+                return PVMFSuccess;
 
-        default:
-            break;
+            default:
+                break;
+        }
     }
 
     int32 wlength = 0;
