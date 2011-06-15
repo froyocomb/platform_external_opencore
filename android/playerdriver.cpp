@@ -1936,6 +1936,14 @@ bool PVPlayer::isPlaying()
 
 status_t PVPlayer::getCurrentPosition(int *msec)
 {
+
+  if(getIsResume()&&((mPlayerDriver->getFormatType() == PVMF_MIME_DATA_SOURCE_RTSP_URL) ||
+                     (mPlayerDriver->getFormatType() == PVMF_MIME_DATA_SOURCE_HTTP_URL) ||
+                     (mPlayerDriver->getFormatType() == PVMF_MIME_DATA_SOURCE_SDP_FILE)))
+  {
+    *msec = mPositionWhenSuspend;
+    return OK;
+  }
     status_t ret = mPlayerDriver->enqueueCommand(new PlayerGetPosition(msec,0,0));
     if (mDuration > 0 && *msec > mDuration) {
         *msec = mDuration;
