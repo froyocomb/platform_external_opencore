@@ -569,7 +569,8 @@ OSCL_EXPORT_REF PVMFOMXBaseDecNode::PVMFOMXBaseDecNode(int32 aPriority, const ch
         bHWAccelerated(accelerated? OMX_TRUE: OMX_FALSE),
         bThumbnailMode(thumbnailmode? OMX_TRUE: OMX_FALSE),
         ipPMemBufferAlloc(NULL),
-        first_iframe_received(OMX_FALSE)
+        first_iframe_received(OMX_FALSE),
+        iIsVideoDecNode(false)
 {
     iThreadSafeHandlerEventHandler = NULL;
     iThreadSafeHandlerEmptyBufferDone = NULL;
@@ -3851,11 +3852,13 @@ OMX_ERRORTYPE PVMFOMXBaseDecNode::FillBufferDoneProcessing(OMX_OUT OMX_HANDLETYP
     }
 
 #ifdef DROP_UNTIL_IFRAME_RECD
-    if (aBuffer->nFlags & OMX_BUFFERFLAG_SYNCFRAME) {
-        first_iframe_received = OMX_TRUE;
-        iDoNotSendOutputBuffersDownstreamFlag = false;
-    } else if(first_iframe_received != OMX_TRUE) {
-        iDoNotSendOutputBuffersDownstreamFlag = true;
+    if (iIsVideoDecNode == true) {
+        if (aBuffer->nFlags & OMX_BUFFERFLAG_SYNCFRAME) {
+            first_iframe_received = OMX_TRUE;
+            iDoNotSendOutputBuffersDownstreamFlag = false;
+        } else if(first_iframe_received != OMX_TRUE) {
+            iDoNotSendOutputBuffersDownstreamFlag = true;
+        }
     }
 #endif
 
@@ -4165,22 +4168,26 @@ void PVMFOMXBaseDecNode::DoPrepare(PVMFOMXBaseDecNodeCommand& aCmd)
             {
                 aInputParameters.cComponentRole = (OMX_STRING)"video_decoder.avc";
                 aOutputParameters = (VideoOMXConfigParserOutputs *)oscl_malloc(sizeof(VideoOMXConfigParserOutputs));
+                iIsVideoDecNode = true;
             }
             else if (format ==  PVMF_MIME_M4V)
             {
                 aInputParameters.cComponentRole = (OMX_STRING)"video_decoder.mpeg4";
                 aOutputParameters = (VideoOMXConfigParserOutputs *)oscl_malloc(sizeof(VideoOMXConfigParserOutputs));
+                iIsVideoDecNode = true;
             }
             else if (format ==  PVMF_MIME_H2631998 ||
                      format == PVMF_MIME_H2632000)
             {
                 aInputParameters.cComponentRole = (OMX_STRING)"video_decoder.h263";
                 aOutputParameters = (VideoOMXConfigParserOutputs *)oscl_malloc(sizeof(VideoOMXConfigParserOutputs));
+                iIsVideoDecNode = true;
             }
             else if (format ==  PVMF_MIME_WMV)
             {
                 aInputParameters.cComponentRole = (OMX_STRING)"video_decoder.wmv";
                 aOutputParameters = (VideoOMXConfigParserOutputs *)oscl_malloc(sizeof(VideoOMXConfigParserOutputs));
+                iIsVideoDecNode = true;
             }
             else
             {

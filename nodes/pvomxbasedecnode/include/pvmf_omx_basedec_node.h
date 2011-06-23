@@ -858,6 +858,7 @@ class PVMFOMXBaseDecNode
         uint32 video_height;
 
         OMX_BOOL first_iframe_received;
+        bool   iIsVideoDecNode;
 };
 
 
