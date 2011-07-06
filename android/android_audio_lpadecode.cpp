@@ -863,17 +863,17 @@ void AndroidAudioLPADecode::TimeoutOccurred(int32 timerID, int32 /*timeoutInfo*/
                 iHwState = STATE_HW_STOPPED;
                 LOGV("The state of Hardware is set to %d", iHwState);
 
-                // 3. Call AUDIO_STOP on the Driver.
+                if ( bIsAudioRouted ) {
+                    // 3. Close the session
+                    mAudioSink->closeSession();
+                    bIsAudioRouted = false;
+                }
                 LOGV("AUDIO_STOP");
+                // 4. Call AUDIO_STOP on the Driver.
                 if ( ioctl(afd, AUDIO_STOP, 0) < 0 ) {
                     LOGE("AUDIO_STOP failed");
                 }
 
-                if ( bIsAudioRouted ) {
-                    // 4. Close the session
-                    mAudioSink->closeSession();
-                    bIsAudioRouted = false;
-                }
             }
         }
 
@@ -1656,8 +1656,13 @@ int AndroidAudioLPADecode::event_thread_func()
                         iHwState = STATE_HW_STOPPED;
                         LOGV("The state of Hardware is set to %d", iHwState);
 
-                        // 3. Call AUDIO_STOP on the Driver.
+                        if ( bIsAudioRouted ) {
+                            // 3. Close the session
+                            mAudioSink->closeSession();
+                            bIsAudioRouted = false;
+                        }
                         LOGV("Inside AUDIO_EVENT_SUSPEND and calling AUDIO_STOP");
+                        // 4. Call AUDIO_STOP on the Driver.
                         if ( ioctl(afd, AUDIO_STOP, 0) < 0 ) {
                             LOGE("AUDIO_STOP failed");
                         }
@@ -1667,11 +1672,6 @@ int AndroidAudioLPADecode::event_thread_func()
                             nBytesWritten = 0;
                         }
 
-                        if ( bIsAudioRouted ) {
-                            // 4. Close the session
-                            mAudioSink->closeSession();
-                            bIsAudioRouted = false;
-                        }
                     } else if ( iState == STATE_MIO_STARTED ) {
                         // In Execution, Just update the suspend flag
                         LOGV("AUDIO_EVENT_SUSPEND received in executing state - Igonre it:: For now");
