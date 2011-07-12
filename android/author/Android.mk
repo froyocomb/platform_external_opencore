@@ -25,13 +25,13 @@ LOCAL_CFLAGS := $(PV_CFLAGS)
 LOCAL_CFLAGS += $(BOARD_OPENCORE_FLAGS)
 
 # Disable 720p/H264 recording for unsupported targets (except 7x30)
-ifneq (,$(filter qsd8k msm7k, $(TARGET_BOARD_PLATFORM)))
+ifeq ($(call is-board-platform-in-list,qsd8k $(MSM7K_BOARD_PLATFORMS)),true)
     ifneq ($(BOARD_USES_QCOM_AUDIO_V2), true)
         LOCAL_CFLAGS += -DSURF8K_7x27
     endif
 endif
 
-ifeq ($(TARGET_BOARD_PLATFORM),msm7k)
+ifeq ($(call is-board-platform-in-list,$(MSM7K_BOARD_PLATFORMS)),true)
     ifeq ($(BOARD_USES_QCOM_AUDIO_V2), true)
         LOCAL_CFLAGS += -DSURF7x30
     else

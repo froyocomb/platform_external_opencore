@@ -13,7 +13,7 @@ LOCAL_MODULE := libpvmp4ffparsernode
 
 LOCAL_CFLAGS :=  $(PV_CFLAGS)
 
-ifeq ($(TARGET_BOARD_PLATFORM),msm7k)
+ifeq ($(call is-board-platform-in-list,$(MSM7K_BOARD_PLATFORMS)),true)
    ifeq ($(BOARD_USES_QCOM_AUDIO_V2), true)
         LOCAL_CFLAGS += -DSURF7x30
         endif
