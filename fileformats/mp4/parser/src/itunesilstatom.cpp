@@ -1469,8 +1469,13 @@ ITunesDiskDatatAtom::ITunesDiskDatatAtom(MP4_FF_FILE *fp,
     uint32 atomSize;
     AtomUtils::getNextAtomType(fp, atomSize, atomType);
 
+
+    atomSize -= 8;
+
     if (atomType == ITUNES_ILST_DATA_ATOM && AtomUtils::read64(fp, _prefix))
     {
+        atomSize -= 8;
+
         if (_prefix == INTEGER_PREFIX)
         {
             uint16 junk; // 2- Bytes representing 0x0000
@@ -1483,11 +1488,18 @@ ITunesDiskDatatAtom::ITunesDiskDatatAtom(MP4_FF_FILE *fp,
                 return;
             }
 
+            atomSize -= 2;
+
             if (!AtomUtils::read16read16(fp, _thisDiskNo, _totalDisks))
             {
                 _success = false;
                 _mp4ErrorCode = READ_ITUNES_ILST_META_DATA_FAILED;
                 PVMF_MP4FFPARSER_LOGERROR((0, "ERROR =>ITunesDiskDatatAtm::ITunesDiskDatatAtom READ_ITUNES_ILST_META_DATA_FAILED  if(!AtomUtils::read16read16(fp, _thisDiskNo, _totalDisks))"));
+                return;
+            }
+
+            atomSize -= 4;
+            if (!atomSize) {
                 return;
             }
 
