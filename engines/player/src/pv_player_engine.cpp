@@ -16132,11 +16132,10 @@ bool PVPlayerEngine::removeCmdFromQ(Oscl_Vector<PVPlayerEngineCommand, OsclMemAl
         if (aVec[i].GetCmdType() == aCmdType)
         {
             ret = true;
-            if (!aRemove)
+            if (aRemove)
             {
-                return ret;
+                continue;
             }
-            continue;
         }
         tmpvec.push_back(aVec[i]);
     }
@@ -16167,12 +16166,11 @@ bool PVPlayerEngine::removeCmdFromQ(OsclPriorityQueue<PVPlayerEngineCommand, Osc
         if (aVec.top().GetCmdType() == aCmdType)
         {
             ret = true;
-            if (!aRemove)
+            if (aRemove)
             {
-                return ret;
+                aVec.pop();
+                continue;
             }
-            aVec.pop();
-            continue;
         }
         tmpvec.push_back(aVec.top());
         aVec.pop();
@@ -16227,7 +16225,6 @@ void PVPlayerEngine::HandleSourceNodeInfoEvent(const PVMFAsyncEvent& aEvent)
             {
                 //cancelled the pending auto-resume
                 PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE, (0, "PVPlayerEngine::HandleSourceNodeInfoEvent() PVMFInfoUnderflow got cancelled"));
-                break;
             }
 
             // if no auto-pause in the queue and no auto-pause in progress, add one
@@ -16248,7 +16245,6 @@ void PVPlayerEngine::HandleSourceNodeInfoEvent(const PVMFAsyncEvent& aEvent)
             {
                 //cancelled the pending auto-pause
                 PVLOGGER_LOGMSG(PVLOGMSG_INST_LLDBG, iLogger, PVLOGMSG_STACK_TRACE, (0, "PVPlayerEngine::HandleSourceNodeInfoEvent() PVMFInfoDataReady got cancelled"));
-                break;
             }
 
             // if no resume in the queue and no resume in progress, add one
