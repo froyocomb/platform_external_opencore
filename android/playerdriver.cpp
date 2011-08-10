@@ -2127,16 +2127,20 @@ status_t doUsePVPlayer(const char *filename)
     oscl_wchar output[MAX_BUFF_SIZE];
     oscl_UTF8ToUnicode((const char *)filename, oscl_strlen((const char *) filename), (oscl_wchar *)output, MAX_BUFF_SIZE);
     OSCL_wHeapString<OsclMemAllocator> wFilename(output);
-
-    //Check for QCelp (no SF support)
-    QCPErrorType qcpErr;
-    IQcpFile qcpFile(wFilename, qcpErr);
-    if (qcpErr == QCP_SUCCESS) {
-        qcpErr = qcpFile.ParseQcpFile();
+    char prop_value[128];
+    if (property_get("media.stagefright.enable-qcp", prop_value, NULL)
+        && (!strcmp(prop_value, "0") || !strcasecmp(prop_value, "false"))) {
+        //Check for QCelp (no SF support)
+        QCPErrorType qcpErr;
+        IQcpFile qcpFile(wFilename, qcpErr);
         if (qcpErr == QCP_SUCCESS) {
-            LOGV("doUsePVPlayer: recognized qcelp or evrc file");
-            mUseLPADecode = false;
-            status = OK;
+            qcpErr = qcpFile.ParseQcpFile();
+            if (qcpErr == QCP_SUCCESS) {
+                LOGW("QCP playback using OC");
+                LOGV("doUsePVPlayer: recognized qcelp or evrc file");
+                mUseLPADecode = false;
+                status = OK;
+            }
         }
     }
 
@@ -2180,26 +2184,31 @@ status_t doUsePVPlayer(const char *filename)
             }
         }
     }
-    //Then check if raw .aac of sufficient length for LPA
-    // remove support of raw .aac from OC, moving to SF
-    if (status != OK) {
-        CAACFileParser aacParser;
+    if (property_get("media.stagefright.enable-aac", prop_value, NULL)
+        && (!strcmp(prop_value, "0") || !strcasecmp(prop_value, "false"))) {
+        //Then check if raw .aac of sufficient length for LPA
+        // remove support of raw .aac from OC, moving to SF
+        if (status != OK) {
+            CAACFileParser aacParser;
 
-        mUseLPADecode = false;
-        if (aacParser.InitAACFile(wFilename)) {
-            TPVAacFileInfo aacInfo;
-            if (aacParser.RetrieveFileInfo(aacInfo)) {
-                LOGV("doUsePVPlayer: recognized .aac file");
-                status = OK;
-            }
-            property_get("lpa.decode",value,"0");
-            if (strcmp("true",value) == 0) {
-                if (aacInfo.iDuration >= MIN_LPA_DURATION) {
-                    mUseLPADecode = true;
+            mUseLPADecode = false;
+            if (aacParser.InitAACFile(wFilename)) {
+                TPVAacFileInfo aacInfo;
+                if (aacParser.RetrieveFileInfo(aacInfo)) {
+                    LOGW("Raw AAC playback using OC");
+                    LOGV("doUsePVPlayer: recognized .aac file");
+                    status = OK;
+                }
+                property_get("lpa.decode",value,"0");
+                if (strcmp("true",value) == 0) {
+                    if (aacInfo.iDuration >= MIN_LPA_DURATION) {
+                        mUseLPADecode = true;
+                    }
                 }
             }
         }
     }
+
 return_status:
     iFs.Close();
     if(mp4Input != NULL) {
