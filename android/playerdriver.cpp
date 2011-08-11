@@ -97,6 +97,9 @@
 
 using namespace android;
 
+// LPA PCM buffer = 512*1024*1000/(48000*2*2) = 2730.66 ms. LPA PCM buffer missed = 2730/4
+#define MIN_LPA_BUFFERTIME 2730
+
 # ifndef PAGESIZE
 #  define PAGESIZE              4096
 # endif
@@ -856,6 +859,18 @@ void PlayerDriver::handleInit(PlayerInit* command)
         );
     }
 
+    {
+        PvmiKvp iKVPLPAMinBufferTime;
+        PvmiKvp *iErrorKVP = NULL;
+
+        int error = 0;
+        iKVPLPAMinBufferTime.key = _STRLIT_CHAR("x-pvmf/player/LPAMinBufferTime;valtype=uint32");
+        iKVPLPAMinBufferTime.value.int32_value = MIN_LPA_BUFFERTIME/4;
+        OSCL_TRY(error, mPlayerCapConfig->setParametersSync(NULL, &iKVPLPAMinBufferTime, 1, iErrorKVP));
+        OSCL_FIRST_CATCH_ANY(error,
+                LOGE("handleInit- setParametersSync ERROR setting iKVPLPAMinBufferTime");
+        );
+    }
     OSCL_TRY(error, mPlayer->Init(command));
     OSCL_FIRST_CATCH_ANY(error, commandFailed(command));
 }
