@@ -560,7 +560,7 @@ struct PVPlayerKeyStringData
 
 
 // Key string info at the base level ("x-pvmf/player/")
-#define PVPLAYERCONFIG_BASE_NUMKEYS 13
+#define PVPLAYERCONFIG_BASE_NUMKEYS 14
 const PVPlayerKeyStringData PVPlayerConfigBaseKeys[PVPLAYERCONFIG_BASE_NUMKEYS] =
 {
     {"pbpos_units", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_CHARPTR},
@@ -575,7 +575,8 @@ const PVPlayerKeyStringData PVPlayerConfigBaseKeys[PVPLAYERCONFIG_BASE_NUMKEYS] 
     {"nodecmd_timeout", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32},
     {"nodedataqueuing_timeout", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32},
     {"productinfo", PVMI_KVPTYPE_AGGREGATE, PVMI_KVPVALTYPE_KSV},
-    {"pbpos_enable", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_BOOL}
+    {"pbpos_enable", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_BOOL},
+    {"LPAMinBufferTime", PVMI_KVPTYPE_VALUE, PVMI_KVPVALTYPE_UINT32}
 };
 
 enum PlayerConfigBaseKeys_IndexMap
@@ -592,7 +593,8 @@ enum PlayerConfigBaseKeys_IndexMap
     NODECMD_TIMEOUT,
     NODEDATAQUEIUING_TIMEOUT,
     PRODUCTINFO,
-    PBPOS_ENABLE
+    PBPOS_ENABLE,
+    LPAMINBUFFER_TIME
 };
 
 // Key string info at the productinfo level ("x-pvmf/player/productinfo/")
@@ -1192,6 +1194,8 @@ class PVPlayerEngine : public OsclTimerObject,
         PVMFStatus DoVerifyAndSetPlayerProductInfoParameter(PvmiKvp& aParameter, bool aSetParam);
         PVMFStatus DoSetConfigSyncMargin(int32 aEarlyMargin, int32 aLateMargin, int32 aMediaType);
         bool iHwAccelerated;
+        bool iAACContainer;
+        uint32 iLPAMinBufferTime;
         int32 iCapConfigContext;
         bool iPreparedtoPause;
 
