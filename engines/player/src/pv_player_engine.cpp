@@ -1157,7 +1157,9 @@ PVPlayerEngine::PVPlayerEngine(bool aHwAccelerated, bool aThumbnailMode) :
         iTrackSelectionHelper(NULL),
         iPlaybackPositionMode(PVPPBPOS_MODE_UNKNOWN),
         iPreparedtoPause(false),
-        iOverflowFlag(false)
+        iOverflowFlag(false),
+        iAACContainer(false),
+        iLPAMinBufferTime(0)
 {
     iCurrentBeginPosition.iIndeterminate = true;
     iCurrentEndPosition.iIndeterminate = true;
@@ -5936,6 +5938,8 @@ PVMFStatus PVPlayerEngine::DoSinkNodeSkipMediaDataDuringPlayback(PVCommandId aCm
     iNumPendingNodeCmd = 0;
     int32 leavecode = 0;
 
+    if ((!iHwAccelerated) && iAACContainer)
+        iSkipMediaDataTS -= iLPAMinBufferTime/4;
     // For all sink node with sync control IF, call SkipMediaData()
     for (uint32 i = 0; i < iDatapathList.size(); ++i)
     {
@@ -6826,6 +6830,8 @@ PVMFStatus PVPlayerEngine::DoSinkNodeTrackSelection(PVCommandId aCmdId, OsclAny*
                         {
                             // MIO is LPA decode enabled. Disable Hardware acceleration.
                             iHwAccelerated = false;
+                            if (pv_mime_strcmp(kvpFormatType.value.pChar_value, PVMF_MIME_MPEG4_AUDIO) == 0)
+                                iAACContainer = true;
                         }
                     }
                 }
@@ -11521,7 +11527,9 @@ PVMFStatus PVPlayerEngine::DoVerifyAndSetPlayerParameter(PvmiKvp& aParameter, bo
 
             }
             break;
-
+        case LPAMINBUFFER_TIME:
+            iLPAMinBufferTime = aParameter.value.uint32_value;
+        break;
         default:
             PVLOGGER_LOGMSG(PVLOGMSG_INST_HLDBG, iLogger, PVLOGMSG_ERR, (0, "PVPlayerEngine::DoVerifyAndSetPlayerParameter() Invalid index for player parameter"));
             return PVMFErrArgument;
