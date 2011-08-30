@@ -760,21 +760,22 @@ void PlayerDriver::handleSetDataSource(PlayerSetDataSource* command)
         delete mDataSource;
         mDataSource = NULL;
     }
-    char strfd[3]={url[11],url[12],'\0'};
-    int urlfd = atoi (strfd);
+    if (strncmp("sharedfd://", url, 11) == 0) {
+        char strfd[3]={url[11],url[12],'\0'};
+        int urlfd = atoi (strfd);
 
-    char bufchk[20];
-    lseek(urlfd, 0, SEEK_SET);
-    read(urlfd, bufchk, sizeof(bufchk));
-    lseek(urlfd, 0, SEEK_SET);
+        char bufchk[20];
+        lseek(urlfd, 0, SEEK_SET);
+        read(urlfd, bufchk, sizeof(bufchk));
+        lseek(urlfd, 0, SEEK_SET);
 
-    long ident = *((long*)bufchk);
+        long ident = *((long*)bufchk);
 
-    if (ident == 0x46494441) // For ADIF check
-    {
-        mIsADIF = true;
+        if (ident == 0x46494441) // For ADIF check
+        {
+            mIsADIF = true;
+        }
     }
-
     // Create a URL datasource to feed PVPlayer
     mDataSource = new PVPlayerDataSourceURL();
     oscl_UTF8ToUnicode(url, strlen(url), output, lengthofurl+1);
