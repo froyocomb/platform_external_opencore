@@ -1,5 +1,6 @@
 /* ------------------------------------------------------------------
  * Copyright (C) 1998-2009 PacketVideo
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -521,7 +522,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
     per_chan_share_w_fxpCoef *pChLeftShare;  /* Helper pointer */
     per_chan_share_w_fxpCoef *pChRightShare; /* Helper pointer */
 
-    Int            status = MP4AUDEC_SUCCESS;
+    Int            status = -1;
 
 
     Bool empty_frame;
@@ -679,7 +680,7 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
     leaveGetLoop = FALSE;
     empty_frame  = TRUE;
 
-    while ((leaveGetLoop == FALSE) && (status == SUCCESS))
+    while (leaveGetLoop == FALSE)
     {
         /* get audio syntactic element */
         id_syn_ele = (Int)get9_n_lessbits(LEN_SE_ID, &pVars->inputStream);
@@ -755,19 +756,20 @@ OSCL_EXPORT_REF Int PVMP4AudioDecodeFrame(
                 getfill(&pVars->inputStream);
 #endif
 
-                break;
+                continue;
 
             case ID_DSE:       /* Data Streaming element */
                 get_dse(pVars->share.data_stream_bytes,
                         &pVars->inputStream);
-                break;
+                continue;
 
             default: /* Unsupported element, including ID_LFE */
                 status = -1;  /* ERROR CODE needs to be updated */
                 break;
 
         } /* end switch() */
-
+        if(status != SUCCESS)
+            break;
     } /* end while() */
 
     byte_align(&pVars->inputStream);
