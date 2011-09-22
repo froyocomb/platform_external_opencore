@@ -706,6 +706,8 @@ PVMFStatus Mpeg4File::populateTitleVector()
             if (oscl_strstr(framevector[i]->key, "title") != 0)
             {
                 uint32 len = oscl_strlen(framevector[i]->value.pChar_value);
+                if(len > ID3V1_STR_MAX_SIZE)
+                    len = ID3V1_STR_MAX_SIZE;
                 oscl_memset(_id3v1Title, 0, ID3V1_STR_MAX_SIZE);
                 oscl_UTF8ToUnicode(framevector[i]->value.pChar_value, len, _id3v1Title, len*2 + 2);
                 titleValues.push_front(_id3v1Title);
@@ -863,6 +865,8 @@ PVMFStatus Mpeg4File::populateAlbumVector()
             if (oscl_strstr(framevector[i]->key, "album") != 0)
             {
                 uint32 len = oscl_strlen(framevector[i]->value.pChar_value);
+                if(len > ID3V1_STR_MAX_SIZE)
+                    len = ID3V1_STR_MAX_SIZE;
                 oscl_memset(_id3v1Album, 0, ID3V1_STR_MAX_SIZE);
                 oscl_UTF8ToUnicode(framevector[i]->value.pChar_value, len, _id3v1Album, len*2 + 2);
                 albumValues.push_front(_id3v1Album);
@@ -972,6 +976,8 @@ PVMFStatus Mpeg4File::populateArtistVector()
             if (oscl_strstr(framevector[i]->key, "artist") != 0)
             {
                 uint32 len = oscl_strlen(framevector[i]->value.pChar_value);
+                if(len > ID3V1_STR_MAX_SIZE)
+                    len = ID3V1_STR_MAX_SIZE;
                 oscl_memset(_id3v1Artist, 0, ID3V1_STR_MAX_SIZE);
                 oscl_UTF8ToUnicode(framevector[i]->value.pChar_value, len, _id3v1Artist, len*2 + 2);
                 artistValues.push_front(_id3v1Artist);
@@ -1200,6 +1206,8 @@ PVMFStatus Mpeg4File::populateCommentVector()
             if (oscl_strstr(framevector[i]->key, "comment") != 0)
             {
                 uint32 len = oscl_strlen(framevector[i]->value.pChar_value);
+                if(len > ID3V1_STR_MAX_SIZE)
+                    len = ID3V1_STR_MAX_SIZE;
                 oscl_memset(_id3v1Comment, 0, ID3V1_STR_MAX_SIZE);
                 oscl_UTF8ToUnicode(framevector[i]->value.pChar_value, len, _id3v1Comment, len*2 + 2);
                 commentValues.push_front(_id3v1Comment);
