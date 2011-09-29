@@ -1057,7 +1057,13 @@ OSCL_EXPORT_REF OMX_BOOL OMX_MasterConfigParser(
             if ((pInterface[index]->GetpOMXConfigParser() == NULL) ||
                 (0 == oscl_strncmp(((OMXConfigParserInputs*)aInputParameters)->cComponentRole,
                                     (OMX_STRING)"audio_decoder.aac",
-                                    oscl_strlen("audio_decoder.aac"))))
+                                    oscl_strlen("audio_decoder.aac")))||
+                (0 == oscl_strncmp(((OMXConfigParserInputs*)aInputParameters)->cComponentRole,
+                                    (OMX_STRING)"video_decoder.mpeg4",
+                                    oscl_strlen("video_decoder.mpeg4")))||
+                (0 == oscl_strncmp(((OMXConfigParserInputs*)aInputParameters)->cComponentRole,
+                                    (OMX_STRING)"video_decoder.avc",
+                                    oscl_strlen("video_decoder.avc"))))
             {
                 //The OMX core does not have config parser - use PV config parser
                 Status = PV_OMXConfigParser(aInputParameters, aOutputParameters);
