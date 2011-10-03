@@ -208,6 +208,9 @@ PVMFOMXVideoDecNode::PVMFOMXVideoDecNode(int32 aPriority, bool aHwAccelerated, b
     iH264InitBufSize = 0;
     iInterlaceFormatDetected = 0;
     bThumbnailMode = aThumbnailMode;
+    iH263_width = 0;
+    iH263_height = 0;
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -3102,6 +3105,24 @@ void PVMFOMXVideoDecNode::DoCapConfigSetParameters(PvmiKvp* aParameters, int aNu
             continue;
         }
 
+        if (pv_mime_strcmp(aParameters[paramind].key, PVMF_VIDEO_OUTPUT_WIDTH_VALUE_KEY)==0)
+        {
+            PvmiKvpValueType keyvaltype = GetValTypeFromKeyString(aParameters[paramind].key);
+            if (keyvaltype == PVMI_KVPVALTYPE_UINT32 && aParameters[paramind].value.uint32_value) {
+                iH263_width = aParameters[paramind].value.uint32_value;
+            }
+            // contine the for loop without parsing current key
+            continue;
+        }
+        if (pv_mime_strcmp(aParameters[paramind].key, PVMF_VIDEO_OUTPUT_HEIGHT_VALUE_KEY)==0)
+        {
+            PvmiKvpValueType keyvaltype = GetValTypeFromKeyString(aParameters[paramind].key);
+            if (keyvaltype == PVMI_KVPVALTYPE_UINT32 && aParameters[paramind].value.uint32_value) {
+                iH263_height = aParameters[paramind].value.uint32_value;
+            }
+            // contine the for loop without parsing current key
+            continue;
+        }
         if ((pv_mime_strcmp(compstr, _STRLIT_CHAR("x-pvmf/video/decoder")) < 0) || compcount < 4)
         {
             // First 3 components should be "x-pvmf/video/decoder" and there must
@@ -3332,9 +3353,14 @@ PVMFStatus PVMFOMXVideoDecNode::DoCapConfigVerifyParameters(PvmiKvp* aParameters
                 {
                     return PVMFErrNotSupported;
                 }
-
-                iNewWidth = aOutputParameters.width;
-                iNewHeight = aOutputParameters.height;
+                if ((aInputs.iMimeType ==  PVMF_MIME_H2631998 ||
+                     aInputs.iMimeType == PVMF_MIME_H2632000)&&(iH263_width&&iH263_height)) {
+                     iNewWidth = aOutputParameters.width = iH263_width;
+                     iNewHeight = aOutputParameters.height = iH263_height;
+                }else {
+                     iNewWidth = aOutputParameters.width;
+                     iNewHeight = aOutputParameters.height;
+                }
 
                 return PVMFSuccess;
             }
