@@ -437,6 +437,12 @@ class PvmfAssetInfo3GPPLocationStruct
 // key for video decoder format
 #define PVMF_VIDEO_DEC_FORMAT_TYPE_VALUE_KEY "x-pvmf/video/decoder/format-type;valtype=char*"
 
+// key for video decoder out put frame height
+ #define PVMF_VIDEO_OUTPUT_HEIGHT_VALUE_KEY "x-pvmf/video/decoder/height;valtype=uint32"
+
+// key for video decoder out put frame width
+ #define PVMF_VIDEO_OUTPUT_WIDTH_VALUE_KEY "x-pvmf/video/decoder/width;valtype=uint32"
+
 // Keys for format specific info for any type of media
 #define PVMF_FORMAT_SPECIFIC_INFO_KEY "x-pvmf/media/format_specific_info;valtype=key_specific_value"
 

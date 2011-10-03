@@ -7372,6 +7372,37 @@ PVMFStatus PVPlayerEngine::DoVerifyTrackInfo(PVPlayerEngineTrackSelection &aTrac
         aTrackSelection.iTsDecNodeCapConfigIF->setParametersSync(NULL, &iKVPSetFormat, 1, iErrorKVP);
         if (iErrorKVP == NULL)
         {
+            PvmiKvp* lpErrorKVP = NULL;
+            if(aTrack->isTrackHeightWidthPresent())
+            {
+                PvmiKvp kvpDimentions[2];
+                PvmiKvp* lTemp;
+                kvpDimentions[0].key = NULL;
+                kvpDimentions[1].key = NULL;
+                lTemp = &kvpDimentions[0];
+                const char* aHeightValType = PVMF_VIDEO_OUTPUT_HEIGHT_VALUE_KEY;
+                const char* aWidthValType = PVMF_VIDEO_OUTPUT_WIDTH_VALUE_KEY;
+                kvpDimentions[0].length = oscl_strlen(aHeightValType) + 1; // +1 for \0
+                kvpDimentions[0].key = (PvmiKeyType)alloc.ALLOCATE(kvpDimentions[0].length);
+                if (kvpDimentions[0].key == NULL) {
+                    return PVMFErrNoMemory;
+                }
+                oscl_strncpy(kvpDimentions[0].key, aHeightValType, kvpDimentions[0].length);
+                kvpDimentions[0].capacity = 1;
+                kvpDimentions[0].value.uint32_value = aTrack->getTrackHeight();
+                kvpDimentions[1].length = oscl_strlen(aWidthValType) + 1; // +1 for \0
+                kvpDimentions[1].key = (PvmiKeyType)alloc.ALLOCATE(kvpDimentions[1].length);
+                if (kvpDimentions[0].key == NULL) {
+                    return PVMFErrNoMemory;
+                }
+                oscl_strncpy(kvpDimentions[1].key, aWidthValType, kvpDimentions[1].length);
+                kvpDimentions[1].capacity = 1;
+                kvpDimentions[1].value.uint32_value = aTrack->getTrackWidth();
+                aTrackSelection.iTsDecNodeCapConfigIF->setParametersSync(NULL, lTemp, 2, iErrorKVP);
+            }
+        }
+        if(iErrorKVP==NULL)
+        {
             //verify codec specific info
             int32 leavecode = 0;
             OSCL_TRY(leavecode, aCheckcodec = aTrackSelection.iTsDecNodeCapConfigIF->verifyParametersSync(NULL, &kvp, 1));
