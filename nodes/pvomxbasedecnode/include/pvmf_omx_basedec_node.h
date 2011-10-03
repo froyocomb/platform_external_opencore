@@ -857,6 +857,8 @@ class PVMFOMXBaseDecNode
         OMX_BOOL bThumbnailMode;
         uint32 video_width;
         uint32 video_height;
+        uint32 iH263_width;
+        uint32 iH263_height;
 
         OMX_BOOL first_iframe_received;
 

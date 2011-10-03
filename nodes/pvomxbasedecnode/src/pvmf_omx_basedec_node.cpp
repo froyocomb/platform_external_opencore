@@ -4392,6 +4392,12 @@ void PVMFOMXBaseDecNode::DoPrepare(PVMFOMXBaseDecNodeCommand& aCmd)
                 return;
             }
 
+            if ((format ==  PVMF_MIME_H2631998 ||
+                format == PVMF_MIME_H2632000)&&(iH263_width&&iH263_height))
+            {
+                ((VideoOMXConfigParserOutputs *)aOutputParameters)->width = iH263_width;
+                ((VideoOMXConfigParserOutputs *)aOutputParameters)->height = iH263_height;
+            }
             // find out how many roles the component supports
             OMX_U32 NumRoles;
             err = OMX_MasterGetRolesOfComponent((OMX_STRING)CompName, &NumRoles, NULL);
