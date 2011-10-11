@@ -2592,7 +2592,7 @@ bool PVMFOMXEncNode::SetMP4EncoderParameters()
     // workaround for 7x30 and 8250, do not set profile and level :
     // This is to prevent overwriting profile/level value set by the component
     char value[PROPERTY_VALUE_MAX];
-    property_get("ro.product.device", value, "0");
+    property_get("ro.board.platform", value, "0");
     if (strcmp("msm7627_surf", value) == 0)
     {
     switch (iVideoEncodeParam.iProfileLevel)

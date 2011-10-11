@@ -495,7 +495,7 @@ void MetadataDriver::doColorConversion()
     //Deinterlace Chroma if the device is an msm7630_surf
     //and if we are using hardware accelerated video decoder
     char value[PROPERTY_VALUE_MAX];
-    property_get("ro.product.device",value,"0");
+    property_get("ro.board.platform",value,"0");
     if(strncmp("msm7630",value,strlen("msm7630")) == 0 && aHwAccelerated == true) deinterlaceChroma();
 
     if (!bitmap) {

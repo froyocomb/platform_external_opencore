@@ -855,7 +855,7 @@ bool PVMFOMXVideoDecNode::NegotiateComponentParameters(OMX_PTR aOutputParameters
     VideoPortFormat.nIndex = 0; // read the preferred format - first
     char curr_target[128] = {0};
     char target[] = "msm7630_";
-    property_get("ro.product.device", curr_target, "0");
+    property_get("ro.board.platform", curr_target, "0");
 
     if (!strncmp(target, curr_target, sizeof(target) - 1)) {
         LOGV("Set Colorformat to Tile for 7x30");

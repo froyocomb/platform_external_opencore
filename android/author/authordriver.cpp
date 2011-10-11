@@ -1541,7 +1541,7 @@ void AuthorDriver::clipVideoBitrate()
      * and 14/20mbps are not supported on all targets.
      */
     char value[PROPERTY_VALUE_MAX];
-    property_get("ro.product.device",value,"0");
+    property_get("ro.board.platform",value,"0");
 
     if((strncmp("msm7630", value, 7) == 0) || (strncmp(value, "msm8660", 7) == 0)) {
       if( (mVideoHeight == 720 &&  mVideoWidth  == 1280 ) ||
