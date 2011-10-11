@@ -449,6 +449,7 @@ void OpenmaxAacAO::ProcessData()
             }
 
             ipOutputBuffer->nFilledLen = 0;
+            ipOutputBuffer->nOffset = 0;
             iNewOutBufRequired = OMX_FALSE;
 
             //Set the current timestamp to the output buffer timestamp
