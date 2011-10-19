@@ -995,7 +995,18 @@ OMX_BOOL PV_OMXConfigParser(
             Status = pv_video_config_parser(&aInputs, (pvVideoConfigParserOutputs *)aOutputParameters);
             if (0 != Status)
             {
-                return OMX_FALSE;
+                 ((pvVideoConfigParserOutputs *)aOutputParameters)->width = 176;
+                 ((pvVideoConfigParserOutputs *)aOutputParameters)->height= 144;
+                 if (aInputs.iMimeType == PVMF_MIME_H264_VIDEO) {
+                     //minimum supported h264 profile - setting to baseline profile
+                     ((pvVideoConfigParserOutputs *)aOutputParameters)->profile = 66;
+                     ((pvVideoConfigParserOutputs *)aOutputParameters)->level = 0;
+                 } else if (aInputs.iMimeType==PVMF_MIME_M4V) {
+                            //minimum supported mpeg4 profile& level
+                            ((pvVideoConfigParserOutputs *)aOutputParameters)->profile = 8;
+                            ((pvVideoConfigParserOutputs *)aOutputParameters)->level = 0;
+                 }
+                 return OMX_TRUE;
             }
         }
         else
