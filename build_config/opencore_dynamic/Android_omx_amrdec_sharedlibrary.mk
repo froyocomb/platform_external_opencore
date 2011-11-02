@@ -8,6 +8,8 @@ LOCAL_WHOLE_STATIC_LIBRARIES := \
 
 LOCAL_MODULE := libomx_amrdec_sharedlibrary
 
+LOCAL_MODULE_TAGS := optional
+
 ifneq ($(BUILD_PV_AUDIO_DEC_ONLY),1)
 -include $(PV_TOP)/Android_platform_extras.mk
 endif

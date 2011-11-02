@@ -19,11 +19,13 @@ LOCAL_SRC_FILES := \
 
 LOCAL_MODULE := pvplayer_engine_test
 
+LOCAL_MODULE_TAGS := optional
+
 LOCAL_CFLAGS := -DBUILD_OMX_DEC_NODE $(PV_CFLAGS)
 
 
 
-LOCAL_STATIC_LIBRARIES := libunit_test  
+LOCAL_STATIC_LIBRARIES := libunit_test
 
 LOCAL_SHARED_LIBRARIES :=  libopencore_player libopencore_common
 
@@ -42,7 +44,7 @@ LOCAL_C_INCLUDES := \
 LOCAL_COPY_HEADERS_TO := $(PV_COPY_HEADERS_TO)
 
 LOCAL_COPY_HEADERS := \
- 	
+
 
 -include $(PV_TOP)/Android_system_extras.mk
 

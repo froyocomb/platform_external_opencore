@@ -12,6 +12,7 @@ LOCAL_WHOLE_STATIC_LIBRARIES +=  libandroidpvauthor
 LOCAL_STATIC_LIBRARIES := $(LOCAL_STATIC_LIBRARIES) $(LOCAL_WHOLE_STATIC_LIBRARIES)
 
 LOCAL_MODULE := libopencore_author
+LOCAL_MODULE_TAGS := optional
 
 -include $(PV_TOP)/Android_platform_extras.mk
 

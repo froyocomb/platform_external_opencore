@@ -42,6 +42,8 @@ LOCAL_SRC_FILES := \
 
 LOCAL_MODULE := libpvdecoder_gsmamr
 
+LOCAL_MODULE_TAGS := optional
+
 LOCAL_CFLAGS :=  $(PV_CFLAGS_MINUS_VISIBILITY)
 
 LOCAL_ARM_MODE := arm

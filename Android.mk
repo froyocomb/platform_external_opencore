@@ -6,7 +6,15 @@ include $(CLEAR_VARS)
 
 # Set up the PV variables.
 include $(LOCAL_PATH)/Config.mk
-$(call add-prebuilt-files, ETC, pvplayer.cfg)
+
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES := pvplayer.cfg
+LOCAL_BUILT_MODULE_STEM := pvplayer.cfg
+LOCAL_MODULE_SUFFIX := $(suffix pvplayer.cfg)
+LOCAL_MODULE := $(basename pvplayer.cfg)
+LOCAL_MODULE_TAGS := optional
+LOCAL_MODULE_CLASS :=  ETC
+include $(BUILD_PREBUILT)
 
 ifeq ($(BUILD_PV_AUDIO_DEC_ONLY), 1)
 # Build only required librabries for PV Software Audio decoders - used by WebOS
