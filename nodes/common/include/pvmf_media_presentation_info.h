@@ -65,6 +65,9 @@ class PVMFTrackInfo : public HeapBase
             iTrackAlternateType = PVMF_TRACK_ALTERNATE_TYPE_UNDEFINED;
             oDurationAvailable = true;
             iTrackFrameRate = 0;
+            iTrackHeight = 0;
+            iTrackWidth = 0;
+
         }
 
         PVMFTrackInfo(const PVMFTrackInfo& aSourceTrackInfo) : HeapBase(aSourceTrackInfo)
@@ -84,6 +87,8 @@ class PVMFTrackInfo : public HeapBase
             iAlternateTrackIDVec = aSourceTrackInfo.iAlternateTrackIDVec;
             oDurationAvailable   = aSourceTrackInfo.oDurationAvailable;
             iLanguage            = aSourceTrackInfo.iLanguage;
+            iTrackWidth          = aSourceTrackInfo.iTrackWidth;
+            iTrackHeight         = aSourceTrackInfo.iTrackHeight;
         }
 
         PVMFTrackInfo& operator=(const PVMFTrackInfo& aSourceTrackInfo)
@@ -105,6 +110,8 @@ class PVMFTrackInfo : public HeapBase
                 iAlternateTrackIDVec = aSourceTrackInfo.iAlternateTrackIDVec;
                 oDurationAvailable   = aSourceTrackInfo.oDurationAvailable;
                 iLanguage            = aSourceTrackInfo.iLanguage;
+                iTrackWidth          = aSourceTrackInfo.iTrackWidth;
+                iTrackHeight         = aSourceTrackInfo.iTrackHeight;
             }
             return *this;
         }
@@ -189,6 +196,27 @@ class PVMFTrackInfo : public HeapBase
         void setTrackFrameRate(uint32 aFrameRate)
         {
             iTrackFrameRate = aFrameRate;
+        }
+
+        void setTrackHeightWidth(uint32 aHeight,uint32 aWidth)
+        {
+            iTrackHeight = aHeight;
+            iTrackWidth  = aWidth;
+        }
+        uint32 isTrackHeightWidthPresent()
+        {
+            if(iTrackHeight&&iTrackWidth)
+                return true;
+            else
+                return false;
+        }
+        uint32 getTrackWidth()
+        {
+            return iTrackWidth;
+        }
+        uint32 getTrackHeight()
+        {
+            return iTrackHeight;
         }
 
         /*
@@ -281,6 +309,9 @@ class PVMFTrackInfo : public HeapBase
         uint64  iDurationTimeScale;
         uint32 iTrackBitRate;
         uint32 iTrackFrameRate;
+        uint32 iTrackHeight;
+        uint32 iTrackWidth;
+
         OsclRefCounterMemFrag iTrackConfigInfo;
         bool iDependsOn;
         Oscl_Vector<int32, OsclMemAllocator> iDependsOnTrackIDVec;

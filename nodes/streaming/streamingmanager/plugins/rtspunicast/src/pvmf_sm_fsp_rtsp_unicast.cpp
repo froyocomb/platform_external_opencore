@@ -3650,7 +3650,14 @@ PVMFStatus PVMFSMRTSPUnicastNode::GetMediaPresentationInfo(PVMFMediaPresentation
              * use just the first payload
              */
             PayloadSpecificInfoTypeBase* payloadInfo = payloadVector[0];
-
+            OSCL_StackString<32> h263(_STRLIT_CHAR("H263"));
+            const char* amimeType = mInfo->getMIMEType();
+            if (oscl_strstr(amimeType, h263.get_cstr()) != NULL) {
+                H263PayloadSpecificInfoType* h263PayloadInfo =
+                OSCL_STATIC_CAST(H263PayloadSpecificInfoType*, payloadInfo);
+                if((h263PayloadInfo->getFrameHeight()>0)&&(h263PayloadInfo->getFrameWidth()>0))
+                    trackInfo.setTrackHeightWidth(h263PayloadInfo->getFrameHeight(),h263PayloadInfo->getFrameWidth());
+            }
             // set config for later
             int32 configSize = payloadInfo->configSize;
             OsclAny* config = payloadInfo->configHeader.GetRep();
