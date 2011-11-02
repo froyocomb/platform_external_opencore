@@ -8,6 +8,8 @@ LOCAL_SRC_FILES := \
 
 LOCAL_MODULE := libpvauthorengine
 
+LOCAL_MODULE_TAGS := optional
+
 LOCAL_CFLAGS :=  $(PV_CFLAGS)
 
 

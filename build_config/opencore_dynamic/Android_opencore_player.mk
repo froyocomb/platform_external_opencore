@@ -32,6 +32,8 @@ LOCAL_STATIC_LIBRARIES := $(LOCAL_STATIC_LIBRARIES) $(LOCAL_WHOLE_STATIC_LIBRARI
 
 LOCAL_MODULE := libopencore_player
 
+LOCAL_MODULE_TAGS := optional
+
 -include $(PV_TOP)/Android_platform_extras.mk
 
 -include $(PV_TOP)/Android_system_extras.mk

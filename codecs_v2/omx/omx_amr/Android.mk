@@ -9,6 +9,8 @@ LOCAL_SRC_FILES := \
 
 LOCAL_MODULE := libomx_amr_component_lib
 
+LOCAL_MODULE_TAGS := optional
+
 LOCAL_CFLAGS :=  $(PV_CFLAGS_MINUS_VISIBILITY)
 
 LOCAL_ARM_MODE := arm
