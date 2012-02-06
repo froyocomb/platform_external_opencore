@@ -437,7 +437,7 @@ int32 OsclNativeFile::Seek(TOsclFileOffset offset, Oscl_File::seek_type origin)
                 seekmode = SEEK_END;
 #if OSCL_HAS_LARGE_FILE_SUPPORT
 #ifdef ANDROID
-            TOsclFileOffset seekResult = lseek64(iFileDescriptor, offset, seekmode);
+            TOsclFileOffset seekResult = lseek64(iFileDescriptor, ((uint32)offset), seekmode);
             if (seekResult == -1){
               LOGE("OsclNativeFile::Seek lseek64 failed");
               return -1;
