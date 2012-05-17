@@ -5583,6 +5583,7 @@ void PVRTSPEngineNode::MoveCmdToCancelQueue(PVRTSPEngineCommand& aCmd)
      */
     iCancelCmdQueue.StoreL(aCmd);
     iRunningCmdQueue.Erase(&aCmd);
+    CommandComplete(iCancelCmdQueue, iCancelCmdQueue[1], PVMFPending);
 }
 
 
