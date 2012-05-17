@@ -718,6 +718,10 @@ void AndroidAudioMIOActiveTimingSupport::ClockStateUpdated()
                     iFrameCount = 0;
                     iUpdateClock = false;
                     LOGV("update iStartTime: %d", iStartTime);
+                    if(int32(iStartTime) < 100) { 
+                        iStartTime_backup = iStartTime;
+                        LOGV("iStartTime_backup: %d iStartTime: %d",iStartTime_backup, iStartTime);
+                    }
                     if(!checkForDelayedStart) {
                         if((int32(iStartTime)) > 100){
                             LOGV("START TIME DELAYED:: Setting startTimeDelayed = 1 ");
@@ -758,8 +762,14 @@ void AndroidAudioMIOActiveTimingSupport::UpdateClock()
         LOGV("sample clock = %u frameCount(%u) msecsPerFrame(%f)", updateClock32,iFrameCount,iMsecsPerFrame);
 
         if((int32(iStartTime)) < 100 || startTimeDelayed == false) {
-            correction = updateClock32 - (clockTime32 - iStartTime);
-            LOGV("ADJ_CLK iDriverLatency %d old clock %d delta %d", iDriverLatency, clockTime32, correction);
+            if(int32(iStartTime) < 100) {
+                correction = updateClock32 - (clockTime32 - iStartTime_backup);
+                LOGV("ADJ_CLK iDriverLatency %d old clock %d delta %d iStartTime_backup %d",
+                     iDriverLatency, clockTime32, correction,iStartTime_backup);
+            }  else {
+                correction = updateClock32 - (clockTime32);
+                LOGV("ADJ_CLK iDriverLatency %d old clock %d delta %d", iDriverLatency, clockTime32, correction);
+            }
         }
         else {
             correction = updateClock32 - clockTime32;

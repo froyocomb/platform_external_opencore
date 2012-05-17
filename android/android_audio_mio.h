@@ -92,6 +92,7 @@ public:
         iClockState(PVMFMediaClock::STOPPED),
         iAudioThreadSem(0),
         iStartTime(0),
+        iStartTime_backup(0),
         iFrameCount(0),
         iMsecsPerFrame(25),
         iDriverLatency(0),
@@ -133,6 +134,7 @@ public:
 
     void setDriverLatency(uint32 latency);
     void incFrameCount(uint32_t numFrames) { iFrameCount += numFrames; }
+    void setFrameCount(uint32_t numFrames){ iFrameCount = numFrames; };
     void setFrameRate(float msecsPerFrame) { iMsecsPerFrame = msecsPerFrame; }
     float msecsPerFrame() { return iMsecsPerFrame; }
     void checkDelayedStart(bool flag) {checkForDelayedStart = !flag;}
@@ -144,6 +146,7 @@ private:
     OsclSemaphore* iAudioThreadSem;
 
     uint32 iStartTime;
+    uint32 iStartTime_backup;
     uint32 iFrameCount;
     float iMsecsPerFrame;
     uint32 iDriverLatency;

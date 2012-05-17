@@ -401,6 +401,7 @@ int AndroidAudioOutput::audout_thread_func()
     PVMFCommandId cmdid = 0;
     const OsclAny* context = 0;
     PVMFTimestamp timestamp = 0;
+    uint32_t tmp_numFrames = 0;
 
     // wait for signal from MIO thread
     LOGV("wait for signal");
@@ -484,7 +485,8 @@ int AndroidAudioOutput::audout_thread_func()
                 timestamp = iOSSRequestQueue[0].iTimestamp;
                 iDataQueued -= len;
                 iOSSRequestQueue.erase(&iOSSRequestQueue[0]);
-                LOGV("receive buffer (%d), timestamp = %u data queued = %u", cmdid, timestamp,iDataQueued);
+                tmp_numFrames = 0; // reset tmp_numFrames
+                LOGV("receive buffer (%d), timestamp = %u data queued = %u, tmp_numFrames = %u", cmdid, timestamp,iDataQueued,tmp_numFrames);
             }
             iOSSRequestQueueLock.Unlock();
 
@@ -565,10 +567,10 @@ int AndroidAudioOutput::audout_thread_func()
 
             // count bytes sent
             bytesAvailInBuffer -= bytesWritten;
-
+            tmp_numFrames += bytesWritten / outputFrameSizeInBytes;
             // update frame count for latency calculation
-            iActiveTiming->incFrameCount(bytesWritten / outputFrameSizeInBytes);
-            //LOGV("outputFrameSizeInBytes = %u,bytesWritten = %u,bytesAvailInBuffer = %u", outputFrameSizeInBytes,bytesWritten,bytesAvailInBuffer);
+            iActiveTiming->setFrameCount((uint32_t(timestamp / msecsPerFrame)) + tmp_numFrames);
+            //LOGV("timestamp = %u,msecsPerFrame = %f ,tmp_numFrames = %u", timestamp,msecsPerFrame,tmp_numFrames);
             // if done with buffer - send response to MIO
             if (data && !len) {
                 LOGV("done with the data cmdid %d, context %p, timestamp %d ",cmdid, context, timestamp);
