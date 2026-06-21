@@ -893,7 +893,7 @@ PVMFStatus AndroidCameraInput::DoInit()
 
     // create a camera if the app didn't supply one
     if (mCamera == 0) {
-        mCamera = Camera::connect();
+        mCamera = Camera::connect(0);
     }
 
     // always call setPreviewDisplay() regardless whether mCamera is just created or not
