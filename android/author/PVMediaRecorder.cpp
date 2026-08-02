@@ -375,7 +375,7 @@ status_t PVMediaRecorder::close()
     return mAuthorDriverWrapper->enqueueCommand(ac, 0, 0);
 }
 
-status_t PVMediaRecorder::setListener(const sp<IMediaPlayerClient>& listener) {
+status_t PVMediaRecorder::setListener(const sp<IMediaRecorderClient>& listener) {
     LOGV("setListener");
     if (mAuthorDriverWrapper == NULL) {
         LOGE("author driver wrapper is not initialized yet");

@@ -283,7 +283,7 @@ public:
 
     status_t getMaxAmplitude(int *max);
     PVAEState getAuthorEngineState();
-    status_t setListener(const sp<IMediaPlayerClient>& listener);
+    status_t setListener(const sp<IMediaRecorderClient>& listener);
 
 private:
     // Finish up a non-async command in such a way that
@@ -375,7 +375,7 @@ private:
     Mutex                   mQueueLock;
 
     sp<ICamera>             mCamera;
-    sp<IMediaPlayerClient>  mListener;
+    sp<IMediaRecorderClient>  mListener;
 
     int32            mSamplingRate;
     int32            mNumberOfChannels;
@@ -393,7 +393,7 @@ public:
     ~AuthorDriverWrapper();
     status_t enqueueCommand(author_command *ec, media_completion_f comp, void *cookie);
     status_t getMaxAmplitude(int *max);
-    status_t setListener(const sp<IMediaPlayerClient>& listener);
+    status_t setListener(const sp<IMediaRecorderClient>& listener);
 
 private:
     void resetAndClose();

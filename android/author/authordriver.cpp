@@ -90,7 +90,7 @@ status_t AuthorDriverWrapper::enqueueCommand(author_command *ac, media_completio
     return NO_INIT;
 }
 
-status_t AuthorDriverWrapper::setListener(const sp<IMediaPlayerClient>& listener) {
+status_t AuthorDriverWrapper::setListener(const sp<IMediaRecorderClient>& listener) {
     if (mAuthorDriver) {
     return mAuthorDriver->setListener(listener);
     }
@@ -1432,7 +1432,7 @@ void AuthorDriver::HandleInformationalEvent(const PVAsyncInformationalEvent& aEv
     }
 }
 
-status_t AuthorDriver::setListener(const sp<IMediaPlayerClient>& listener) {
+status_t AuthorDriver::setListener(const sp<IMediaRecorderClient>& listener) {
     mListener = listener;
 
     return android::OK;
