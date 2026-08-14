@@ -384,4 +384,11 @@ status_t PVMediaRecorder::setListener(const sp<IMediaRecorderClient>& listener) 
     return mAuthorDriverWrapper->setListener(listener);
 }
 
+// PATCH (after and including HRG14): FIX COMPILE.
+// Basically just adds the new "dump" diagnostic variable or whatever it's called and makes it a no-op.
+status_t PVMediaRecorder::dump(int fd, const Vector<String16>& args) const {
+    LOGV("dump");
+    return NO_ERROR;
+}
+
 }; // namespace android
