@@ -209,8 +209,9 @@ struct set_video_frame_rate_command : author_command
 
 struct set_preview_surface_command : author_command
 {
+    // PATCH (after and including HRG56): FIX COMPILE - ISurface to Surface.
     set_preview_surface_command() : author_command(AUTHOR_SET_PREVIEW_SURFACE) {};
-    sp<ISurface>                     surface;
+    sp<Surface>                     surface;
 };
 
 struct set_camera_command : author_command

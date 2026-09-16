@@ -20,6 +20,9 @@
 
 #include <media/PVMediaRecorder.h>
 #include <camera/ICamera.h>
+// PATCH (after and including HRG56): FIX COMPILE.
+// mSurface is a sp<Surface> now, so this is required.
+#include <surfaceflinger/Surface.h>
 #include "authordriver.h"
 
 namespace android {
@@ -234,7 +237,8 @@ status_t PVMediaRecorder::setCamera(const sp<ICamera>& camera)
     return mAuthorDriverWrapper->enqueueCommand(ac, 0, 0);
 }
 
-status_t PVMediaRecorder::setPreviewSurface(const sp<ISurface>& surface)
+// PATCH (after and including HRG56): FIX COMPILE - ISurface to Surface.
+status_t PVMediaRecorder::setPreviewSurface(const sp<Surface>& surface)
 {
     LOGV("setPreviewSurface(%p)", surface.get());
     if (mAuthorDriverWrapper == NULL) {

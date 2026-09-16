@@ -22,6 +22,9 @@
 #include <utils/Errors.h>
 #include <media/mediarecorder.h>
 #include <surfaceflinger/ISurface.h>
+// PATCH (after and including HRG56): FIX COMPILE.
+// mSurface is a sp<Surface> now, so this is required.
+#include <surfaceflinger/Surface.h>
 #include <camera/ICamera.h>
 #include <camera/Camera.h>
 
@@ -1122,7 +1125,8 @@ PVMFStatus AndroidCameraInput::VerifyAndSetParameter(PvmiKvp* aKvp,
     return PVMFFailure;
 }
 
-void AndroidCameraInput::SetPreviewSurface(const sp<android::ISurface>& surface)
+// PATCH (after and including HRG56): FIX COMPILE - ISurface to Surface.
+void AndroidCameraInput::SetPreviewSurface(const sp<android::Surface>& surface)
 {
     LOGV("SetPreviewSurface");
     mSurface = surface;

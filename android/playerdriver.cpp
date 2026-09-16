@@ -34,6 +34,11 @@
 #include <media/MediaPlayerInterface.h>
 #include <media/Metadata.h>
 
+// PATCH (after and including HRG56): FIX COMPILE.
+// mSurface is a sp<Surface> now, so these are required.
+#include <surfaceflinger/ISurface.h>
+#include <surfaceflinger/Surface.h>
+
 #include "playerdriver.h"
 #include <media/PVPlayer.h>
 
@@ -1547,9 +1552,69 @@ status_t PVPlayer::setDataSource(int fd, int64_t offset, int64_t length) {
     return OK;
 }
 
-status_t PVPlayer::setVideoSurface(const sp<ISurface>& surface)
+// ---------------------------------------------------------------------
+// PATCH (after and including HRG56): FIX COMPILE.
+//
+// PVPlayer::setVideoSurface() changed from taking sp<ISurface> to
+// sp<Surface>. Everything downstream of PlayerDriver (mSurface,
+// PlayerSetVideoSurface, AndroidSurfaceOutput, ISurface::BufferHeap /
+// registerBuffers / postBuffer) still speaks ISurface, so this function
+// extracts the ISurface once, right at the entry point, and leaves the
+// rest of the MIO path untouched.
+//
+// That extraction needs Surface::getISurface(), which is private in
+// this frameworks/base tree (friends: SurfaceComposerClient,
+// SurfaceControl). Rather than edit the platform header, it's reached
+// via PrivateAccessThief below, which exploits the standard rule that
+// access control isn't checked at explicit template instantiation.
+// This is a real function call through the actual method, not a
+// memory hack -- only the "may I even name this" check is skipped.
+// Caveat: this idiom is only safe because getISurface() is a plain
+// non-virtual method; a virtual one can misbehave with this trick on
+// older GCC, since pointer-to-member-function values for virtuals
+// encode a vtable slot rather than a code address.
+// ---------------------------------------------------------------------
+namespace {
+template <typename Tag, typename Tag::type M>
+struct PrivateAccessThief {
+    friend typename Tag::type stolen(Tag) { return M; }
+};
+
+struct Surface_getISurface_tag {
+    typedef sp<ISurface> (Surface::*type)() const;
+    friend type stolen(Surface_getISurface_tag);
+};
+
+template struct PrivateAccessThief<Surface_getISurface_tag, &Surface::getISurface>;
+} // namespace
+
+status_t PVPlayer::setVideoSurface(const sp<Surface>& surface)
 {
     LOGV("setVideoSurface(%p)", surface.get());
+    if (surface == NULL) {
+        mSurface = NULL;
+        return OK;
+    }
+
+    mSurface = (surface.get()->*stolen(Surface_getISurface_tag()))();
+    if (mSurface == NULL) {
+        LOGE("setVideoSurface: no ISurface behind Surface %p", surface.get());
+        return INVALID_OPERATION;
+    }
+    return OK;
+}
+
+// PATCH (after and including HRG56): FIX COMPILE/LINK.
+// PVPlayer.h declares this as its OWN pure virtual -- not an overload of
+// setVideoSurface(), a distinct entry point that already gets handed an
+// ISurface directly. Left unimplemented, PVPlayer stays abstract and the
+// vtable has a hole, which only shows up at link time ("undefined
+// reference to vtable for PVPlayer"), not at compile time. No conversion
+// needed here since it isn't wrapped in a Surface to begin with. Confirmed
+// on the correctly rev-4-synced tree (not a stale-repo artifact).
+status_t PVPlayer::setVideoISurface(const sp<ISurface>& surface)
+{
+    LOGV("setVideoISurface(%p)", surface.get());
     mSurface = surface;
     return OK;
 }

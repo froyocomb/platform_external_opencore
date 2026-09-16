@@ -62,6 +62,8 @@
 using namespace android;
 
 class ISurface;
+// PATCH (after and including HRG56): FIX COMPILE. It's sp<Surface> now instead of sp<ISurface>, so this is required.
+class Surface;
 class ICamera;
 
 /**
@@ -403,7 +405,8 @@ public:
         int num_elements);
 
     // Android-specific stuff
-    void SetPreviewSurface(const sp<android::ISurface>& surface);
+    // PATCH (after and including HRG56): FIX COMPILE - ISurface to Surface.
+    void SetPreviewSurface(const sp<android::Surface>& surface);
     void SetFrameSize(int w, int h);
     void SetFrameRate(int frames_per_second);
     PVMFStatus SetCamera(const sp<android::ICamera>& camera);
@@ -499,7 +502,8 @@ private:
     };
 
     // Camera specific stuff
-    sp<android::ISurface>   mSurface;
+    // PATCH (after and including HRG56): FIX COMPILE - ISurface to Surface.
+    sp<android::Surface>   mSurface;
     int32                   mSurfaceWidth;
     int32                   mSurfaceHeight;
     int32                   mFrameWidth;
